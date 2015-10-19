@@ -1,6 +1,6 @@
 %% function to determine absolute heights for instruments
  
-function DataWithHeights = ProcessInstrumentHeights(Data, InstrumentMetadata)
+function DataWithHeights = ProcessInstrumentHeights(Data)
 
 %% PARAMETERS
 InstrumentHeightCorrection_m = 0; %amount by which to adjust instrument heights to account for scour beneath Wenglors
