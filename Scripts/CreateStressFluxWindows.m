@@ -1,4 +1,12 @@
 %% SCRIPT TO GENERATE WINDOWS OF SALTATION FLUX AND STRESS VALUES FOR ANALYSIS
+% SCRIPT DEPENDENCIES:
+% CreateStressFluxWindows.m
+% CreateTimeBlocks.m
+% ExtractVariableTimeInterval.m
+% IntersectingTimeIntervals.m
+% qz_profilefit
+% reorient_anemometers_vanboxel2004
+% window_average
 
 %% initialize
 clearvars;
