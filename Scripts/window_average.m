@@ -1,6 +1,6 @@
-%time_out gives timeseries of first time for each window
+%t_out gives timeseries of first time for each window
 
-function [data_out, time_out] = window_average(data_in, t, dt_avg)
+function [data_out, t_out] = window_average(data_in, t, dt_avg)
 
 L_data = length(data_in);
 dt = mode(diff(t));
@@ -9,7 +9,7 @@ N_chunk = floor(L_data/L_chunk);
 
 data_out = zeros(N_chunk,1);
 for n=1:N_chunk
-    data_out(n) = mean(data_in((n-1)*(1:L_chunk)+1));
+    data_out(n) = mean(data_in((n-1)+(1:L_chunk)));
 end
 
-time_out = (t(1)+(0:(N_chunk-1))*dt_avg)';
+t_out = (t(1)+(0:(N_chunk-1))*dt_avg)';
