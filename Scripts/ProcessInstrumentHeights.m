@@ -2,9 +2,6 @@
  
 function DataWithHeights = ProcessInstrumentHeights(Data)
 
-%% PARAMETERS
-InstrumentHeightCorrection_m = 0; %amount by which to adjust instrument heights to account for scour beneath Wenglors
-
 %% GO THROUGH INSTRUMENT TYPES, DETERMINE ABSOLUTE HEIGHTS BASED ON DISTANCE SENSOR READINGS
 InstrumentTypes = fieldnames(Data); %get list of instrument types
 N_InstrumentTypes = length(InstrumentTypes); %how many instrument types
@@ -42,7 +39,7 @@ for i = 1:N_InstrumentTypes
                 
                 %if values are contained in this interval, compute mean of them 
                 if ~isempty(z_interval_mm)
-                    RefHeight_m = mean(z_interval_mm)/1000+InstrumentHeightCorrection_m; %compute mean, convert to meters.  Add in height correction value
+                    RefHeight_m = mean(z_interval_mm)/1000; %compute mean, convert to meters
                     RefHeightErr_m = std(z_interval_mm)/1000; %error is standard deviation, convert to meters
                     
                 %if no values contained in interval, use values from previous interval
@@ -56,7 +53,7 @@ for i = 1:N_InstrumentTypes
             RefHeight_List(k) = RefHeight_m;
             RefHeightErr_List(k) = RefHeightErr_m;
             
-            %compute instrument height
+            %compute instrument height (gives mean height for the entire interval)
             z_Instrument = RefHeight_m+mean([StartHeight_m; EndHeight_m]);
             
             %compute error as combination of measurement error, reference

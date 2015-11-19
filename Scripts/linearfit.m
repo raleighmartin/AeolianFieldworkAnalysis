@@ -18,7 +18,7 @@
 % sigma_yfit - corresponding uncertainty in predictions of y
 
 %use method of bevington and robinson (p. 105)
-function [a, b, sigma_b, sigma_a, yfit, sigma_yfit] = linearfit(x, y, sigma_x, sigma_y)
+function [a, b, sigma_a, sigma_b, yfit, sigma_yfit] = linearfit(x, y, sigma_x, sigma_y)
 
 %set input error values to 0 if not given
 if nargin == 2
@@ -29,6 +29,7 @@ end
 %perform fit if sufficient number of observations
 if length(x)>=3
     if (max(sigma_y)>0)&&(max(sigma_x)>0); %calculations if error is included
+    %if (min(sigma_y)>0)&&(min(sigma_x)>0); %calculations if error is included
         delta = sum(1./sigma_y.^2).*sum(x.^2./sigma_y.^2)-(sum(x./sigma_y.^2)).^2; %(Bevington and Robinson, Eq. 6.12c)
         a = (1/delta)*(sum(x.^2./sigma_y.^2)*sum(y./sigma_y.^2)-sum(x./sigma_y.^2)*sum(x.*y./sigma_y.^2)); %(Bevington and Robinson, Eq. 6.12a)
         b = (1/delta)*(sum(1./sigma_y.^2)*sum(x.*y./sigma_y.^2)-sum(x./sigma_y.^2)*sum(y./sigma_y.^2)); %(Bevington and Robinson, Eq. 6.12b)

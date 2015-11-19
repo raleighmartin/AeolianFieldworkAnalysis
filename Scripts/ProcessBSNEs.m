@@ -131,41 +131,41 @@ for i = 1:N_Intervals
     z_profile = z_bottom_profile+z_trapheight_profile/2;
     
     %height-integrated flux from exponential fit
-    [q0,ze,sigma_q0,sigma_ze,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(qz_profile, z_profile, sigma_qz_profile, sigma_z_profile);
+    [q0,zq,sigma_q0,sigma_zq,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(qz_profile, z_profile, sigma_qz_profile, sigma_z_profile);
     
-    %now that we have ze, redo calculation of BSNE heights
+    %now that we have zq, redo calculation of BSNE heights
     z_profile_old = z_profile; %document previous z-profile to see difference
-    z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,ze); %calculate new BSNE midpoint heights based on ze
+    z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
     z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
     
     %iterate until the z_profile is minutely small
     while(z_profile_difference>1e-8)
-        [q0,ze,sigma_q0,sigma_ze,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(qz_profile, z_profile, sigma_qz_profile, sigma_z_profile); %height-integrated flux from exponential fit
+        [q0,zq,sigma_q0,sigma_zq,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(qz_profile, z_profile, sigma_qz_profile, sigma_z_profile); %height-integrated flux from exponential fit
         z_profile_old = z_profile; %document previous z-profile to see difference
-        z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,ze); %calculate new BSNE midpoint heights based on ze
+        z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
         z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
     end
     
-    %% optional plot
-    
-    %get predicted values
-    qz_pred_minus = qz_pred - sigma_qz_pred;
-    qz_pred_plus = qz_pred + sigma_qz_pred;
-    [z_sort, ind_sort] = sort(z_profile);
-    qz_pred_sort = qz_pred(ind_sort);
-    qz_pred_minus_sort = qz_pred_minus(ind_sort);
-    qz_pred_plus_sort = qz_pred_plus(ind_sort);
-    
-    %make plot
-    figure(1); clf;
-    errorbar(z_profile,qz_profile,sigma_qz_profile,'bx'); hold on;
-    plot(z_sort,qz_pred_sort,'k');
-    plot(z_sort,qz_pred_minus_sort,'r--',z_sort,qz_pred_plus_sort,'r--');
-    set(gca,'yscale','log');
-    xlabel('z (m)');
-    ylabel('q (g/m^2/s)');
-    set(gca,'FontSize',16);
-    pause;
+%     %% optional plot (comment out to hide)
+%     
+%     %get predicted values
+%     qz_pred_minus = qz_pred - sigma_qz_pred;
+%     qz_pred_plus = qz_pred + sigma_qz_pred;
+%     [z_sort, ind_sort] = sort(z_profile);
+%     qz_pred_sort = qz_pred(ind_sort);
+%     qz_pred_minus_sort = qz_pred_minus(ind_sort);
+%     qz_pred_plus_sort = qz_pred_plus(ind_sort);
+%     
+%     %make plot
+%     figure(1); clf;
+%     errorbar(z_profile,qz_profile,sigma_qz_profile,'bx'); hold on;
+%     plot(z_sort,qz_pred_sort,'k');
+%     plot(z_sort,qz_pred_minus_sort,'r--',z_sort,qz_pred_plus_sort,'r--');
+%     set(gca,'yscale','log');
+%     xlabel('z (m)');
+%     ylabel('q (g/m^2/s)');
+%     set(gca,'FontSize',16);
+%     pause;
     
     %% add to structured array
     FluxBSNE(i).qz.q0 = q0;
@@ -173,8 +173,11 @@ for i = 1:N_Intervals
     FluxBSNE(i).qz.sigma_q0 = sigma_q0;
     FluxBSNE(i).qz.sigma_qz_pred = sigma_qz_pred;
     FluxBSNE(i).qz.sigma_logqz_pred = sigma_logqz_pred;
-    FluxBSNE(i).z.ze = ze;
-    FluxBSNE(i).z.sigma_ze = sigma_ze;
+    FluxBSNE(i).z.zq = zq;
+    FluxBSNE(i).z.sigma_zq = sigma_zq;
     FluxBSNE(i).z.z = z_profile;
     FluxBSNE(i).z.sigma_z = sigma_z_profile;
 end
+
+%reshape FluxBSNE so it is a column vector like all other structured arrays
+FluxBSNE = FluxBSNE';
