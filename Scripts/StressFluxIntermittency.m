@@ -11,7 +11,8 @@ folder_AnalysisData = '../AnalysisData/'; %folder for storing data output
 folder_Plots = '../PlotOutput/FluxFrequency/'; %folder for plots
 
 %load flux stress window data
-load(strcat(folder_AnalysisData,'StressFluxWindows_all'));
+load(strcat(folder_ProcessedData,'StressFluxWindows_all'));
+%load(strcat(folder_AnalysisData,'StressFluxWindows_all'));
 
 %get info about number of sites
 N_Sites = length(Sites);
@@ -141,8 +142,8 @@ tauex_bins_mid = mean([tauex_bins_min;tauex_bins_max]);
 N_tauex_bins = length(tauex_bins_mid);
 
 %etatau_bins
-etatau_bins_min = 0:0.01:0.22;
-etatau_bins_max = 0.01:0.01:0.23;
+etatau_bins_min = 0:0.01:0.24;
+etatau_bins_max = 0.01:0.01:0.25;
 etatau_bins_mid = mean([etatau_bins_min;etatau_bins_max]);
 N_etatau_bins = length(etatau_bins_mid);
 
@@ -159,9 +160,12 @@ ust_fQ_bin_values = cell(N_Sites,1); %u* into frequency bins
 tau_fQ_bin_values = cell(N_Sites,1); %tau into frequency bins
 tauex_fQ_bin_values = cell(N_Sites,1); %tauex into frequency bins
 Q_fQ_bin_values = cell(N_Sites,1); %fluxes into frequency bins
-eta_fQ_bin_values = cell(N_Sites,1); %etas into frequency bins
+sigma_Q_fQ_bin_values = cell(N_Sites,1); %flux uncertainties into frequency bins
+eta_inactive_fQ_bin_values = cell(N_Sites,1); %etas into frequency bins
+eta_active_fQ_bin_values = cell(N_Sites,1); %etas into frequency bins
 zs_fQ_bin_values = cell(N_Sites,1); %zs into frequency bins
 ubarustd_fQ_bin_values = cell(N_Sites,1); %ubar/ustd into frequency bins
+zq_fQ_bin_values = cell(N_Sites,1); %saltation characteristic height
 
 %apply values to bins
 for i=1:N_Sites
@@ -172,9 +176,12 @@ for i=1:N_Sites
     tau_fQ_bin_values{i} = cell(N_fQ_bins,1);
     tauex_fQ_bin_values{i} = cell(N_fQ_bins,1);
     Q_fQ_bin_values{i} = cell(N_fQ_bins,1);
-    eta_fQ_bin_values{i} = cell(N_fQ_bins,1);
+    sigma_Q_fQ_bin_values{i} = cell(N_fQ_bins,1);
+    eta_inactive_fQ_bin_values{i} = cell(N_fQ_bins,1);
+    eta_active_fQ_bin_values{i} = cell(N_fQ_bins,1);
     zs_fQ_bin_values{i} = cell(N_fQ_bins,1);
     ubarustd_fQ_bin_values{i} = cell(N_fQ_bins,1);
+    zq_fQ_bin_values{i} = cell(N_fQ_bins,1);
     
     %go through frequency bins, get values
     for j=1:N_fQ_bins
@@ -188,11 +195,12 @@ for i=1:N_Sites
             tau_fQ_bin_values{i}{j} = tauRe_all{i}(bin_ind);
             tauex_fQ_bin_values{i}{j} = tauex_all{i}(bin_ind);
             Q_fQ_bin_values{i}{j} = Q_all{i}(bin_ind);
-            eta_fQ_bin_values{i}{j} = eta_fQ_constthr_all{i}(bin_ind); %use eta based on frequency below constant threshold method
-            %eta_fQ_bin_values{i}{j} = eta_zs_constthr_all{i}(bin_ind); %use eta based on constant threshold
-            %eta_fQ_bin_values{i}{j} = eta_zs_TFEMthr_all{i}(bin_ind); %use eta based on TFEM threshold 
+            sigma_Q_fQ_bin_values{i}{j} = sigma_Q_all{i}(bin_ind);
+            eta_inactive_fQ_bin_values{i}{j} = eta_inactive_TFEMthr_LP_all{i}(bin_ind); %use eta based on frequency below constant threshold method
+            eta_active_fQ_bin_values{i}{j} = eta_active_TFEMthr_LP_all{i}(bin_ind); %use eta based on constant threshold
             zs_fQ_bin_values{i}{j} = zs_all{i}(bin_ind);
             ubarustd_fQ_bin_values{i}{j} = u_bar_all{i}(bin_ind)./u_std_all{i}(bin_ind);
+            zq_fQ_bin_values{i}{j} = zq_all{i}(bin_ind);
         end
     end
 end
@@ -204,28 +212,45 @@ eta_bins_mid = mean([eta_bins_min;eta_bins_max]);
 N_eta_bins = length(eta_bins_mid);
 
 %separate fQ's into eta bins
-fQ_eta_bin_values = cell(N_Sites,1); %fQ's into eta bins
-fQ_eta_bin_avg = cell(N_Sites,1); %get average fQ for eta bin
-fQ_eta_bin_std = cell(N_Sites,1); %get std fQ for eta bin
-fQ_eta_bin_SE = cell(N_Sites,1); %get SE fQ for eta bin
+fQ_eta_inactive_bin_values = cell(N_Sites,1); %fQ's into eta bins - fQ definition
+fQ_eta_inactive_bin_avg = cell(N_Sites,1); %get average fQ for eta bin
+fQ_eta_inactive_bin_std = cell(N_Sites,1); %get std fQ for eta bin
+fQ_eta_inactive_bin_SE = cell(N_Sites,1); %get SE fQ for eta bin
+
+fQ_eta_active_bin_values = cell(N_Sites,1); %fQ's into eta bins - zs definition
+fQ_eta_active_bin_avg = cell(N_Sites,1); %get average fQ for eta bin
+fQ_eta_active_bin_std = cell(N_Sites,1); %get std fQ for eta bin
+fQ_eta_active_bin_SE = cell(N_Sites,1); %get SE fQ for eta bin
 
 for i = 1:N_Sites
-    %initialize fQ's into eta bins
-    fQ_eta_bin_values{i} = cell(N_eta_bins,1); 
-    fQ_eta_bin_avg{i} = zeros(N_eta_bins,1)*NaN;
-    fQ_eta_bin_std{i} = zeros(N_eta_bins,1)*NaN;
-    fQ_eta_bin_SE{i} = zeros(N_eta_bins,1)*NaN;
+    %initialize fQ's into eta bins - fQ definition
+    fQ_eta_inactive_bin_values{i} = cell(N_eta_bins,1); 
+    fQ_eta_inactive_bin_avg{i} = zeros(N_eta_bins,1)*NaN;
+    fQ_eta_inactive_bin_std{i} = zeros(N_eta_bins,1)*NaN;
+    fQ_eta_inactive_bin_SE{i} = zeros(N_eta_bins,1)*NaN;
+    
+    %initialize fQ's into eta bins - zs definition
+    fQ_eta_active_bin_values{i} = cell(N_eta_bins,1); 
+    fQ_eta_active_bin_avg{i} = zeros(N_eta_bins,1)*NaN;
+    fQ_eta_active_bin_std{i} = zeros(N_eta_bins,1)*NaN;
+    fQ_eta_active_bin_SE{i} = zeros(N_eta_bins,1)*NaN;
     
     %get fQs for eta bin
     for j = 1:N_eta_bins
-        bin_ind = find(eta_fQ_constthr_all{i}>=eta_bins_min(j)&eta_fQ_constthr_all{i}<=eta_bins_max(j));
-        %bin_ind = find(eta_zs_constthr_all{i}>=eta_bins_min(j)&eta_zs_constthr_all{i}<=eta_bins_max(j));
-        %bin_ind = find(eta_zs_TFEMthr_all{i}>=eta_bins_min(j)&eta_zs_TFEMthr_all{i}<=eta_bins_max(j));
-        fQ_eta_bin_values{i}{j} = fQ1_all{i}(bin_ind);
-        fQ_eta_bin_values{i}{j} = fQ_eta_bin_values{i}{j}(~isnan(fQ_eta_bin_values{i}{j}));
-        fQ_eta_bin_avg{i}(j) = mean(fQ_eta_bin_values{i}{j});
-        fQ_eta_bin_std{i}(j) = std(fQ_eta_bin_values{i}{j});
-        fQ_eta_bin_SE{i}(j) = std(fQ_eta_bin_values{i}{j})./sqrt(length(~isnan(fQ_eta_bin_values{i}{j})));
+        bin_ind = find(eta_inactive_TFEMthr_LP_all{i}>=eta_bins_min(j)&eta_inactive_TFEMthr_LP_all{i}<=eta_bins_max(j));
+        fQ_eta_inactive_bin_values{i}{j} = fQ1_all{i}(bin_ind);
+        fQ_eta_inactive_bin_values{i}{j} = fQ_eta_inactive_bin_values{i}{j}(~isnan(fQ_eta_inactive_bin_values{i}{j}));
+        fQ_eta_inactive_bin_avg{i}(j) = mean(fQ_eta_inactive_bin_values{i}{j});
+        fQ_eta_inactive_bin_std{i}(j) = std(fQ_eta_inactive_bin_values{i}{j});
+        fQ_eta_inactive_bin_SE{i}(j) = std(fQ_eta_inactive_bin_values{i}{j})./sqrt(length(~isnan(fQ_eta_inactive_bin_values{i}{j})));
+
+        bin_ind = find(eta_active_TFEMthr_LP_all{i}>=eta_bins_min(j)&eta_active_TFEMthr_LP_all{i}<=eta_bins_max(j));
+        fQ_eta_active_bin_values{i}{j} = fQ1_all{i}(bin_ind);
+        fQ_eta_active_bin_values{i}{j} = fQ_eta_active_bin_values{i}{j}(~isnan(fQ_eta_active_bin_values{i}{j}));
+        fQ_eta_active_bin_avg{i}(j) = mean(fQ_eta_active_bin_values{i}{j});
+        fQ_eta_active_bin_std{i}(j) = std(fQ_eta_active_bin_values{i}{j});
+        fQ_eta_active_bin_SE{i}(j) = std(fQ_eta_active_bin_values{i}{j})./sqrt(length(~isnan(fQ_eta_active_bin_values{i}{j})));
+
     end
 end
 
@@ -374,9 +399,12 @@ for i = 3;
     Q_fQ_ust_bin_avg = cell(N_fQ_bins,1);
     Q_fQ_ust_bin_std = cell(N_fQ_bins,1);
     Q_fQ_ust_bin_SE = cell(N_fQ_bins,1);
-    eta_fQ_ust_bin_avg = cell(N_fQ_bins,1);
-    eta_fQ_ust_bin_std = cell(N_fQ_bins,1);
-    eta_fQ_ust_bin_SE = cell(N_fQ_bins,1);
+    eta_inactive_fQ_ust_bin_avg = cell(N_fQ_bins,1);
+    eta_inactive_fQ_ust_bin_std = cell(N_fQ_bins,1);
+    eta_inactive_fQ_ust_bin_SE = cell(N_fQ_bins,1);
+    eta_active_fQ_ust_bin_avg = cell(N_fQ_bins,1);
+    eta_active_fQ_ust_bin_std = cell(N_fQ_bins,1);
+    eta_active_fQ_ust_bin_SE = cell(N_fQ_bins,1);
     zs_fQ_ust_bin_avg = cell(N_fQ_bins,1);
     zs_fQ_ust_bin_std = cell(N_fQ_bins,1);
     zs_fQ_ust_bin_SE = cell(N_fQ_bins,1);
@@ -388,22 +416,31 @@ for i = 3;
     Q_fQ_tau_bin_avg = cell(N_fQ_bins,1);
     Q_fQ_tau_bin_std = cell(N_fQ_bins,1);
     Q_fQ_tau_bin_SE = cell(N_fQ_bins,1);
+    zq_fQ_tau_bin_avg = cell(N_fQ_bins,1);
+    zq_fQ_tau_bin_std = cell(N_fQ_bins,1);
+    zq_fQ_tau_bin_SE = cell(N_fQ_bins,1);
     
     %fluxes and other values into tauex bins within fQ bins
     Q_fQ_tauex_bin_avg = cell(N_fQ_bins,1);
     Q_fQ_tauex_bin_std = cell(N_fQ_bins,1);
     Q_fQ_tauex_bin_SE = cell(N_fQ_bins,1);
-    eta_fQ_tauex_bin_avg = cell(N_fQ_bins,1);
-    eta_fQ_tauex_bin_std = cell(N_fQ_bins,1);
-    eta_fQ_tauex_bin_SE = cell(N_fQ_bins,1);
+    eta_inactive_fQ_tauex_bin_avg = cell(N_fQ_bins,1);
+    eta_inactive_fQ_tauex_bin_std = cell(N_fQ_bins,1);
+    eta_inactive_fQ_tauex_bin_SE = cell(N_fQ_bins,1);
+    eta_active_fQ_tauex_bin_avg = cell(N_fQ_bins,1);
+    eta_active_fQ_tauex_bin_std = cell(N_fQ_bins,1);
+    eta_active_fQ_tauex_bin_SE = cell(N_fQ_bins,1);
     zs_fQ_tauex_bin_avg = cell(N_fQ_bins,1);
     zs_fQ_tauex_bin_std = cell(N_fQ_bins,1);
     zs_fQ_tauex_bin_SE = cell(N_fQ_bins,1);
     
     %fluxes into eta*tau bins within fQ bins
-    Q_fQ_etatau_bin_avg = cell(N_fQ_bins,1);
-    Q_fQ_etatau_bin_std = cell(N_fQ_bins,1);
-    Q_fQ_etatau_bin_SE = cell(N_fQ_bins,1);
+    Q_fQ_eta_inactive_tau_bin_avg = cell(N_fQ_bins,1);
+    Q_fQ_eta_inactive_tau_bin_std = cell(N_fQ_bins,1);
+    Q_fQ_eta_inactive_tau_bin_SE = cell(N_fQ_bins,1);
+    Q_fQ_eta_active_tau_bin_avg = cell(N_fQ_bins,1);
+    Q_fQ_eta_active_tau_bin_std = cell(N_fQ_bins,1);
+    Q_fQ_eta_active_tau_bin_SE = cell(N_fQ_bins,1);
     
     %go through each fQ bin
     for j = 1:N_fQ_bins
@@ -412,9 +449,12 @@ for i = 3;
         Q_fQ_ust_bin_avg{j} = zeros(N_ust_bins,1)*NaN;
         Q_fQ_ust_bin_std{j} = zeros(N_ust_bins,1)*NaN;
         Q_fQ_ust_bin_SE{j} = zeros(N_ust_bins,1)*NaN;
-        eta_fQ_ust_bin_avg{j} = zeros(N_ust_bins,1)*NaN;
-        eta_fQ_ust_bin_std{j} = zeros(N_ust_bins,1)*NaN;
-        eta_fQ_ust_bin_SE{j} = zeros(N_ust_bins,1)*NaN;
+        eta_inactive_fQ_ust_bin_avg{j} = zeros(N_ust_bins,1)*NaN;
+        eta_inactive_fQ_ust_bin_std{j} = zeros(N_ust_bins,1)*NaN;
+        eta_inactive_fQ_ust_bin_SE{j} = zeros(N_ust_bins,1)*NaN;
+        eta_active_fQ_ust_bin_avg{j} = zeros(N_ust_bins,1)*NaN;
+        eta_active_fQ_ust_bin_std{j} = zeros(N_ust_bins,1)*NaN;
+        eta_active_fQ_ust_bin_SE{j} = zeros(N_ust_bins,1)*NaN;
         zs_fQ_ust_bin_avg{j} = zeros(N_ust_bins,1)*NaN;
         zs_fQ_ust_bin_std{j} = zeros(N_ust_bins,1)*NaN;
         zs_fQ_ust_bin_SE{j} = zeros(N_ust_bins,1)*NaN;
@@ -426,22 +466,31 @@ for i = 3;
         Q_fQ_tau_bin_avg{j} = zeros(N_tau_bins,1)*NaN;
         Q_fQ_tau_bin_std{j} = zeros(N_tau_bins,1)*NaN;
         Q_fQ_tau_bin_SE{j} = zeros(N_tau_bins,1)*NaN;
-  
+        zq_fQ_tau_bin_avg{j} = zeros(N_tau_bins,1)*NaN;
+        zq_fQ_tau_bin_std{j} = zeros(N_tau_bins,1)*NaN;
+        zq_fQ_tau_bin_SE{j} = zeros(N_tau_bins,1)*NaN;
+        
         %initialize tau_ex bins for each fQ bin
         Q_fQ_tauex_bin_avg{j} = zeros(N_tauex_bins,1)*NaN;
         Q_fQ_tauex_bin_std{j} = zeros(N_tauex_bins,1)*NaN;
         Q_fQ_tauex_bin_SE{j} = zeros(N_tauex_bins,1)*NaN;
-        eta_fQ_tauex_bin_avg{j} = zeros(N_tauex_bins,1)*NaN;
-        eta_fQ_tauex_bin_std{j} = zeros(N_tauex_bins,1)*NaN;
-        eta_fQ_tauex_bin_SE{j} = zeros(N_tauex_bins,1)*NaN;
+        eta_inactive_fQ_tauex_bin_avg{j} = zeros(N_tauex_bins,1)*NaN;
+        eta_inactive_fQ_tauex_bin_std{j} = zeros(N_tauex_bins,1)*NaN;
+        eta_inactive_fQ_tauex_bin_SE{j} = zeros(N_tauex_bins,1)*NaN;
+        eta_active_fQ_tauex_bin_avg{j} = zeros(N_tauex_bins,1)*NaN;
+        eta_active_fQ_tauex_bin_std{j} = zeros(N_tauex_bins,1)*NaN;
+        eta_active_fQ_tauex_bin_SE{j} = zeros(N_tauex_bins,1)*NaN;
         zs_fQ_tauex_bin_avg{j} = zeros(N_tauex_bins,1)*NaN;
         zs_fQ_tauex_bin_std{j} = zeros(N_tauex_bins,1)*NaN;
         zs_fQ_tauex_bin_SE{j} = zeros(N_tauex_bins,1)*NaN;
                 
         %initialize etatau bins for each fQ bin
-        Q_fQ_etatau_bin_avg{j} = zeros(N_etatau_bins,1)*NaN;
-        Q_fQ_etatau_bin_std{j} = zeros(N_etatau_bins,1)*NaN;
-        Q_fQ_etatau_bin_SE{j} = zeros(N_etatau_bins,1)*NaN;
+        Q_fQ_eta_inactive_tau_bin_avg{j} = zeros(N_etatau_bins,1)*NaN;
+        Q_fQ_eta_inactive_tau_bin_std{j} = zeros(N_etatau_bins,1)*NaN;
+        Q_fQ_eta_inactive_tau_bin_SE{j} = zeros(N_etatau_bins,1)*NaN;
+        Q_fQ_eta_active_tau_bin_avg{j} = zeros(N_etatau_bins,1)*NaN;
+        Q_fQ_eta_active_tau_bin_std{j} = zeros(N_etatau_bins,1)*NaN;
+        Q_fQ_eta_active_tau_bin_SE{j} = zeros(N_etatau_bins,1)*NaN;
               
         %go through each u* bin
         for k=1:N_ust_bins
@@ -453,11 +502,17 @@ for i = 3;
                 Q_fQ_ust_bin_SE{j}(k) = std(Q_fQ_ust_bin_values)/sqrt(length(~isnan(Q_fQ_ust_bin_values)));
                 Q_fQ_ust_bin_std{j}(k) = std(Q_fQ_ust_bin_values);
                 
-                eta_fQ_ust_bin_values = eta_fQ_bin_values{i}{j}(bin_ind);
-                eta_fQ_ust_bin_values = eta_fQ_ust_bin_values(~isnan(eta_fQ_ust_bin_values));
-                eta_fQ_ust_bin_avg{j}(k) = mean(eta_fQ_ust_bin_values);
-                eta_fQ_ust_bin_SE{j}(k) = std(eta_fQ_ust_bin_values)/sqrt(length(~isnan(eta_fQ_ust_bin_values)));
-                eta_fQ_ust_bin_std{j}(k) = std(eta_fQ_ust_bin_values);
+                eta_inactive_fQ_ust_bin_values = eta_inactive_fQ_bin_values{i}{j}(bin_ind);
+                eta_inactive_fQ_ust_bin_values = eta_inactive_fQ_ust_bin_values(~isnan(eta_inactive_fQ_ust_bin_values));
+                eta_inactive_fQ_ust_bin_avg{j}(k) = mean(eta_inactive_fQ_ust_bin_values);
+                eta_inactive_fQ_ust_bin_SE{j}(k) = std(eta_inactive_fQ_ust_bin_values)/sqrt(length(~isnan(eta_inactive_fQ_ust_bin_values)));
+                eta_inactive_fQ_ust_bin_std{j}(k) = std(eta_inactive_fQ_ust_bin_values);
+
+                eta_active_fQ_ust_bin_values = eta_active_fQ_bin_values{i}{j}(bin_ind);
+                eta_active_fQ_ust_bin_values = eta_active_fQ_ust_bin_values(~isnan(eta_active_fQ_ust_bin_values));
+                eta_active_fQ_ust_bin_avg{j}(k) = mean(eta_active_fQ_ust_bin_values);
+                eta_active_fQ_ust_bin_SE{j}(k) = std(eta_active_fQ_ust_bin_values)/sqrt(length(~isnan(eta_active_fQ_ust_bin_values)));
+                eta_active_fQ_ust_bin_std{j}(k) = std(eta_active_fQ_ust_bin_values);
                 
                 zs_fQ_ust_bin_values = zs_fQ_bin_values{i}{j}(bin_ind);
                 zs_fQ_ust_bin_values = zs_fQ_ust_bin_values(~isnan(zs_fQ_ust_bin_values));
@@ -482,6 +537,12 @@ for i = 3;
                 Q_fQ_tau_bin_avg{j}(k) = mean(Q_fQ_tau_bin_values);
                 Q_fQ_tau_bin_SE{j}(k) = std(Q_fQ_tau_bin_values)/sqrt(length(~isnan(Q_fQ_tau_bin_values)));
                 Q_fQ_tau_bin_std{j}(k) = std(Q_fQ_tau_bin_values);
+                
+                zq_fQ_tau_bin_values = zq_fQ_bin_values{i}{j}(bin_ind);
+                zq_fQ_tau_bin_values = zq_fQ_tau_bin_values(~isnan(zq_fQ_tau_bin_values));
+                zq_fQ_tau_bin_avg{j}(k) = mean(zq_fQ_tau_bin_values);
+                zq_fQ_tau_bin_SE{j}(k) = std(zq_fQ_tau_bin_values)/sqrt(length(zq_fQ_tau_bin_values));
+                zq_fQ_tau_bin_std{j}(k) = std(zq_fQ_tau_bin_values);
             end
         end
         
@@ -495,14 +556,20 @@ for i = 3;
                 Q_fQ_tauex_bin_SE{j}(k) = std(Q_fQ_tauex_bin_values)/sqrt(length(~isnan(Q_fQ_tauex_bin_values)));
                 Q_fQ_tauex_bin_std{j}(k) = std(Q_fQ_tauex_bin_values);
                 
-                eta_fQ_tauex_bin_values = eta_fQ_bin_values{i}{j}(bin_ind);
-                eta_fQ_tauex_bin_values = eta_fQ_tauex_bin_values(~isnan(eta_fQ_tauex_bin_values));
-                eta_fQ_tauex_bin_avg{j}(k) = mean(eta_fQ_tauex_bin_values);
-                eta_fQ_tauex_bin_SE{j}(k) = std(eta_fQ_tauex_bin_values)/sqrt(length(~isnan(eta_fQ_tauex_bin_values)));
-                eta_fQ_tauex_bin_std{j}(k) = std(eta_fQ_tauex_bin_values);
+                eta_inactive_fQ_tauex_bin_values = eta_inactive_fQ_bin_values{i}{j}(bin_ind);
+                eta_inactive_fQ_tauex_bin_values = eta_inactive_fQ_tauex_bin_values(~isnan(eta_inactive_fQ_tauex_bin_values));
+                eta_inactive_fQ_tauex_bin_avg{j}(k) = mean(eta_inactive_fQ_tauex_bin_values);
+                eta_inactive_fQ_tauex_bin_SE{j}(k) = std(eta_inactive_fQ_tauex_bin_values)/sqrt(length(~isnan(eta_inactive_fQ_tauex_bin_values)));
+                eta_inactive_fQ_tauex_bin_std{j}(k) = std(eta_inactive_fQ_tauex_bin_values);
+                
+                eta_active_fQ_tauex_bin_values = eta_active_fQ_bin_values{i}{j}(bin_ind);
+                eta_active_fQ_tauex_bin_values = eta_active_fQ_tauex_bin_values(~isnan(eta_active_fQ_tauex_bin_values));
+                eta_active_fQ_tauex_bin_avg{j}(k) = mean(eta_active_fQ_tauex_bin_values);
+                eta_active_fQ_tauex_bin_SE{j}(k) = std(eta_active_fQ_tauex_bin_values)/sqrt(length(~isnan(eta_active_fQ_tauex_bin_values)));
+                eta_active_fQ_tauex_bin_std{j}(k) = std(eta_active_fQ_tauex_bin_values);
                 
                 zs_fQ_tauex_bin_values = zs_fQ_bin_values{i}{j}(bin_ind);
-                eta_fQ_tauex_bin_values = eta_fQ_tauex_bin_values(~isnan(eta_fQ_tauex_bin_values));
+                zs_fQ_tauex_bin_values = zs_fQ_tauex_bin_values(~isnan(zs_fQ_tauex_bin_values));
                 zs_fQ_tauex_bin_avg{j}(k) = exp(mean(log(zs_fQ_tauex_bin_values))); %get mean in log space
                 zs_fQ_tauex_bin_SE{j}(k) = std(zs_fQ_tauex_bin_values)/sqrt(length(~isnan(zs_fQ_tauex_bin_values)));
                 zs_fQ_tauex_bin_std{j}(k) = std(zs_fQ_tauex_bin_values);
@@ -512,14 +579,24 @@ for i = 3;
         
         %go through each etatau bin
         for k=1:N_etatau_bins
-            bin_ind = find(eta_fQ_bin_values{i}{j}.*tau_fQ_bin_values{i}{j}>=etatau_bins_min(k)&...
-                eta_fQ_bin_values{i}{j}.*tau_fQ_bin_values{i}{j}<=etatau_bins_max(k));
+            bin_ind = find(eta_inactive_fQ_bin_values{i}{j}.*tau_fQ_bin_values{i}{j}>=etatau_bins_min(k)&...
+                eta_inactive_fQ_bin_values{i}{j}.*tau_fQ_bin_values{i}{j}<=etatau_bins_max(k));
             if ~isempty(bin_ind)
-                Q_fQ_etatau_bin_values = Q_fQ_bin_values{i}{j}(bin_ind);
-                Q_fQ_etatau_bin_values = Q_fQ_etatau_bin_values(~isnan(Q_fQ_etatau_bin_values));
-                Q_fQ_etatau_bin_avg{j}(k) = mean(Q_fQ_etatau_bin_values);
-                Q_fQ_etatau_bin_SE{j}(k) = std(Q_fQ_etatau_bin_values)/sqrt(length(~isnan(Q_fQ_etatau_bin_values)));
-                Q_fQ_etatau_bin_std{j}(k) = std(Q_fQ_etatau_bin_values);
+                Q_fQ_eta_inactive_tau_bin_values = Q_fQ_bin_values{i}{j}(bin_ind);
+                Q_fQ_eta_inactive_tau_bin_values = Q_fQ_eta_inactive_tau_bin_values(~isnan(Q_fQ_eta_inactive_tau_bin_values));
+                Q_fQ_eta_inactive_tau_bin_avg{j}(k) = mean(Q_fQ_eta_inactive_tau_bin_values);
+                Q_fQ_eta_inactive_tau_bin_SE{j}(k) = std(Q_fQ_eta_inactive_tau_bin_values)/sqrt(length(~isnan(Q_fQ_eta_inactive_tau_bin_values)));
+                Q_fQ_eta_inactive_tau_bin_std{j}(k) = std(Q_fQ_eta_inactive_tau_bin_values);
+            end
+            
+            bin_ind = find(eta_active_fQ_bin_values{i}{j}.*tau_fQ_bin_values{i}{j}>=etatau_bins_min(k)&...
+                eta_active_fQ_bin_values{i}{j}.*tau_fQ_bin_values{i}{j}<=etatau_bins_max(k));
+            if ~isempty(bin_ind)
+                Q_fQ_eta_active_tau_bin_values = Q_fQ_bin_values{i}{j}(bin_ind);
+                Q_fQ_eta_active_tau_bin_values = Q_fQ_eta_active_tau_bin_values(~isnan(Q_fQ_eta_active_tau_bin_values));
+                Q_fQ_eta_active_tau_bin_avg{j}(k) = mean(Q_fQ_eta_active_tau_bin_values);
+                Q_fQ_eta_active_tau_bin_SE{j}(k) = std(Q_fQ_eta_active_tau_bin_values)/sqrt(length(~isnan(Q_fQ_eta_active_tau_bin_values)));
+                Q_fQ_eta_active_tau_bin_std{j}(k) = std(Q_fQ_eta_active_tau_bin_values);
             end
         end    
     end
@@ -541,20 +618,46 @@ for i = 3;
 %     set(h_legend,'FontSize',16);
 %     print([folder_Plots,'Flux_Ust_fQ_',Sites{i},'.png'],'-dpng');
 % 
-    %flux versus tau
-    figure(2); clf; hold on;
-    for j = ind_fQ_bins_full
-       errorbar(tau_bins_mid,Q_fQ_tau_bin_avg{j},Q_fQ_tau_bin_SE{j},Markers_fQ_bins{j});
-       %errorbar(tau_bins_mid,Q_fQ_tau_bin_avg{j},Q_fQ_tau_bin_std{j},Markers_fQ_bins{j});
-       %plot(tau_fQ_bin_values{i}{j},Q_fQ_bin_values{i}{j},Markers_fQ_bins{j});
-    end
     
-    %fit to continuous flux points
-    ind_good = find(~isnan(Q_fQ_tau_bin_avg{end}));
+    %fit to continuous flux points - all points
+    ind_continuous = find(fQ_all{i}>0.9); %get continuous flux points
+    [~, ind_sort] = sort(tauRe_all{i}(ind_continuous)); %sort these points based on stresses
+    ind_continuous = ind_continuous(ind_sort); %sort continuous indices accordingly
+    tau_continuous = tauRe_all{i}(ind_continuous); %get continuous stresses
+    sigma_tau_continuous = 0.1*tau_continuous; %assume 10% relative error on stresses
+    Q_continuous = Q_all{i}(ind_continuous); %get continuous fluxes
+    sigma_Q_continuous = sigma_Q_all{i}(ind_continuous); %get errors on continuous fluxes
+    [a, b, sigma_a, sigma_b, Q_pred, sigma_Q_pred] = ...
+        linearfit(tau_continuous, Q_continuous, sigma_tau_continuous, sigma_Q_continuous);
+    CQ_pred = b;
+    sigma_CQ_pred = sigma_b;
+    tau_it_pred = -a/CQ_pred;
+    sigma_tau_it_pred = sigma_a/CQ_pred;
+    tau_conf_min = [tau_it_pred+sigma_tau_it_pred; tau_continuous];
+    tau_conf_max = [tau_it_pred-sigma_tau_it_pred; tau_continuous];
+    Q_conf_min = [0; Q_pred-sigma_Q_pred];
+    Q_conf_max = [0; Q_pred+sigma_Q_pred];
+    
+    %plot continuous flux points with error bars, then plot fit with confidence intervals
+    figure(2); clf; hold on;
+    errorbar(tau_continuous,Q_continuous,sigma_Q_continuous,'o'); %plot raw data
+    P = polyfit(tau_continuous,Q_continuous,1); %perform fit without error bars
+    plot([-P(2)/P(1) max(tau_continuous)],polyval(P,[-P(2)/P(1) max(tau_continuous)]),'r'); %plot fit without error bars
+    plot([tau_it_pred max(tau_continuous)],[0 CQ_pred*(max(tau_continuous)-tau_it_pred)],'b'); %plot fit with error bars
+    plot(tau_conf_min,Q_conf_min,'b--',tau_conf_max,Q_conf_max,'b--'); %plot confidence intervals for this fit
+    xlabel('\tau (Pa)');
+    ylabel('Q (g/m/s)');
+    legend('data','fit without error','fit with error','Location','NorthWest');
+    title(Sites{i});
+    set(gca,'FontSize',16);
+    print([folder_Plots,'Flux_Tau_Continuous_AllFit_',Sites{i},'.png'],'-dpng'); 
+    
+    %fit to continuous flux points - binned points
+    ind_good = find(~isnan(Q_fQ_tau_bin_avg{end})); %get continuous flux points
     tau_fit = tau_bins_mid(ind_good)';
     sigma_tau_fit = ones(size(ind_good))*mode(tau_bins_max-tau_bins_min);
     Q_fit = Q_fQ_tau_bin_avg{end}(ind_good);
-    sigma_Q_fit = Q_fQ_tau_bin_SE{end}(ind_good);
+    sigma_Q_fit = Q_fQ_tau_bin_std{end}(ind_good);
     [a, b, sigma_a, sigma_b, Q_pred, sigma_Q_pred] = linearfit(tau_fit, Q_fit, sigma_tau_fit, sigma_Q_fit);
     CQ_pred = b;
     sigma_CQ_pred = sigma_b;
@@ -564,9 +667,32 @@ for i = 3;
     tau_conf_max = [tau_it_pred-sigma_tau_it_pred; tau_fit];
     Q_conf_min = [0; Q_pred-sigma_Q_pred];
     Q_conf_max = [0; Q_pred+sigma_Q_pred];
-    plot([tau_it_pred max(tau_fit)],[0 CQ_pred*(max(tau_fit)-tau_it_pred)]);
-    plot(tau_conf_min,Q_conf_min,'b--',tau_conf_max,Q_conf_max,'b--');
     
+    %plot continuous flux points with error bars, then plot fit with confidence intervals
+    figure(3); clf; hold on;
+    errorbar(tau_bins_mid,Q_fQ_tau_bin_avg{end},Q_fQ_tau_bin_std{end},Markers_fQ_bins{end}); %plot binned data with error bars
+    P = polyfit(tau_fit,Q_fit,1); %perform fit without error bars
+    plot([-P(2)/P(1) max(tau_fit)],polyval(P,[-P(2)/P(1) max(tau_fit)]),'r'); %plot fit without error bars
+    plot([tau_it_pred max(tau_continuous)],[0 CQ_pred*(max(tau_continuous)-tau_it_pred)],'b'); %plot fit with error bars
+    plot([tau_it_pred max(tau_fit)],[0 CQ_pred*(max(tau_fit)-tau_it_pred)]); %plot fit with error bars
+    plot(tau_conf_min,Q_conf_min,'b--',tau_conf_max,Q_conf_max,'b--'); %include confidence intervals
+    xlabel('\tau (Pa)');
+    ylabel('Q (g/m/s)');
+    legend('data','fit without error','fit with error','Location','NorthWest');
+    title(Sites{i});
+    set(gca,'FontSize',16);
+    print([folder_Plots,'Flux_Tau_Continuous_BinnedFit_',Sites{i},'.png'],'-dpng'); 
+
+    
+    %flux versus tau
+    figure(4); clf; hold on;
+    for j = ind_fQ_bins_full
+       errorbar(tau_bins_mid,Q_fQ_tau_bin_avg{j},Q_fQ_tau_bin_std{j},Markers_fQ_bins{j});
+       %errorbar(tau_bins_mid,Q_fQ_tau_bin_avg{j},Q_fQ_tau_bin_std{j},Markers_fQ_bins{j});
+       %plot(tau_fQ_bin_values{i}{j},Q_fQ_bin_values{i}{j},Markers_fQ_bins{j});
+    end
+    plot([tau_it_pred max(tau_fit)],[0 CQ_pred*(max(tau_fit)-tau_it_pred)]); %plot fit with error bars
+    plot(tau_conf_min,Q_conf_min,'b--',tau_conf_max,Q_conf_max,'b--'); %include confidence intervals
     ylim([0 max(Q_all{i})]);
     xlabel('\tau (Pa)');
     ylabel('Q (g m^{-1} s^{-1})');
@@ -578,8 +704,23 @@ for i = 3;
     set(h_legend,'FontSize',16);
     print([folder_Plots,'Flux_Tau_fQ_',Sites{i},'.png'],'-dpng'); 
 
+    %flux height versus tau
+    figure(5); clf; hold on;
+    for j = ind_fQ_bins_full
+       errorbar(tau_bins_mid,zq_fQ_tau_bin_avg{j},zq_fQ_tau_bin_std{j},Markers_fQ_bins{j});
+    end
+    ylim([0 0.09]);
+    xlabel('\tau (Pa)');
+    ylabel('z_{q} (m)');
+    title(Sites{i});
+    legend_items = fQ_bins_legend{i}(ind_fQ_bins_full);
+    h_legend = legend(legend_items,'Location','SouthEast');
+    set(gca,'FontSize',16);
+    set(h_legend,'FontSize',16);
+    print([folder_Plots,'FluxHeight_Tau_fQ_',Sites{i},'.png'],'-dpng'); 
+    
     %flux versus tau_ex
-    figure(3); clf; hold on;
+    figure(6); clf; hold on;
     for j = ind_fQ_bins_full
        errorbar(tauex_bins_mid,Q_fQ_tauex_bin_avg{j},Q_fQ_tauex_bin_std{j},Markers_fQ_bins{j});
        %plot(tauex_fQ_bin_values{i}{j},Q_fQ_bin_values{i}{j},Markers_fQ_bins{j});
@@ -596,8 +737,8 @@ for i = 3;
 %     %eta versus u*
 %     figure(4); clf; hold on;
 %     for j = ind_fQ_bins_full
-%        errorbar(ust_bins_mid,eta_fQ_ust_bin_avg{j},eta_fQ_ust_bin_std{j},Markers_fQ_bins{j});
-%        %plot(ust_fQ_bin_values{i}{j},eta_fQ_bin_values{i}{j},Markers_fQ_bins{j});
+%        errorbar(ust_bins_mid,eta_inactive_fQ_ust_bin_avg{j},eta_inactive_fQ_ust_bin_std{j},Markers_fQ_bins{j});
+%        %plot(ust_fQ_bin_values{i}{j},eta_inactive_fQ_bin_values{i}{j},Markers_fQ_bins{j});
 %     end
 %     xlabel('u_{*} (m/s)');
 %     ylabel('\eta = (\int u^2-u^2_{th} dt) / (\int u^2 dt)');
@@ -609,24 +750,44 @@ for i = 3;
 %     print([folder_Plots,'eta_Ust_fQ_',Sites{i},'.png'],'-dpng');
 
     %eta versus tau_ex
-    figure(5); clf; hold on;
+    figure(7); clf;
+    
+    %method 1
+    subplot(1,2,1); hold on;
     for j = ind_fQ_bins_full
-       errorbar(tauex_bins_mid,eta_fQ_tauex_bin_avg{j},eta_fQ_tauex_bin_std{j},Markers_fQ_bins{j});
-       %plot(tauex_fQ_bin_values{i}{j},eta_fQ_bin_values{i}{j},Markers_fQ_bins{j});
+       errorbar(tauex_bins_mid,eta_inactive_fQ_tauex_bin_avg{j},eta_inactive_fQ_tauex_bin_std{j},Markers_fQ_bins{j});
+       %plot(tauex_fQ_bin_values{i}{j},eta_inactive_fQ_bin_values{i}{j},Markers_fQ_bins{j});
     end
     plot(tauex_bins_mid,tauratio_tauex_bin_avg{i},'k'); %plot tauex/tau versus tauex
     xlabel('\tau_{ex} (Pa)');
-    ylabel('\eta = (\int u^2-u^2_{th} dt) / (\int u^2 dt)');
+    ylabel('\eta_{1}');
     tauratio_plot = [0 0.75];
-    ylim([0 max(eta_fQ_constthr_all{i})]);
-    %ylim([0 max(eta_zs_constthr_all{i})]);
-    %ylim([0 max(eta_zs_TFEMthr_all{i})]);
+    ylim([0 0.75]);
     title(Sites{i});
     legend_items = fQ_bins_legend{i}(ind_fQ_bins_full);
     legend_items{length(legend_items)+1} = '\tau_{ex}/\tau';
-    h_legend = legend(legend_items,'Location','SouthEast');
+    h_legend = legend(legend_items,'Location','NorthWest');
+    set(gca,'FontSize',16);
+    %set(h_legend,'FontSize',16);
+    
+    %method 2
+    subplot(1,2,2); hold on;
+    for j = ind_fQ_bins_full
+       errorbar(tauex_bins_mid,eta_active_fQ_tauex_bin_avg{j},eta_active_fQ_tauex_bin_std{j},Markers_fQ_bins{j});
+       %plot(tauex_fQ_bin_values{i}{j},eta_active_fQ_bin_values{i}{j},Markers_fQ_bins{j});
+    end
+    plot(tauex_bins_mid,tauratio_tauex_bin_avg{i},'k'); %plot tauex/tau versus tauex
+    xlabel('\tau_{ex} (Pa)');
+    ylabel('\eta_{2}');
+    tauratio_plot = [0 0.75];
+    ylim([0 0.75]);
+    title(Sites{i});
+%     legend_items = fQ_bins_legend{i}(ind_fQ_bins_full);
+%     legend_items{length(legend_items)+1} = '\tau_{ex}/\tau';
+%     h_legend = legend(legend_items,'Location','SouthEast');
     set(gca,'FontSize',16);
     set(h_legend,'FontSize',16);
+    set(gcf,'PaperPosition',[0 0 16 6]);
     print([folder_Plots,'eta_Tauex_fQ_',Sites{i},'.png'],'-dpng');
     
 %     %zs versus u*
@@ -650,7 +811,7 @@ for i = 3;
 %     print([folder_Plots,'zs_Ust_fQ_',Sites{i},'.png'],'-dpng');
 
     %zs versus tau_ex
-    figure(7); clf; hold on;
+    figure(8); clf; hold on;
     for j = ind_fQ_bins_full
        errorbar(tauex_bins_mid,zs_fQ_tauex_bin_avg{j},zs_fQ_tauex_bin_std{j},Markers_fQ_bins{j});
        %plot(tauex_fQ_bin_values{i}{j},zs_fQ_bin_values{i}{j},Markers_fQ_bins{j});
@@ -670,20 +831,41 @@ for i = 3;
     print([folder_Plots,'zs_Tauex_fQ_',Sites{i},'.png'],'-dpng');
     
     %flux versus eta*tau
-    figure(8); clf; hold on; %initialize plot
+    figure(9); clf; %initialize plot
+    
+    %method 1
+    subplot(1,2,1); hold on;
     for j = ind_fQ_bins_full
-       errorbar(etatau_bins_mid,Q_fQ_etatau_bin_avg{j},Q_fQ_etatau_bin_std{j},Markers_fQ_bins{j});
-       %plot(eta_fQ_bin_values{i}{j}.*tau_fQ_bin_values{i}{j},Q_fQ_bin_values{i}{j},Markers_fQ_bins{j});
+       errorbar(etatau_bins_mid,Q_fQ_eta_inactive_tau_bin_avg{j},Q_fQ_eta_inactive_tau_bin_std{j},Markers_fQ_bins{j});
+       %plot(eta_inactive_fQ_bin_values{i}{j}.*tau_fQ_bin_values{i}{j},Q_fQ_bin_values{i}{j},Markers_fQ_bins{j});
     end
-    %xlim([0, min(etatau_bins_mid(etatau_bins_mid>max(eta_zs_all{i}.*tauRe_all{i})))]);
+    xlim([0 0.25]);
     ylim([0, max(Q_all{i})]);
-    xlabel('\eta\tau (Pa)');
+    xlabel('\eta_{1}\tau (Pa)');
     ylabel('Q (g/m/s)');
     title(Sites{i});
     h_legend = legend(fQ_bins_legend{i}(ind_fQ_bins_full),'Location','SouthEast');
     set(gca,'FontSize',16);
     set(gca,'FontSize',16);
     title([Sites{i}]);
+    
+    %method 2
+    subplot(1,2,2); hold on;
+    for j = ind_fQ_bins_full
+       errorbar(etatau_bins_mid,Q_fQ_eta_active_tau_bin_avg{j},Q_fQ_eta_active_tau_bin_std{j},Markers_fQ_bins{j});
+       %plot(eta_active_fQ_bin_values{i}{j}.*tau_fQ_bin_values{i}{j},Q_fQ_bin_values{i}{j},Markers_fQ_bins{j});
+    end
+    xlim([0 0.25]);
+    ylim([0, max(Q_all{i})]);
+    xlabel('\eta_{2}\tau (Pa)');
+    ylabel('Q (g/m/s)');
+    title(Sites{i});
+    h_legend = legend(fQ_bins_legend{i}(ind_fQ_bins_full),'Location','SouthEast');
+    set(gca,'FontSize',16);
+    set(gca,'FontSize',16);
+    title([Sites{i}]);
+    
+    set(gcf,'PaperPosition',[0 0 14 6]);
     print([folder_Plots,'flux_etatau_',Sites{i},'.png'],'-dpng');
 
 %     %ubar/ustd versus u*
@@ -735,7 +917,7 @@ end
 % %flux frequency versus eta
 % figure(12); clf; hold on; %initialize plot
 % for i=1:N_Sites
-%     errorbar(eta_bins_mid,fQ_eta_bin_avg{i},fQ_eta_bin_std{i},Markers{i});
+%     errorbar(eta_bins_mid,fQ_eta_inactive_bin_avg{i},fQ_eta_inactive_bin_std{i},Markers{i});
 % end
 % xlabel('\eta');
 % ylabel('f_{Q}');

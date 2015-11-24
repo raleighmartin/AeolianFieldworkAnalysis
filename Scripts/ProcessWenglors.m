@@ -23,7 +23,11 @@ for i=1:N_Wenglors
         N_t = length(ProcessedWenglors.(WenglorNames{i})(j).t.int);
         
         %assign 'qz' structured array to new column of master stuctured array
-        ProcessedWenglors.(WenglorNames{i})(j).qz = struct('qz',zeros(N_t,1),'units','g/m^2/s','qzPerCount',zeros(N_t,1));
+        units = struct('qz','g/m^2/s','z','m','qzPerCount','g/m^2'); %create structured array with units
+        ProcessedWenglors.(WenglorNames{i})(j).qz = ...
+            struct('qz',zeros(N_t,1),'z',zeros(N_t,1),...
+            'sigma_z',zeros(N_t,1),'qzPerCount',zeros(N_t,1),...
+            'sigma_qzPerCount',zeros(N_t,1),'units',units);
     end
     
 end

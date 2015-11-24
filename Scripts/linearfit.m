@@ -9,7 +9,7 @@
 % assume 0)
 
 %% OUTPUTS
-% yfit = a + bx
+% yfit = a + b*x
 % a - fitting intercept
 % b - fitting slope
 % sigma_a - uncertainty in a
@@ -42,10 +42,10 @@ if length(x)>=3
         sigma_yfit = sqrt(sigma_a^2+sigma_b^2*x.^2+2*sigma2_ab*x); %uncertainty in prediction of y (Kok et al. 2014, Eq. A19)
     else %calculations if no error included
         P = polyfit(x,y,1); %perform linear fit
-        a = P(1); b = P(2); %get fit parameters
+        a = P(2); b = P(1); %get fit parameters
         sigma_b = NaN;
         sigma_a = NaN;
-        yfit = a*x+b;
+        yfit = a+b*x;
         sigma_yfit = NaN*zeros(size(yfit));
     end
 else
@@ -56,7 +56,7 @@ else
     yfit = NaN;
     sigma_yfit = NaN;
 end
-% 
+
 % %% optional plot (comment out to hide this plot)
 % figure(1); clf;
 % errorbar(x,y,sigma_y,'bx'); hold on; %plot raw values with error bars
