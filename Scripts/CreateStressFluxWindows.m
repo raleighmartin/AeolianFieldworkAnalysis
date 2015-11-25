@@ -13,16 +13,12 @@ rho_a = 1.23; %air density kg/m^3
 rho_s = 2650; %particle density kg/m^3
 g = 9.8; %gravity m/s^2
 kappa = 0.39; %von Karman parameter
-tau_it = [0.13 0.13 0.0864]; %impact threshold stress (Pa)
-%tau_it = [0.1 0.1 0.1]; %impact threshold stress (Pa)
-tau_ft = [0.18 0.18 0.1308]; %fluid threshold stress (Pa)
-%tau_ft = [0.14 0.14 0.14]; %fluid threshold stress (Pa)
+tau_it = [0.1 0.1 0.0864]; %impact threshold stress (Pa)
+tau_ft = [0.15 0.15 0.1308]; %fluid threshold stress (Pa)
 ust_it = sqrt(tau_it./rho_a); %impact threshold shear velocity (m/s)
 ust_ft = sqrt(tau_ft./rho_a); %fluid threshold shear velocity (m/s)
 k_zs = 0.004; %proportionality constant for zs (m^2 s^2 kg^-1)
 z0 = [1e-4, 1e-4, 1e-4]; %aerodynamic roughness length (m) at threshold
-%ust_it = [0.35, 0.28, 0.28]; %shear velocity (m/s) threshold
-
 
 %% information about sites for analysis
 %Sites = {'Jericoacoara'};
@@ -41,12 +37,12 @@ dt_q_s = 0.04; %time interval of flux (s)
 
 
 %% set durations of window average for flux frequencies
-dt_fQ_min_s = 1;
-dt_fQ_max_s = 1;
-N_dt_fQ = 1;
-% dt_fQ_min_s = 0.04; %mininum window average time
-% dt_fQ_max_s = 600; %maximum window average time
-% N_dt_fQ = 30; %number of durations of window average
+% dt_fQ_min_s = 1;
+% dt_fQ_max_s = 1;
+% N_dt_fQ = 1;
+dt_fQ_min_s = 0.04; %mininum window average time
+dt_fQ_max_s = 600; %maximum window average time
+N_dt_fQ = 30; %number of durations of window average
 dt_fQ_s = unique([round(logspace(0,log10(dt_fQ_max_s/dt_fQ_min_s),N_dt_fQ))*dt_fQ_min_s, 1]); %create window average dt's, make sure to include 1 second in list
 N_dt_fQ = length(dt_fQ_s); %recalculate number of window average dt's after removing repeats
 dt_fQ_windowaverage = duration(0,0,dt_fQ_s);
@@ -62,6 +58,7 @@ folder_ProcessedData = '../../../Google Drive/Data/AeolianFieldwork/Processed/';
 folder_AnalysisData = '../AnalysisData/'; %folder for storing outputs of this analysis
 SaveFullData_Path = strcat(folder_ProcessedData,'StressFluxWindows_all');
 SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows_all');
+
 
 %% load processed and metadata for each site, add to structured arrays of all data and metadata
 Data = cell(N_Sites,1);
@@ -115,18 +112,25 @@ f_ubetween_fromabove_all = cell(N_Sites,1); %frequency of u between thresholds a
 uth_TFEM_all = cell(N_Sites,1); %1-second TFEM estimate of u_th
 tauth_TFEM_all = cell(N_Sites,1); %1-second TFEM estimate of tau_th
 zs_all = cell(N_Sites,1); %observed roughness height from lowest anemometer
-tau0_bar_Q0_all = cell(N_Sites,1); %get mean stress dissipation, times of no transport
-tau0_bar_constthr_all = cell(N_Sites,1); %get mean stress dissipation based on constant impact threshold
-tau0_bar_TFEMthr_all = cell(N_Sites,1); %get mean stress dissipation based on TFEM threshold
-eta_inactive_Q0_1s_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, times of zero flux - based on 1s winds
-eta_inactive_constthr_1s_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, constant tau_it - based on 1s winds
-eta_inactive_TFEMthr_1s_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on 1s winds
-eta_active_constthr_1s_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using constant tau_it - based on 1s winds
-eta_active_TFEMthr_1s_all = cell(N_Sites,1); %mean stress partition based on  mean stress during active transport, using TFEM u_th - based on 1s winds
-eta_inactive_constthr_LP_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, constant tau_it - based on LP winds
-eta_inactive_TFEMthr_LP_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on LP winds
-eta_active_constthr_LP_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using constant tau_it - based on LP winds
-eta_active_TFEMthr_LP_all = cell(N_Sites,1); %mean stress partition based on  mean stress during active transport, using TFEM u_th - based on LP winds
+
+%stress partition values
+eta_inactive_1s_Q0_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, times of zero flux - based on 1s winds, using fQ
+eta_inactive_fQ_1s_constthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, constant tau_it - based on 1s winds, using fQ
+eta_inactive_fQ_1s_TFEMthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on 1s winds, using fQ
+eta_inactive_fQ_LP_constthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, constant tau_it - based on LP winds, using fQ
+eta_inactive_fQ_LP_TFEMthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on LP winds, using fQ
+eta_active_fQ_1s_constthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using constant tau_it - based on 1s winds, using fQ
+eta_active_fQ_1s_TFEMthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using TFEM u_th - based on 1s winds, using fQ
+eta_active_fQ_LP_constthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using constant tau_it - based on LP winds, using fQ
+eta_active_fQ_LP_TFEMthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using TFEM u_th - based on LP winds, using fQ
+eta_inactive_fU_1s_constthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, constant tau_it - based on 1s winds, using fU
+eta_inactive_fU_1s_TFEMthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on 1s winds, using fU
+eta_inactive_fU_LP_constthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, constant tau_it - based on LP winds, using fU
+eta_inactive_fU_LP_TFEMthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on LP winds, using fU
+eta_active_fU_1s_constthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using constant tau_it - based on 1s winds, using fU
+eta_active_fU_1s_TFEMthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using TFEM u_th - based on 1s winds, using fU
+eta_active_fU_LP_constthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using constant tau_it - based on LP winds, using fU
+eta_active_fU_LP_TFEMthr_all = cell(N_Sites,1); %mean stress partition based on mean stress during active transport, using TFEM u_th - based on LP winds, using fU
 
 %inialize arrays of low-pass timeseries
 q_LP_all = cell(N_Sites,1); %low-pass flux timeseries
@@ -148,7 +152,6 @@ z_lowest_all = cell(N_Sites,1); %heights of lowest anemometers
 Anemometer_lowest_all = cell(N_Sites,1); %names of lowest anemometers for profile
 ustLog_all = cell(N_Sites,1); %u* calculated from mean of calibrated velocities for lowest anemometers in profile
 z0_profile_all = cell(N_Sites,1); %z0 calculated from mean of calibrated velocities for lowest anemometers in velocity profile
-
 
 %% PERFORM ANALYSIS FOR EACH SITE
 for i = 1:N_Sites
@@ -243,19 +246,27 @@ for i = 1:N_Sites
     uth_TFEM_all{i} = zeros(N_Blocks,1)*NaN; %1 second TFEM calc of threshold
     tauth_TFEM_all{i} = zeros(N_Blocks,1)*NaN; %1 second TFEM calc of threshold stress
     zs_all{i} = zeros(N_Blocks,1)*NaN; %observed roughness height from lowest anemometer
-    tau0_bar_Q0_all{i} = zeros(N_Blocks,1)*NaN; %get mean stress dissipation, times of no transport
-    tau0_bar_constthr_all{i} = zeros(N_Blocks,1)*NaN; %get mean stress dissipation based on constant impact threshold
-    tau0_bar_TFEMthr_all{i} = zeros(N_Blocks,1)*NaN; %get mean stress dissipation based on TFEM threshold
-    eta_inactive_Q0_1s_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on flux frequency method, times of zero flux
-    eta_inactive_constthr_1s_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on flux frequency method, constant tau_it
-    eta_inactive_TFEMthr_1s_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on flux frequency method, TFEM u_th
-    eta_active_constthr_1s_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on friction coefficient estimation from z_s, constant tau_it
-    eta_active_TFEMthr_1s_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on friction coefficient estimation from z_s, using TFEM u_th
-    eta_inactive_constthr_LP_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on flux frequency method, constant tau_it
-    eta_inactive_TFEMthr_LP_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on flux frequency method, TFEM u_th
-    eta_active_constthr_LP_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on friction coefficient estimation from z_s, constant tau_it
-    eta_active_TFEMthr_LP_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on friction coefficient estimation from z_s, using TFEM u_th
     
+    %stress partition values
+    eta_inactive_1s_Q0_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during inactive transport, times of zero flux - based on 1s winds, using fQ
+    eta_inactive_fQ_1s_constthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during inactive transport, constant tau_it - based on 1s winds, using fQ
+    eta_inactive_fQ_1s_TFEMthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on 1s winds, using fQ
+    eta_inactive_fQ_LP_constthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during inactive transport, constant tau_it - based on LP winds, using fQ
+    eta_inactive_fQ_LP_TFEMthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on LP winds, using fQ
+    eta_active_fQ_1s_constthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during active transport, using constant tau_it - based on 1s winds, using fQ
+    eta_active_fQ_1s_TFEMthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during active transport, using TFEM u_th - based on 1s winds, using fQ
+    eta_active_fQ_LP_constthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during active transport, using constant tau_it - based on LP winds, using fQ
+    eta_active_fQ_LP_TFEMthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during active transport, using TFEM u_th - based on LP winds, using fQ
+    
+    eta_inactive_fU_1s_constthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during inactive transport, constant tau_it - based on 1s winds, using fU
+    eta_inactive_fU_1s_TFEMthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on 1s winds, using fU
+    eta_inactive_fU_LP_constthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during inactive transport, constant tau_it - based on LP winds, using fU
+    eta_inactive_fU_LP_TFEMthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during inactive transport, TFEM u_th - based on LP winds, using fU
+    eta_active_fU_1s_constthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during active transport, using constant tau_it - based on 1s winds, using fU
+    eta_active_fU_1s_TFEMthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during active transport, using TFEM u_th - based on 1s winds, using fU
+    eta_active_fU_LP_constthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during active transport, using constant tau_it - based on LP winds, using fU
+    eta_active_fU_LP_TFEMthr_all{i} = zeros(N_Blocks,1)*NaN; %mean stress partition based on mean stress during active transport, using TFEM u_th - based on LP winds, using fU
+     
     %inialize arrays of low-pass timeseries
     q_LP_all{i} = cell(N_Blocks,1); %low-pass flux timeseries
     u_LP_all{i} = cell(N_Blocks,1); %low-pass wind timeseries
@@ -267,15 +278,15 @@ for i = 1:N_Sites
     u_1s_all{i} = cell(N_Blocks,1); %1 second window average wind velocity timeseries
     t_1s_all{i} = (0:seconds(WindowTimeInterval))'; %times for 1 second window average timeseries
     
-    %initialize lists of profile values
-    u_profile_all{i} = cell(N_Blocks,1); %calibrated velocity profile
-    z_profile_all{i} = cell(N_Blocks,1); %heights for profile
-    Anemometer_profile_all{i} = cell(N_Blocks,1); %names of anemometers for profile
-    u_lowest_all{i} = cell(N_Blocks,1); %calibrated velocity profile - lowest anemometers
-    z_lowest_all{i} = cell(N_Blocks,1); %heights of lowest anemometers
-    Anemometer_lowest_all{i} = cell(N_Blocks,1); %names of lowest anemometers for profile
-    ustLog_all{i} = zeros(N_Blocks,1); %u* calculated from mean of calibrated velocities for lowest anemometers in profile
-    z0_profile_all{i} = zeros(N_Blocks,1); %z0 calculated from mean of calibrated velocities for lowest anemometers in profile
+%     %initialize lists of profile values
+%     u_profile_all{i} = cell(N_Blocks,1); %calibrated velocity profile
+%     z_profile_all{i} = cell(N_Blocks,1); %heights for profile
+%     Anemometer_profile_all{i} = cell(N_Blocks,1); %names of anemometers for profile
+%     u_lowest_all{i} = cell(N_Blocks,1); %calibrated velocity profile - lowest anemometers
+%     z_lowest_all{i} = cell(N_Blocks,1); %heights of lowest anemometers
+%     Anemometer_lowest_all{i} = cell(N_Blocks,1); %names of lowest anemometers for profile
+%     ustLog_all{i} = zeros(N_Blocks,1); %u* calculated from mean of calibrated velocities for lowest anemometers in profile
+%     z0_profile_all{i} = zeros(N_Blocks,1); %z0 calculated from mean of calibrated velocities for lowest anemometers in profile
     
     
     %% go through time blocks
@@ -340,8 +351,8 @@ for i = 1:N_Sites
             Q = q0*zq; %get total flux [g/m/s]
             sigma_Q = sqrt((sigma_q0*zq)^2+(sigma_zq*q0)^2); %estimate uncertainty in total flux
             
-            %convert to 0 if NaN and expected Q<0.05 g/m/s based on lowest Wenglor and zq = 5 cm
-            if isnan(Q)&&((0.1*q_profile(1))/exp(-zW_profile(1)/0.1)<0.05);
+            %convert to 0 if Q<0.05 or if Q=NaN AND expected Q<0.05 g/m/s based on lowest Wenglor and zq = 5 cm
+            if Q<0.05||(isnan(Q)&&((0.1*q_profile(1))/exp(-zW_profile(1)/0.1)<0.05));
                 Q=0;
                 zq=0;
                 sigma_q0=0;
@@ -514,8 +525,7 @@ for i = 1:N_Sites
             %% TFEM threshold calcs
             u_it = ust_it(i)/kappa*log(zU/z0(i)); %compute expected u impact threshold based on log law
             u_ft = ust_ft(i)/kappa*log(zU/z0(i)); %compute expected u fluid threshold based on log low
-            %if fQ_all{i}(j)~=1
-            if fQ_all{i}(j)<=0.99 %if too close to 1, just use u_it / tau_it
+            if fQ_all{i}(j)~=1 %if 1, just use u_it and tau_it
                 uth_TFEM = prctile(u_1s,100*(1-fQ1_all{i}(j))); %generate uth from TFEM method based on fQ and 1 s window averaged u
                 tauth_TFEM = rho_a*kappa^2*uth_TFEM^2/log(zU/z0(i))^2; %generate tauth from TFEM method based on uth_TFEM 
             else
@@ -573,32 +583,48 @@ for i = 1:N_Sites
             % Based on mean stress of times with no transport detection - u_1s
             u2bar_inactive_Q0 = mean(u_1s(Qbinary_1s_all{i}{j}==0).^2); %get mean u^2 during no transport based on 1 second flux/wind timeseries
             tau_inactive_Q0 = rho_a*kappa^2*u2bar_inactive_Q0/log(zU/z0(i))^2; %get mean stress during no transport based on 1 second flux timeseries
-            tau0_bar_Q0_all{i}(j) = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive_Q0; %get mean stress dissipation
-            eta_inactive_Q0_1s_all{i}(j) = max([1-tau0_bar_Q0_all{i}(j)/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, times of zero flux
+            tau0_bar_Q0 = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive_Q0; %get mean stress dissipation
+            eta_inactive_1s_Q0_all{i}(j) = max([1-tau0_bar_Q0/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, times of zero flux
             
             % Based on mean stress when wind is below impact threshold - u_1s
-            u2bar_inactive_constthr = mean(u_1s(u_1s<u_it).^2); %get mean u^2 during no transport based on u_1s winds less than uth for fixed tauit
-            tau_inactive_constthr = rho_a*kappa^2*u2bar_inactive_constthr/log(zU/z0(i))^2; %get mean stress during no transport based on 1 second winds less than uth for fixed tauit
-            tau0_bar_constthr_all{i}(j) = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive_constthr; %get mean stress dissipation
-            eta_inactive_constthr_1s_all{i}(j) = max([1-tau0_bar_constthr_all{i}(j)/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
-       
+            u2bar_inactive = mean(u_1s(u_1s<u_it).^2); %get mean u^2 during no transport based on u_1s winds less than uth for fixed tauit
+            tau_inactive = rho_a*kappa^2*u2bar_inactive/log(zU/z0(i))^2; %get mean stress during no transport based on 1 second winds less than uth for fixed tauit
+            tau0_bar = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive; %get mean stress dissipation
+            eta_inactive_fQ_1s_constthr_all{i}(j) = max([1-tau0_bar/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
+            % redo calculation using fU instead of fQ
+            fU = length(find(u_1s>=u_it))/length(u_1s);
+            tau0_bar = fU*tau_it(i)+(1-fU)*tau_inactive; %get mean stress dissipation
+            eta_inactive_fU_1s_constthr_all{i}(j) = max([1-tau0_bar/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
+            
             % Based on mean stress when wind is below TFEM threshold - u_1s
-            u2bar_inactive_TFEMthr = mean(u_LP(u_LP<uth_TFEM).^2); %get mean u^2 during no transport based on 1 second winds less than uth from TFEM
-            tau_inactive_TFEMthr = rho_a*kappa^2*u2bar_inactive_TFEMthr/log(zU/z0(i))^2; %get mean stress during no transport based on 1 second winds less than uth from TFEM
-            tau0_bar_TFEMthr_all{i}(j) = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive_TFEMthr; %get mean stress dissipation
-            eta_inactive_TFEMthr_1s_all{i}(j) = max([1-tau0_bar_TFEMthr_all{i}(j)/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
-                
+            u2bar_inactive = mean(u_1s(u_1s<uth_TFEM).^2); %get mean u^2 during no transport based on 1 second winds less than uth from TFEM
+            tau_inactive = rho_a*kappa^2*u2bar_inactive/log(zU/z0(i))^2; %get mean stress during no transport based on 1 second winds less than uth from TFEM
+            tau0_bar = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive; %get mean stress dissipation
+            eta_inactive_fQ_1s_TFEMthr_all{i}(j) = max([1-tau0_bar/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
+            % redo calculation using fU instead of fQ
+            fU = length(find(u_1s>=uth_TFEM))/length(u_1s);
+            tau0_bar = fU*tau_it(i)+(1-fU)*tau_inactive; %get mean stress dissipation
+            eta_inactive_fU_1s_TFEMthr_all{i}(j) = max([1-tau0_bar/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
+            
             % Based on mean stress when wind is below impact threshold - u_LP 
-            u2bar_inactive_constthr = mean(u_LP(u_LP<u_it).^2); %get mean u^2 during no transport based on u_LP winds less than uth for fixed tauit
-            tau_inactive_constthr = rho_a*kappa^2*u2bar_inactive_constthr/log(zU/z0(i))^2; %get mean stress during no transport based on 1 second winds less than uth for fixed tauit
-            tau0_bar_constthr_all{i}(j) = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive_constthr; %get mean stress dissipation
-            eta_inactive_constthr_LP_all{i}(j) = max([1-tau0_bar_constthr_all{i}(j)/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
-       
+            u2bar_inactive = mean(u_LP(u_LP<u_it).^2); %get mean u^2 during no transport based on u_LP winds less than uth for fixed tauit
+            tau_inactive = rho_a*kappa^2*u2bar_inactive/log(zU/z0(i))^2; %get mean stress during no transport based on 1 second winds less than uth for fixed tauit
+            tau0_bar = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive; %get mean stress dissipation
+            eta_inactive_fQ_LP_constthr_all{i}(j) = max([1-tau0_bar/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
+            % redo calculation using fU instead of fQ
+            fU = length(find(u_LP>=u_it))/length(u_LP);
+            tau0_bar = fU*tau_it(i)+(1-fU)*tau_inactive; %get mean stress dissipation
+            eta_inactive_fU_LP_constthr_all{i}(j) = max([1-tau0_bar/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
+            
             % Based on mean stress when wind is below TFEM threshold - u_LP 
-            u2bar_inactive_TFEMthr = mean(u_LP(u_LP<uth_TFEM).^2); %get mean u^2 during no transport based on 1 second winds less than uth from TFEM
-            tau_inactive_TFEMthr = rho_a*kappa^2*u2bar_inactive_TFEMthr/log(zU/z0(i))^2; %get mean stress during no transport based on 1 second winds less than uth from TFEM
-            tau0_bar_TFEMthr_all{i}(j) = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive_TFEMthr; %get mean stress dissipation
-            eta_inactive_TFEMthr_LP_all{i}(j) = max([1-tau0_bar_TFEMthr_all{i}(j)/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
+            u2bar_inactive = mean(u_LP(u_LP<uth_TFEM).^2); %get mean u^2 during no transport based on 1 second winds less than uth from TFEM
+            tau_inactive = rho_a*kappa^2*u2bar_inactive/log(zU/z0(i))^2; %get mean stress during no transport based on 1 second winds less than uth from TFEM
+            tau0_bar = fQ1_all{i}(j)*tau_it(i)+(1-fQ1_all{i}(j))*tau_inactive; %get mean stress dissipation
+            eta_inactive_fQ_LP_TFEMthr_all{i}(j) = max([1-tau0_bar/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
+            % redo calculation using fU instead of fQ
+            fU = length(find(u_LP>=u_it))/length(u_LP);
+            tau0_bar = fU*tau_it(i)+(1-fU)*tau_inactive; %get mean stress dissipation
+            eta_inactive_fU_LP_constthr_all{i}(j) = max([1-tau0_bar/tauRe_all{i}(j), 0]); %mean stress partition based on flux frequency method, constant tau_it
             
             %% Stress partition calculations -- based on mean stress during active transport
             %generate zs(u) rating curve, compute zs for each timestep
@@ -633,92 +659,38 @@ for i = 1:N_Sites
             end
             
             %compute eta value on u and zs, for u_1s>u_it
-            eta_inst_constthr_1s = zeros(size(u_1s));
+            tau_inst = rho_a*kappa^2*u_1s.^2./log(zU./zs_1s).^2;
+            eta_inst = zeros(size(u_1s));
             ind_abovethr = find(u_1s>=u_it);
-            eta_inst_constthr_1s(u_1s>u_it)=1-(rho_a*kappa^2*u_1s(ind_abovethr).^2./log(zU./zs_1s(ind_abovethr)).^2);
-            eta_active_constthr_1s_all{i}(j) = fQ1_all{i}(j)*mean(eta_inst_constthr_1s(ind_abovethr)); %mean stress partition for active transport, constant tau_it
+            eta_inst(ind_abovethr)=1-(tau_it(i)./tau_inst(ind_abovethr));
+            eta_active_fQ_1s_constthr_all{i}(j) = fQ1_all{i}(j)*mean(eta_inst(ind_abovethr)); %mean stress partition for active transport, constant tau_it
+            eta_active_fU_1s_constthr_all{i}(j) = mean(eta_inst); %same as before, but now use the actual frequency of wind above threshold
             
             %compute eta value on u and zs, for u_1s>u_th (TFEM threshold)
-            eta_inst_TFEMthr_1s = zeros(size(u_1s));
+            tau_inst = rho_a*kappa^2*u_1s.^2./log(zU./zs_1s).^2;
+            eta_inst = zeros(size(u_1s));
             ind_abovethr = find(u_1s>=uth_TFEM);
-            eta_inst_TFEMthr_1s(u_1s>uth_TFEM)=1-(rho_a*kappa^2*u_1s(ind_abovethr).^2./log(zU./zs_1s(ind_abovethr)).^2);
-            eta_active_TFEMthr_1s_all{i}(j) = fQ1_all{i}(j)*mean(eta_inst_TFEMthr_1s(ind_abovethr)); %mean stress partition for active transport, TFEM threshold
+            eta_inst(ind_abovethr)=1-(tau_it(i)./tau_inst(ind_abovethr));
+            eta_active_fQ_1s_TFEMthr_all{i}(j) = fQ1_all{i}(j)*mean(eta_inst(ind_abovethr)); %mean stress partition for active transport, TFEM threshold
+            eta_active_fU_1s_TFEMthr_all{i}(j) = mean(eta_inst); %same as before, but now use the actual frequency of wind above threshold
             
             %compute eta value on u and zs, for u_LP>u_it
-            eta_inst_constthr_LP = zeros(size(u_LP));
+            tau_inst = rho_a*kappa^2*u_LP.^2./log(zU./zs_LP).^2;
+            eta_inst = zeros(size(u_LP));
             ind_abovethr = find(u_LP>=u_it);
-            eta_inst_constthr_LP(u_LP>u_it)=1-(rho_a*kappa^2*u_LP(ind_abovethr).^2./log(zU./zs_LP(ind_abovethr)).^2);
-            eta_active_constthr_LP_all{i}(j) = fQ1_all{i}(j)*mean(eta_inst_constthr_LP(ind_abovethr)); %mean stress partition for active transport, constant tau_it
+            eta_inst(ind_abovethr)=1-(tau_it(i)./tau_inst(ind_abovethr));
+            eta_active_fQ_LP_constthr_all{i}(j) = fQ1_all{i}(j)*mean(eta_inst(ind_abovethr)); %mean stress partition for active transport, constant tau_it
+            eta_active_fU_LP_constthr_all{i}(j) = mean(eta_inst); %same as before, but now use the actual frequency of wind above threshold
             
             %compute eta value on u and zs, for u_LP>u_th (TFEM threshold)
-            eta_inst_TFEMthr_LP = zeros(size(u_LP));
+            tau_inst = rho_a*kappa^2*u_LP.^2./log(zU./zs_LP).^2;
+            eta_inst = zeros(size(u_LP));
             ind_abovethr = find(u_LP>=uth_TFEM);
-            eta_inst_TFEMthr_LP(u_LP>uth_TFEM)=1-(rho_a*kappa^2*u_LP(ind_abovethr).^2./log(zU./zs_LP(ind_abovethr)).^2);
-            eta_active_TFEMthr_LP_all{i}(j) = fQ1_all{i}(j)*mean(eta_inst_TFEMthr_LP(ind_abovethr)); %mean stress partition for active transport, TFEM threshold
-
-            
-%             %% Stress partition calculations -- based on variations in estimated drag force
-%             %generate Cf(u) rating curve, compute Cf for each timestep
-%             u_ratingcurve_constthr = linspace(min(u_LP),max(u_LP),N_Cf_ratingcurve)'; %generate list of u values for rating curve - constant threshold
-%             u_ratingcurve_TFEMthr = linspace(min(u_LP),max(u_LP),N_Cf_ratingcurve)'; %generate list of u values for rating curve - TFEM threshold
-%             Cf_ratingcurve_constthr = zeros(N_Cf_ratingcurve,1); %initialize list of associated Cf values for rating curve - constant threshold
-%             Cf_ratingcurve_TFEMthr = zeros(N_Cf_ratingcurve,1); %initialize list of associated Cf values for rating curve - TFEM threshold
-%             for k = 1:N_Cf_ratingcurve 
-%                 %calculations for constant threshold
-%                 if u_ratingcurve_constthr(k)<u_it %if below threshold, Cf = 1
-%                     Cf_ratingcurve_constthr(k) = 1;
-%                 else %if above threshold, iteratively determine zs and tau
-%                     zs_old = z0f(i); %initialize zs guess based on z0
-%                     tau_old = rho_a*kappa^2*u_ratingcurve_constthr(k).^2/log(zU/z0f(i))^2; %initialize tau guess based on z0
-%                     zs_new = z0f(i)+k_zs*(tau_old-tau_it(i)); %revise zs guess based on tau
-%                     tau_new = rho_a*kappa^2*u_ratingcurve_constthr(k).^2/log(zU/zs_new)^2; %compute new tau based on zs
-%                     while abs(tau_new-tau_old)>0.0001 %if new and old taus are too far apart
-%                         zs_old = zs_new; %set the "new" guesses to the "old" guesses
-%                         tau_old = tau_new; %set the "new" guesses to the "old" guesses
-%                         zs_new = z0f(i)+k_zs*(tau_old-tau_it(i)); %recompute zs
-%                         tau_new = rho_a*kappa^2*u_ratingcurve_constthr(k).^2/log(zU/zs_new)^2; %recompute tau
-%                     end
-%                     Cf_ratingcurve_constthr(k) = log(zU/zs_new)^2/log(zU/z0f(i))^2; %compute friction coefficient
-%                 end
-%                 
-%                 %calculations for TFEM threshold
-%                 if u_ratingcurve_TFEMthr(k)<uth_TFEM %if below threshold, Cf = 1
-%                     Cf_ratingcurve_TFEMthr(k) = 1;
-%                 else %if above threshold, iteratively determine zs and tau
-%                     zs_old = z0f(i); %initialize zs guess based on z0
-%                     tau_old = rho_a*kappa^2*u_ratingcurve_TFEMthr(k).^2/log(zU/z0f(i))^2; %initialize tau guess based on z0
-%                     zs_new = z0f(i)+k_zs*(tau_old-tauth_TFEM); %revise zs guess based on tau
-%                     tau_new = rho_a*kappa^2*u_ratingcurve_TFEMthr(k).^2/log(zU/zs_new)^2; %compute new tau based on zs
-%                     while abs(tau_new-tau_old)>0.0001 %if new and old taus are too far apart
-%                         zs_old = zs_new; %set the "new" guesses to the "old" guesses
-%                         tau_old = tau_new; %set the "new" guesses to the "old" guesses
-%                         zs_new = z0f(i)+k_zs*(tau_old-tauth_TFEM); %recompute zs
-%                         tau_new = rho_a*kappa^2*u_ratingcurve_TFEMthr(k).^2/log(zU/zs_new)^2; %recompute tau
-%                     end
-%                     Cf_ratingcurve_TFEMthr(k) = log(zU/zs_new)^2/log(zU/z0f(i))^2; %compute friction coefficient
-%                 end
-%             end
-%             Cf_constthr = zeros(length(u_LP),1);
-%             Cf_TFEMthr = zeros(length(u_LP),1);
-%             for k = 1:length(u_LP)
-%                 Cf_constthr(k) = Cf_ratingcurve_constthr(abs(u_ratingcurve_constthr-u_LP(k))==min(abs(u_ratingcurve_constthr-u_LP(k))));
-%                 Cf_TFEMthr(k) = Cf_ratingcurve_TFEMthr(abs(u_ratingcurve_TFEMthr-u_LP(k))==min(abs(u_ratingcurve_TFEMthr-u_LP(k))));
-%             end
-%             
-%             %compute eta value based on 1-Cf*(uth^2/uLP^2), for uLP>uth (using constant threshold)
-%             eta_inst_constthr = zeros(size(u_LP));
-%             ind_abovethr = find(u_LP>u_it);
-%             eta_inst_constthr(u_LP>u_it)=1-Cf_constthr(ind_abovethr).*(u_it^2./u_LP(ind_abovethr).^2);
-%             eta_active_constthr_all{i}(j) = mean(eta_inst_constthr); %mean stress partition based on friction coefficient estimation from z_s, constant tau_it
-%             
-%             %compute eta value based on 1-Cf*(uth^2/uLP^2), for uLP>uth (using TFEM threshold)
-%             eta_inst_TFEMthr = zeros(size(u_LP));
-%             ind_abovethr = find(u_LP>uth_TFEM);
-%             %eta_inst_TFEMthr(u_LP>uth_TFEM)=1-Cf_TFEMthr(ind_abovethr).*(uth_TFEM^2./u_LP(ind_abovethr).^2); %dissipation based on TFEM threshold
-%             eta_inst_TFEMthr(u_LP>uth_TFEM)=1-Cf_TFEMthr(ind_abovethr).*(uth_TFEM^2./u_LP(ind_abovethr).^2); %dissipation based on impact threshold
-%             eta_active_TFEMthr_all{i}(j) = mean(eta_inst_TFEMthr); %mean stress partition based on friction coefficient estimation from z_s, using TFEM u_th
+            eta_inst(ind_abovethr)=1-(tau_it(i)./tau_inst(ind_abovethr));
+            eta_active_fQ_LP_TFEMthr_all{i}(j) = fQ1_all{i}(j)*mean(eta_inst(ind_abovethr)); %mean stress partition for active transport, TFEM threshold
+            eta_active_fU_LP_TFEMthr_all{i}(j) = mean(eta_inst); %same as before, but now use the actual frequency of wind above threshold
         end
-        
+         
         %% WIND CALCULATIONS FOR INTERVAL - FULL PROFILE
         u_cal_profile = zeros(N_Anemometers,1)*NaN;
         z_profile = zeros(N_Anemometers,1)*NaN;
@@ -814,85 +786,88 @@ for i = 1:N_Sites
             end
         end 
     end
-    
-    %% KEEP ONLY INTERVALS WHERE FLUX IS WELL DEFINED
-    ind_good = find(~isnan(Q_all{i}));
-    
-%     %% KEEP ONLY INTERVALS WHERE FLUX AND STRESS ARE WELL DEFINED
-%     ind_good = intersect(find(~isnan(Q_all{i})),find(~isnan(ustRe_all{i})));
-
-    %lists of dates, times, and grain size values
-    d50_all{i} = d50_all{i}(ind_good); %d50 of surface sand
-    d10_all{i} = d10_all{i}(ind_good); %d10 of surface sand
-    d90_all{i} = d90_all{i}(ind_good); %d90 of surface sand
-    date_all{i} = date_all{i}(ind_good); %date of observation
-    StartTime_all{i} = BlockStartTimes(ind_good); %start time of block
-    EndTime_all{i} = BlockEndTimes(ind_good); %end time of block
-    
-    %flux values
-    Q_all{i} = Q_all{i}(ind_good); %total flux
-    sigma_Q_all{i} = sigma_Q_all{i}(ind_good); %total flux uncertainty
-    zq_all{i} = zq_all{i}(ind_good); %characteristic flux height
-    sigma_zq_all{i} = sigma_zq_all{i}(ind_good); %characteristic flux height
-    fD_all{i} = fD_all{i}(ind_good,:); %Wenglor detection frequency
-    fD1_all{i} = fD1_all{i}(ind_good); %Wenglor 1 s detection frequency
-    fQ_all{i} = fQ_all{i}(ind_good,:); %Wenglor total transport frequency
-    fQ1_all{i} = fQ1_all{i}(ind_good); %Wenglor 1 s transport frequency
-    fQalt_all{i} = fQalt_all{i}(ind_good); %Wenglor total transport frequency, normalized by Poisson expectation
-    q_all{i} = q_all{i}(ind_good); %partial flux
-    zW_all{i} = zW_all{i}(ind_good); %Wenglor flux height
-    qcal_all{i} = qcal_all{i}(ind_good); %calibration factor
-    
-    %wind values
-    zU_all{i} = zU_all{i}(ind_good); %height of anemometer (m)
-    u_bar_all{i} = u_bar_all{i}(ind_good); %mean u values
-    u_std_all{i} = u_std_all{i}(ind_good); %standard deviation u values
-    u2_all{i} = u2_all{i}(ind_good); %mean u^2
-    theta_all{i} = theta_all{i}(ind_good); %mean theta (wind angle)
-    zL_all{i} = zL_all{i}(ind_good); %stability parameter
-    ustRe_all{i} = ustRe_all{i}(ind_good); %u* for Reynolds stress
-    tauRe_all{i} = tauRe_all{i}(ind_good); %tau for Reynolds stress
-    f_uaboveft_all{i} = f_uaboveft_all{i}(ind_good); %frequency of u above fluid threshold
-    f_ubelowit_all{i} = f_ubelowit_all{i}(ind_good); %frequency of u below impact threshold
-    f_ubetween_all{i} = f_ubetween_all{i}(ind_good); %frequency of u between thresholds
-    f_ubetween_frombelow_all{i} = f_ubetween_frombelow_all{i}(ind_good); %frequency of u between thresholds approaching from below it
-    f_ubetween_fromabove_all{i} = f_ubetween_fromabove_all{i}(ind_good); %frequency of u between thresholds approaching from above ft
-    uth_TFEM_all{i} = uth_TFEM_all{i}(ind_good); %uth for 1s TFEM
-    tauth_TFEM_all{i} = tauth_TFEM_all{i}(ind_good); %tau for 1s TFEM
-    zs_all{i} = zs_all{i}(ind_good);
-    tau0_bar_Q0_all{i} = tau0_bar_Q0_all{i}(ind_good); %get mean stress dissipation, times of no transport
-    tau0_bar_constthr_all{i} = tau0_bar_constthr_all{i}(ind_good); %get mean stress dissipation based on constant impact threshold
-    tau0_bar_TFEMthr_all{i} = tau0_bar_TFEMthr_all{i}(ind_good); %get mean stress dissipation based on TFEM threshold
-    eta_inactive_Q0_1s_all{i} = eta_inactive_Q0_1s_all{i}(ind_good); %mean stress partition based on flux frequency method, times of zero flux
-    eta_inactive_constthr_1s_all{i} = eta_inactive_constthr_1s_all{i}(ind_good); %mean stress partition based on flux frequency method, constant tau_it
-    eta_inactive_TFEMthr_1s_all{i} = eta_inactive_TFEMthr_1s_all{i}(ind_good); %mean stress partition based on flux frequency method, TFEM u_th
-    eta_active_constthr_1s_all{i} = eta_active_constthr_1s_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, constant tau_it
-    eta_active_TFEMthr_1s_all{i} = eta_active_TFEMthr_1s_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, TFEM tau_it
-    eta_inactive_constthr_LP_all{i} = eta_inactive_constthr_LP_all{i}(ind_good); %mean stress partition based on flux frequency method, constant tau_it
-    eta_inactive_TFEMthr_LP_all{i} = eta_inactive_TFEMthr_LP_all{i}(ind_good); %mean stress partition based on flux frequency method, TFEM u_th
-    eta_active_constthr_LP_all{i} = eta_active_constthr_LP_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, constant tau_it
-    eta_active_TFEMthr_LP_all{i} = eta_active_TFEMthr_LP_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, TFEM tau_it
-
-    
-    %arrays of low-pass timeseries
-    q_LP_all{i} = q_LP_all{i}(ind_good); %low-pass flux timeseries
-    u_LP_all{i} = u_LP_all{i}(ind_good); %low-pass wind timeseries
-
-    %arrays of window average timeseries
-    Qbinary_1s_all{i} = Qbinary_1s_all{i}(ind_good); %timesteps with flux for 1 second wind average
-    u_1s_all{i} = u_1s_all{i}(ind_good); %window average wind
-        
-    %profile values
-    u_profile_all{i} = u_profile_all{i}(ind_good); %calibrated velocity profile
-    z_profile_all{i} = z_profile_all{i}(ind_good); %heights for profile
-    Anemometer_profile_all{i} = Anemometer_profile_all{i}(ind_good); %names of anemometers for profile
-    u_lowest_all{i} = u_lowest_all{i}(ind_good); %calibrated velocity profile - lowest anemometers
-    z_lowest_all{i} = z_lowest_all{i}(ind_good); %heights of lowest anemometers
-    Anemometer_lowest_all{i} = Anemometer_lowest_all{i}(ind_good); %names of lowest anemometers for profile
-    ustLog_all{i} = ustLog_all{i}(ind_good); %u* calculated from mean of calibrated velocities for lowest anemometers in profile
-    z0_profile_all{i} = z0_profile_all{i}(ind_good); %z0 calculated from mean of calibrated velocities for lowest anemometers in profile
 end
 
+%     %% KEEP ONLY INTERVALS WHERE FLUX AND STRESS ARE WELL DEFINED
+%     ind_good = intersect(find(~isnan(Q_all{i})),find(~isnan(ustRe_all{i})));
+% 
+%     %% KEEP ONLY INTERVALS WHERE FLUX IS WELL DEFINED
+%     ind_good = find(~isnan(Q_all{i}));
+% 
+%     %lists of dates, times, and grain size values
+%     d50_all{i} = d50_all{i}(ind_good); %d50 of surface sand
+%     d10_all{i} = d10_all{i}(ind_good); %d10 of surface sand
+%     d90_all{i} = d90_all{i}(ind_good); %d90 of surface sand
+%     date_all{i} = date_all{i}(ind_good); %date of observation
+%     StartTime_all{i} = BlockStartTimes(ind_good); %start time of block
+%     EndTime_all{i} = BlockEndTimes(ind_good); %end time of block
+%     
+%     %flux values
+%     Q_all{i} = Q_all{i}(ind_good); %total flux
+%     sigma_Q_all{i} = sigma_Q_all{i}(ind_good); %total flux uncertainty
+%     zq_all{i} = zq_all{i}(ind_good); %characteristic flux height
+%     sigma_zq_all{i} = sigma_zq_all{i}(ind_good); %characteristic flux height
+%     fD_all{i} = fD_all{i}(ind_good,:); %Wenglor detection frequency
+%     fD1_all{i} = fD1_all{i}(ind_good); %Wenglor 1 s detection frequency
+%     fQ_all{i} = fQ_all{i}(ind_good,:); %Wenglor total transport frequency
+%     fQ1_all{i} = fQ1_all{i}(ind_good); %Wenglor 1 s transport frequency
+%     fQalt_all{i} = fQalt_all{i}(ind_good); %Wenglor total transport frequency, normalized by Poisson expectation
+%     q_all{i} = q_all{i}(ind_good); %partial flux
+%     zW_all{i} = zW_all{i}(ind_good); %Wenglor flux height
+%     qcal_all{i} = qcal_all{i}(ind_good); %calibration factor
+%     
+%     %wind values
+%     zU_all{i} = zU_all{i}(ind_good); %height of anemometer (m)
+%     u_bar_all{i} = u_bar_all{i}(ind_good); %mean u values
+%     u_std_all{i} = u_std_all{i}(ind_good); %standard deviation u values
+%     u2_all{i} = u2_all{i}(ind_good); %mean u^2
+%     theta_all{i} = theta_all{i}(ind_good); %mean theta (wind angle)
+%     zL_all{i} = zL_all{i}(ind_good); %stability parameter
+%     ustRe_all{i} = ustRe_all{i}(ind_good); %u* for Reynolds stress
+%     tauRe_all{i} = tauRe_all{i}(ind_good); %tau for Reynolds stress
+%     f_uaboveft_all{i} = f_uaboveft_all{i}(ind_good); %frequency of u above fluid threshold
+%     f_ubelowit_all{i} = f_ubelowit_all{i}(ind_good); %frequency of u below impact threshold
+%     f_ubetween_all{i} = f_ubetween_all{i}(ind_good); %frequency of u between thresholds
+%     f_ubetween_frombelow_all{i} = f_ubetween_frombelow_all{i}(ind_good); %frequency of u between thresholds approaching from below it
+%     f_ubetween_fromabove_all{i} = f_ubetween_fromabove_all{i}(ind_good); %frequency of u between thresholds approaching from above ft
+%     uth_TFEM_all{i} = uth_TFEM_all{i}(ind_good); %uth for 1s TFEM
+%     tauth_TFEM_all{i} = tauth_TFEM_all{i}(ind_good); %tau for 1s TFEM
+%     zs_all{i} = zs_all{i}(ind_good);
+%     
+%     tau0_bar_Q0_all{i} = tau0_bar_Q0_all{i}(ind_good); %get mean stress dissipation, times of no transport
+%     tau0_bar_constthr_all{i} = tau0_bar_constthr_all{i}(ind_good); %get mean stress dissipation based on constant impact threshold
+%     tau0_bar_TFEMthr_all{i} = tau0_bar_TFEMthr_all{i}(ind_good); %get mean stress dissipation based on TFEM threshold
+%     
+%     eta_inactive_1s_Q0_all{i} = eta_inactive_1s_Q0_all{i}(ind_good); %mean stress partition based on flux frequency method, times of zero flux
+%     eta_inactive_1s_constthr_all{i} = eta_inactive_1s_constthr_all{i}(ind_good); %mean stress partition based on flux frequency method, constant tau_it
+%     eta_inactive_LP_constthr_all{i} = eta_inactive_LP_constthr_all{i}(ind_good); %mean stress partition based on flux frequency method, constant tau_it
+%     eta_inactive_1s_TFEMthr_all{i} = eta_inactive_1s_TFEMthr_all{i}(ind_good); %mean stress partition based on flux frequency method, TFEM u_th
+%     eta_inactive_LP_TFEMthr_all{i} = eta_inactive_LP_TFEMthr_all{i}(ind_good); %mean stress partition based on flux frequency method, TFEM u_th
+%     
+%     eta_active_1s_constthr_all{i} = eta_active_1s_constthr_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, constant tau_it
+%     eta_active_LP_constthr_all{i} = eta_active_LP_constthr_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, constant tau_it
+%     eta_active_1s_TFEMthr_all{i} = eta_active_1s_TFEMthr_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, TFEM tau_it
+%     eta_active_LP_TFEMthr_all{i} = eta_active_LP_TFEMthr_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, TFEM tau_it
+% 
+%     %arrays of low-pass timeseries
+%     q_LP_all{i} = q_LP_all{i}(ind_good); %low-pass flux timeseries
+%     u_LP_all{i} = u_LP_all{i}(ind_good); %low-pass wind timeseries
+% 
+%     %arrays of window average timeseries
+%     Qbinary_1s_all{i} = Qbinary_1s_all{i}(ind_good); %timesteps with flux for 1 second wind average
+%     u_1s_all{i} = u_1s_all{i}(ind_good); %window average wind
+%         
+%     %profile values
+%     u_profile_all{i} = u_profile_all{i}(ind_good); %calibrated velocity profile
+%     z_profile_all{i} = z_profile_all{i}(ind_good); %heights for profile
+%     Anemometer_profile_all{i} = Anemometer_profile_all{i}(ind_good); %names of anemometers for profile
+%     u_lowest_all{i} = u_lowest_all{i}(ind_good); %calibrated velocity profile - lowest anemometers
+%     z_lowest_all{i} = z_lowest_all{i}(ind_good); %heights of lowest anemometers
+%     Anemometer_lowest_all{i} = Anemometer_lowest_all{i}(ind_good); %names of lowest anemometers for profile
+%     ustLog_all{i} = ustLog_all{i}(ind_good); %u* calculated from mean of calibrated velocities for lowest anemometers in profile
+%     z0_profile_all{i} = z0_profile_all{i}(ind_good); %z0 calculated from mean of calibrated velocities for lowest anemometers in profile
+% end
+% 
 % SAVE DATA
 save(SaveFullData_Path,'Sites','*all','-v7.3'); %save full size file including all sub-timeseries
 clear('*LP_all','*1s_all'); %remove timeseries to make file smaller

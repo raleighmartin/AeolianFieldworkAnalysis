@@ -241,14 +241,14 @@ for i = 1:N_Sites
     
     %get fQs for eta bin
     for j = 1:N_eta_bins
-        bin_ind = find(eta_inactive_all{i}>=eta_bins_min(j)&eta_inactive_all{i}<=eta_bins_max(j));
+        bin_ind = find(eta_inactive_TFEMthr_LP_all{i}>=eta_bins_min(j)&eta_inactive_TFEMthr_LP_all{i}<=eta_bins_max(j));
         fQ_eta_inactive_bin_values{i}{j} = fQ1_all{i}(bin_ind);
         fQ_eta_inactive_bin_values{i}{j} = fQ_eta_inactive_bin_values{i}{j}(~isnan(fQ_eta_inactive_bin_values{i}{j}));
         fQ_eta_inactive_bin_avg{i}(j) = mean(fQ_eta_inactive_bin_values{i}{j});
         fQ_eta_inactive_bin_std{i}(j) = std(fQ_eta_inactive_bin_values{i}{j});
         fQ_eta_inactive_bin_SE{i}(j) = std(fQ_eta_inactive_bin_values{i}{j})./sqrt(length(~isnan(fQ_eta_inactive_bin_values{i}{j})));
 
-        bin_ind = find(eta_active_all{i}>=eta_bins_min(j)&eta_active_all{i}<=eta_bins_max(j));
+        bin_ind = find(eta_active_TFEMthr_LP_all{i}>=eta_bins_min(j)&eta_active_TFEMthr_LP_all{i}<=eta_bins_max(j));
         fQ_eta_active_bin_values{i}{j} = fQ1_all{i}(bin_ind);
         fQ_eta_active_bin_values{i}{j} = fQ_eta_active_bin_values{i}{j}(~isnan(fQ_eta_active_bin_values{i}{j}));
         fQ_eta_active_bin_avg{i}(j) = mean(fQ_eta_active_bin_values{i}{j});
