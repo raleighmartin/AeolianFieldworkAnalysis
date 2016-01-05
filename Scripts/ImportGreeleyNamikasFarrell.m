@@ -1,23 +1,34 @@
-%% SCRIPT TO IMPORT GREELEY (1996) AND NAMIKAS (2003) FLUX VALUES FROM TEXT FILE
+%% SCRIPT TO IMPORT GREELEY (1996), NAMIKAS (2003), AND FARRELL (2012) FLUX VALUES FROM TEXT FILE
 clearvars; %initialize
+
+%suppress figures
+set(0,'DefaultFigureVisible', 'off');
+
+%% constants
+rho_a = 1.23; %air density kg/m^3
 
 %% filepath information
 folder_LiteratureData = '../../../Google Drive/Data/Literature/'; %location where Namikas and Greeley data are stored
 filename_Greeley96 = [folder_LiteratureData,'Greeley96.dat'];
 filename_Namikas03 = [folder_LiteratureData,'Namikas03verMF.dat'];
 folder_ProcessedData = '../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for storing data output
+folder_AnalysisData = '../AnalysisData/'; %folder for storing outputs of this analysis
 folder_Plots = '../PlotOutput/SaltationFlux/'; %folder for plots
-SaveData_Path = strcat(folder_ProcessedData,'GreeleyNamikasData');
+SaveData_Path = strcat(folder_AnalysisData,'GreeleyNamikasData'); %folder for saving data
 
 %% manually enter basic info
 N_Greeley96 = 10;
 N_Namikas03 = 9;
 ust_Greeley96 = [0.47; 0.51; 0.49; 0.31; 0.35; 0.31; 0.54; 0.49; 0.41; 0.42]; %u* values (m/s) used in Kok et al. (2008)
 ust_Namikas03 = [0.32; 0.27; 0.32; 0.30; 0.38; 0.37; 0.38; 0.47; 0.63]; %u* values (m/s) from paper
-Q_Greeley96 = [NaN; NaN; NaN; NaN; 16.1; 2.7; 19; 19; 10.4; 10.4]; %values from Table 1 in paper
-Q_Namikas03 = [0.35; 0.76; 2.73; 2.12; 5.61; 5.86; 5.57; 11.80; 29.11]; %values from Table 1 in paper
+ust_Farrell12 = [0.54; 0.47; 0.53; 0.49; 0.50; 0.50; 0.47; 0.45; 0.51; 0.48; 0.41; 0.50; 0.50; 0.49]; %u* values (m/s) from paper
+Q_fit_Farrell12 = [30.16; 29.06; 19.37; 22.49; 19.48; 16.59; 15.10; 14.15; 16.44; 25.46; 19.94; 20.33; 27.51; 22.89]; %Q values (g/m/s) estimated from paper
+zbar_Farrell12 = [0.113; 0.088; 0.088; 0.077; 0.087; 0.075; 0.069; 0.085; 0.081; 0.095; 0.083; 0.118; 0.123; 0.123]; %zQ values (m) estimated from paper 
+Q_pub_Greeley96 = [NaN; NaN; NaN; NaN; 16.1; 2.7; 19; 19; 10.4; 10.4]; %values from Table 1 in paper
+Q_pub_Namikas03 = [0.35; 0.76; 2.73; 2.12; 5.61; 5.86; 5.57; 11.80; 29.11]; %values from Table 1 in paper
 d50_Greeley96 = 0.230; %median grain size (mm) value from paper
 d50_Namikas03 = 0.250; %median grain size (mm) value from paper
+d50_Farrell12 = 0.61; %use median grain size (mm) from Jeri deployment since they don't report it
 
 %% give information about outliers to exclude
 Greeley96_OutlierInd = 4;
@@ -261,7 +272,7 @@ print([folder_Plots,'GreeleyNamikas_ust_Q.png'],'-dpng');
 %% Remove outlier value(s) from data
 N_Greeley96 = length(Greeley96_GoodInd);
 q_Greeley96 = q_Greeley96{Greeley96_GoodInd};
-Q_Greeley96 = Q_Greeley96(Greeley96_GoodInd);
+Q_pub_Greeley96 = Q_pub_Greeley96(Greeley96_GoodInd);
 Q_fit_Greeley96 =Q_fit_Greeley96(Greeley96_GoodInd);
 RunName_Greeley96 = RunName_Greeley96(Greeley96_GoodInd);
 ust_Greeley96 = ust_Greeley96(Greeley96_GoodInd);
@@ -270,21 +281,46 @@ zbar_Greeley96 = zbar_Greeley96(Greeley96_GoodInd);
 
 N_Namikas03 = length(Namikas03_GoodInd);
 q_Namikas03 = q_Namikas03{Namikas03_GoodInd};
-Q_Namikas03 = Q_Namikas03(Namikas03_GoodInd);
+Q_pub_Namikas03 = Q_pub_Namikas03(Namikas03_GoodInd);
 Q_fit_Namikas03 =Q_fit_Namikas03(Namikas03_GoodInd);
 RunName_Namikas03 = RunName_Namikas03(Namikas03_GoodInd);
 ust_Namikas03 = ust_Namikas03(Namikas03_GoodInd);
 z_Namikas03 = z_Namikas03{Namikas03_GoodInd};
 zbar_Namikas03 = zbar_Namikas03(Namikas03_GoodInd);
 
+%% calculate shear stresses
+tau_Greeley96 = rho_a*ust_Greeley96.^2;
+tau_Namikas03 = rho_a*ust_Namikas03.^2;
+tau_Farrell12 = rho_a*ust_Farrell12.^2;
+
+%% fit to get threshold
+[a, b, ~, ~, ~, ~] = linearfit(tau_Greeley96, Q_fit_Greeley96);
+tauit_Greeley96 = -a/b;
+tauex_Greeley96 = tau_Greeley96-tauit_Greeley96;
+tauratio_Greeley96 = tauex_Greeley96./tau_Greeley96;
+[a, b, ~, ~, ~, ~] = linearfit(tau_Namikas03, Q_fit_Namikas03);
+tauit_Namikas03 = -a/b;
+tauex_Namikas03 = tau_Namikas03-tauit_Namikas03;
+tauratio_Namikas03 = tauex_Namikas03./tau_Namikas03;
+%assume values from Jeri deployment for Namikas
+tauit_Farrell12 = 0.1317;
+tauex_Farrell12 = tau_Farrell12-tauit_Farrell12;
+tauratio_Farrell12 = tauex_Farrell12./tau_Farrell12;
+
+%% plot Q versus tau
+figure(23); clf;
+plot(tau_Greeley96,Q_fit_Greeley96,'r^',...
+    tau_Namikas03,Q_fit_Namikas03,'gd',...
+    'MarkerSize',10);
+xlabel('\tau (Pa)','FontSize',16);
+ylabel('Q (g/m^2/s)','FontSize',16);
+set(gca,'FontSize',16);
+h_legend = legend({'Greeley (1996)','Namikas (2003)'},'Location','NorthWest');
+set(h_legend,'FontSize',16);
+print([folder_Plots,'GreeleyNamikas_tau_Q.png'],'-dpng');
+
 %% save useful data
-save(SaveData_Path,...
-    'N_Greeley96','N_Namikas03',...
-    'd50_Greeley96','d50_Namikas03',...
-    'q_Greeley96','q_Namikas03',...
-    'Q_Greeley96','Q_Namikas03',...
-    'Q_fit_Greeley96','Q_fit_Namikas03',...
-    'RunName_Greeley96','RunName_Namikas03',...
-    'ust_Greeley96','ust_Namikas03',...
-    'z_Greeley96','z_Namikas03',...
-    'zbar_Greeley96','zbar_Namikas03');
+save(SaveData_Path,'*Greeley96','*Namikas03','*Farrell12');
+
+%re-allow figures
+set(0,'DefaultFigureVisible', 'on');

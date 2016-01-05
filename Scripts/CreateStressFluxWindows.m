@@ -7,14 +7,15 @@
 %% initialize
 clearvars;
 
-
 %% parameter values
 rho_a = 1.23; %air density kg/m^3
 rho_s = 2650; %particle density kg/m^3
 g = 9.8; %gravity m/s^2
 kappa = 0.39; %von Karman parameter
-tau_it = [0.1 0.1 0.0864]; %impact threshold stress (Pa)
-tau_ft = [0.15 0.15 0.1308]; %fluid threshold stress (Pa)
+tau_it = [0.1317 0.0951 0.0841]; %impact threshold stress (Pa)
+tau_ft = [0.1787 0.1631 0.1299]; %fluid threshold stress (Pa)
+% tauit = [0.1 0.1 0.0864]; %impact threshold stress (Pa)
+% tauft = [0.15 0.15 0.1308]; %fluid threshold stress (Pa)
 ust_it = sqrt(tau_it./rho_a); %impact threshold shear velocity (m/s)
 ust_ft = sqrt(tau_ft./rho_a); %fluid threshold shear velocity (m/s)
 k_zs = 0.004; %proportionality constant for zs (m^2 s^2 kg^-1)
@@ -24,7 +25,6 @@ z0 = [1e-4, 1e-4, 1e-4]; %aerodynamic roughness length (m) at threshold
 %Sites = {'Jericoacoara'};
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
 N_Sites = length(Sites);
-
 
 %% set time interval for computing wind/flux windows
 WindowTimeInterval = duration(0,30,0); %duration of window for computations
@@ -37,12 +37,12 @@ dt_q_s = 0.04; %time interval of flux (s)
 
 
 %% set durations of window average for flux frequencies
-% dt_fQ_min_s = 1;
-% dt_fQ_max_s = 1;
-% N_dt_fQ = 1;
-dt_fQ_min_s = 0.04; %mininum window average time
-dt_fQ_max_s = 600; %maximum window average time
-N_dt_fQ = 30; %number of durations of window average
+dt_fQ_min_s = 1;
+dt_fQ_max_s = 1;
+N_dt_fQ = 1;
+% dt_fQ_min_s = 0.04; %mininum window average time
+% dt_fQ_max_s = 600; %maximum window average time
+% N_dt_fQ = 30; %number of durations of window average
 dt_fQ_s = unique([round(logspace(0,log10(dt_fQ_max_s/dt_fQ_min_s),N_dt_fQ))*dt_fQ_min_s, 1]); %create window average dt's, make sure to include 1 second in list
 N_dt_fQ = length(dt_fQ_s); %recalculate number of window average dt's after removing repeats
 dt_fQ_windowaverage = duration(0,0,dt_fQ_s);
@@ -92,7 +92,9 @@ fQ_all = cell(N_Sites,1); %Wenglor transport frequency matrix
 fQ1_all = cell(N_Sites,1); %Wenglor transport frequency matrix - 1 second
 fQalt_all = cell(N_Sites,1); %Wenglor transport frequency matrix - alternate (non-iterative) calc
 q_all = cell(N_Sites,1); %partial flux
+sigma_q_all = cell(N_Sites,1); %partial flux uncertainty
 zW_all = cell(N_Sites,1); %Wenglor flux height list
+sigma_zW_all = cell(N_Sites,1); %Wenglor flux height uncertainty list
 qcal_all = cell(N_Sites,1); %calibration factor list
 
 %initialize lists of wind values for lowest anemometer
@@ -143,15 +145,15 @@ Qbinary_1s_all = cell(N_Sites,1); %1 second wind average flux occurrence timeser
 u_1s_all = cell(N_Sites,1); %1 second window average wind velocity timeseries
 t_1s_all = cell(N_Sites,1); %times for 1 second window average timeseries
 
-%initialize lists of profile values
-u_profile_all = cell(N_Sites,1); %calibrated velocity profile
-z_profile_all = cell(N_Sites,1); %heights for profile
-Anemometer_profile_all = cell(N_Sites,1); %names of anemometers for profile
-u_lowest_all = cell(N_Sites,1); %calibrated velocity profile - lowest anemometers
-z_lowest_all = cell(N_Sites,1); %heights of lowest anemometers
-Anemometer_lowest_all = cell(N_Sites,1); %names of lowest anemometers for profile
-ustLog_all = cell(N_Sites,1); %u* calculated from mean of calibrated velocities for lowest anemometers in profile
-z0_profile_all = cell(N_Sites,1); %z0 calculated from mean of calibrated velocities for lowest anemometers in velocity profile
+% %initialize lists of profile values
+% u_profile_all = cell(N_Sites,1); %calibrated velocity profile
+% z_profile_all = cell(N_Sites,1); %heights for profile
+% Anemometer_profile_all = cell(N_Sites,1); %names of anemometers for profile
+% u_lowest_all = cell(N_Sites,1); %calibrated velocity profile - lowest anemometers
+% z_lowest_all = cell(N_Sites,1); %heights of lowest anemometers
+% Anemometer_lowest_all = cell(N_Sites,1); %names of lowest anemometers for profile
+% ustLog_all = cell(N_Sites,1); %u* calculated from mean of calibrated velocities for lowest anemometers in profile
+% z0_profile_all = cell(N_Sites,1); %z0 calculated from mean of calibrated velocities for lowest anemometers in velocity profile
 
 %% PERFORM ANALYSIS FOR EACH SITE
 for i = 1:N_Sites
@@ -226,7 +228,9 @@ for i = 1:N_Sites
     fQ1_all{i} = zeros(N_Blocks,1)*NaN; %Wenglor total transport frequency - 1 s
     fQalt_all{i} = zeros(N_Blocks,N_dt_fQ)*NaN; %Wenglor total transport frequency, alternate calc
     q_all{i} = cell(N_Blocks,1); %partial flux
+    sigma_q_all{i} = cell(N_Blocks,1); %partial flux uncertainty
     zW_all{i} = cell(N_Blocks,1); %Wenglor height
+    sigma_zW_all{i} = cell(N_Blocks,1); %Wenglor height uncertainty
     qcal_all{i} = cell(N_Blocks,1); %calibration factor
     
     %initialize lists of values for lowest anemometer
@@ -350,7 +354,7 @@ for i = 1:N_Sites
             [q0,zq,sigma_q0,sigma_zq] = qz_profilefit(q_profile,zW_profile,sigma_q_profile,sigma_zW_profile);
             Q = q0*zq; %get total flux [g/m/s]
             sigma_Q = sqrt((sigma_q0*zq)^2+(sigma_zq*q0)^2); %estimate uncertainty in total flux
-            
+                
             %convert to 0 if Q<0.05 or if Q=NaN AND expected Q<0.05 g/m/s based on lowest Wenglor and zq = 5 cm
             if Q<0.05||(isnan(Q)&&((0.1*q_profile(1))/exp(-zW_profile(1)/0.1)<0.05));
                 Q=0;
@@ -412,7 +416,9 @@ for i = 1:N_Sites
             zq_all{i}(j) = zq; %characteristic flux height
             sigma_zq_all{i}(j) = sigma_zq; %uncertainty in flux height
             q_all{i}{j} = q_profile; %partial flux
+            sigma_q_all{i}{j} = sigma_q_profile; %partial flux uncertainty
             zW_all{i}{j} = zW_profile; %Wenglor flux height
+            sigma_zW_all{i}{j} = sigma_zW_profile; %uncertainty in Wenglor flux height
             qcal_all{i}{j} = qcal_profile; %calibration factor
             fD1_all{i}(j) = fD_all{i}(j,ind_dt_fQ_1s); %1s detection frequency
             fQ1_all{i}(j) = fQ_all{i}(j,ind_dt_fQ_1s); %1s transport frequency
@@ -690,184 +696,104 @@ for i = 1:N_Sites
             eta_active_fQ_LP_TFEMthr_all{i}(j) = fQ1_all{i}(j)*mean(eta_inst(ind_abovethr)); %mean stress partition for active transport, TFEM threshold
             eta_active_fU_LP_TFEMthr_all{i}(j) = mean(eta_inst); %same as before, but now use the actual frequency of wind above threshold
         end
-         
-        %% WIND CALCULATIONS FOR INTERVAL - FULL PROFILE
-        u_cal_profile = zeros(N_Anemometers,1)*NaN;
-        z_profile = zeros(N_Anemometers,1)*NaN;
-        
-        for k = 1:N_Anemometers;
-            %extract time interval
-            [~, ~, IntervalN, IntervalInd] = ExtractVariableTimeInterval(WindDataAll.(Anemometer_profile{k}),StartTime,EndTime,'u','int','int');
-
-            %determine if values span entire analysis interval
-            if ~isempty(IntervalN)
-                %use only first interval
-                IntervalN = IntervalN(1);
-                IntervalInd = IntervalInd{1};
-                StartTime_Extraction = WindDataAll.(Anemometer_profile{k})(IntervalN).t.int(IntervalInd(1));
-                EndTime_Extraction = WindDataAll.(Anemometer_profile{k})(IntervalN).t.int(IntervalInd(end));
-
-                %further reduce IntervalInd based on eliminating error times
-                [~, ErrInd, ~] = intersect(WindDataAll.(Anemometer_profile{k})(IntervalN).t.int,WindDataAll.(Anemometer_profile{k})(IntervalN).t.err);
-                IntervalInd = setdiff(IntervalInd,ErrInd);
-
-            else %generate arbitrary values if there are no data
-                StartTime_Extraction = datetime(0,0,0);
-                EndTime_Extraction = datetime(0,0,0);
-            end
-
-            %restrict to time intervals with data spanning entire interval
-            if (StartTime_Extraction==StartTime)&&(EndTime_Extraction==EndTime)
-                
-                %get velocity values
-                u = WindDataAll.(Anemometer_profile{k})(IntervalN).u.int(IntervalInd);
-                v = WindDataAll.(Anemometer_profile{k})(IntervalN).v.int(IntervalInd);
-                w = WindDataAll.(Anemometer_profile{k})(IntervalN).w.int(IntervalInd);
-
-                %rotate instrument, call these 'raw' values
-                [u_raw, ~, ~] = reorient_anemometers_vanboxel2004(u, v, w); %rotate instrument
-
-                %get calibration factors
-                CalibrationFactor_u = WindDataAll.(Anemometer_profile{k})(IntervalN).u.CalibrationFactor;
-                CalibrationIntercept_u = WindDataAll.(Anemometer_profile{k})(IntervalN).u.CalibrationIntercept;
-
-                %apply calibration, call these 'cal' values
-                u_cal = (u_raw-CalibrationIntercept_u)/CalibrationFactor_u;
-
-                %add mean velocities to profile
-                u_cal_profile(k) = mean(u_cal);
-
-                %add height to profile
-                z_profile(k) = WindDataAll.(Anemometer_profile{k})(IntervalN).z.z;
-            end
-        end
-        
-        %get indices of NaN entries in profile
-        ind_notnan = find(~isnan(u_cal_profile));
-        
-        %if some profile exists...
-        if ~isempty(ind_notnan)
-            
-            %remove NaN's from profile, add to 'profile_all' lists
-            u_cal_profile = u_cal_profile(ind_notnan);
-            z_profile = z_profile(ind_notnan);
-            
-            %add to lists
-            u_profile_all{i}{j} = u_cal_profile;
-            z_profile_all{i}{j} = z_profile;
-            Anemometer_profile_all{i}{j} = Anemometer_profile{ind_notnan};
-            
-            %get profile for three lowest anemometers
-            [~, ind_sort] = sort(z_profile);
-        
-            %check to make sure there are enough values for fitting log
-            if length(ind_sort)>=3
-                ind_lowest = ind_sort(1:3);
-                u_cal_lowest = u_cal_profile(ind_lowest);
-                z_lowest = z_profile(ind_lowest);
-
-                %compute u* and z0, add to list
-                P_cal = polyfit(log(z_lowest),u_cal_lowest,1);
-                ustLog_cal = kappa*P_cal(1);
-                z0_cal = exp(-P_cal(2)/P_cal(1));
-
-                %deal with poorly fit profiles
-                if(ustLog_cal<0||isnan(ustLog_cal))
-                    ustLog_cal = NaN;
-                    z0_cal = NaN;
-                end
-            
-                %add to lists
-                u_lowest_all{i}{j} = u_cal_lowest;
-                z_lowest_all{i}{j} = z_lowest;
-                Anemometer_lowest_all{i}{j} = Anemometer_profile{ind_lowest};
-                ustLog_all{i}(j) = ustLog_cal;
-                z0_profile_all{i}(j) = z0_cal;
-            end
-        end 
+%          
+%         %% WIND CALCULATIONS FOR INTERVAL - FULL PROFILE
+%         u_cal_profile = zeros(N_Anemometers,1)*NaN;
+%         z_profile = zeros(N_Anemometers,1)*NaN;
+%         
+%         for k = 1:N_Anemometers;
+%             %extract time interval
+%             [~, ~, IntervalN, IntervalInd] = ExtractVariableTimeInterval(WindDataAll.(Anemometer_profile{k}),StartTime,EndTime,'u','int','int');
+% 
+%             %determine if values span entire analysis interval
+%             if ~isempty(IntervalN)
+%                 %use only first interval
+%                 IntervalN = IntervalN(1);
+%                 IntervalInd = IntervalInd{1};
+%                 StartTime_Extraction = WindDataAll.(Anemometer_profile{k})(IntervalN).t.int(IntervalInd(1));
+%                 EndTime_Extraction = WindDataAll.(Anemometer_profile{k})(IntervalN).t.int(IntervalInd(end));
+% 
+%                 %further reduce IntervalInd based on eliminating error times
+%                 [~, ErrInd, ~] = intersect(WindDataAll.(Anemometer_profile{k})(IntervalN).t.int,WindDataAll.(Anemometer_profile{k})(IntervalN).t.err);
+%                 IntervalInd = setdiff(IntervalInd,ErrInd);
+% 
+%             else %generate arbitrary values if there are no data
+%                 StartTime_Extraction = datetime(0,0,0);
+%                 EndTime_Extraction = datetime(0,0,0);
+%             end
+% 
+%             %restrict to time intervals with data spanning entire interval
+%             if (StartTime_Extraction==StartTime)&&(EndTime_Extraction==EndTime)
+%                 
+%                 %get velocity values
+%                 u = WindDataAll.(Anemometer_profile{k})(IntervalN).u.int(IntervalInd);
+%                 v = WindDataAll.(Anemometer_profile{k})(IntervalN).v.int(IntervalInd);
+%                 w = WindDataAll.(Anemometer_profile{k})(IntervalN).w.int(IntervalInd);
+% 
+%                 %rotate instrument, call these 'raw' values
+%                 [u_raw, ~, ~] = reorient_anemometers_vanboxel2004(u, v, w); %rotate instrument
+% 
+%                 %get calibration factors
+%                 CalibrationFactor_u = WindDataAll.(Anemometer_profile{k})(IntervalN).u.CalibrationFactor;
+%                 CalibrationIntercept_u = WindDataAll.(Anemometer_profile{k})(IntervalN).u.CalibrationIntercept;
+% 
+%                 %apply calibration, call these 'cal' values
+%                 u_cal = (u_raw-CalibrationIntercept_u)/CalibrationFactor_u;
+% 
+%                 %add mean velocities to profile
+%                 u_cal_profile(k) = mean(u_cal);
+% 
+%                 %add height to profile
+%                 z_profile(k) = WindDataAll.(Anemometer_profile{k})(IntervalN).z.z;
+%             end
+%         end
+%         
+%         %get indices of NaN entries in profile
+%         ind_notnan = find(~isnan(u_cal_profile));
+%         
+%         %if some profile exists...
+%         if ~isempty(ind_notnan)
+%             
+%             %remove NaN's from profile, add to 'profile_all' lists
+%             u_cal_profile = u_cal_profile(ind_notnan);
+%             z_profile = z_profile(ind_notnan);
+%             
+%             %add to lists
+%             u_profile_all{i}{j} = u_cal_profile;
+%             z_profile_all{i}{j} = z_profile;
+%             Anemometer_profile_all{i}{j} = Anemometer_profile{ind_notnan};
+%             
+%             %get profile for three lowest anemometers
+%             [~, ind_sort] = sort(z_profile);
+%         
+%             %check to make sure there are enough values for fitting log
+%             if length(ind_sort)>=3
+%                 ind_lowest = ind_sort(1:3);
+%                 u_cal_lowest = u_cal_profile(ind_lowest);
+%                 z_lowest = z_profile(ind_lowest);
+% 
+%                 %compute u* and z0, add to list
+%                 P_cal = polyfit(log(z_lowest),u_cal_lowest,1);
+%                 ustLog_cal = kappa*P_cal(1);
+%                 z0_cal = exp(-P_cal(2)/P_cal(1));
+% 
+%                 %deal with poorly fit profiles
+%                 if(ustLog_cal<0||isnan(ustLog_cal))
+%                     ustLog_cal = NaN;
+%                     z0_cal = NaN;
+%                 end
+%             
+%                 %add to lists
+%                 u_lowest_all{i}{j} = u_cal_lowest;
+%                 z_lowest_all{i}{j} = z_lowest;
+%                 Anemometer_lowest_all{i}{j} = Anemometer_profile{ind_lowest};
+%                 ustLog_all{i}(j) = ustLog_cal;
+%                 z0_profile_all{i}(j) = z0_cal;
+%             end
+%         end 
     end
 end
 
-%     %% KEEP ONLY INTERVALS WHERE FLUX AND STRESS ARE WELL DEFINED
-%     ind_good = intersect(find(~isnan(Q_all{i})),find(~isnan(ustRe_all{i})));
-% 
-%     %% KEEP ONLY INTERVALS WHERE FLUX IS WELL DEFINED
-%     ind_good = find(~isnan(Q_all{i}));
-% 
-%     %lists of dates, times, and grain size values
-%     d50_all{i} = d50_all{i}(ind_good); %d50 of surface sand
-%     d10_all{i} = d10_all{i}(ind_good); %d10 of surface sand
-%     d90_all{i} = d90_all{i}(ind_good); %d90 of surface sand
-%     date_all{i} = date_all{i}(ind_good); %date of observation
-%     StartTime_all{i} = BlockStartTimes(ind_good); %start time of block
-%     EndTime_all{i} = BlockEndTimes(ind_good); %end time of block
-%     
-%     %flux values
-%     Q_all{i} = Q_all{i}(ind_good); %total flux
-%     sigma_Q_all{i} = sigma_Q_all{i}(ind_good); %total flux uncertainty
-%     zq_all{i} = zq_all{i}(ind_good); %characteristic flux height
-%     sigma_zq_all{i} = sigma_zq_all{i}(ind_good); %characteristic flux height
-%     fD_all{i} = fD_all{i}(ind_good,:); %Wenglor detection frequency
-%     fD1_all{i} = fD1_all{i}(ind_good); %Wenglor 1 s detection frequency
-%     fQ_all{i} = fQ_all{i}(ind_good,:); %Wenglor total transport frequency
-%     fQ1_all{i} = fQ1_all{i}(ind_good); %Wenglor 1 s transport frequency
-%     fQalt_all{i} = fQalt_all{i}(ind_good); %Wenglor total transport frequency, normalized by Poisson expectation
-%     q_all{i} = q_all{i}(ind_good); %partial flux
-%     zW_all{i} = zW_all{i}(ind_good); %Wenglor flux height
-%     qcal_all{i} = qcal_all{i}(ind_good); %calibration factor
-%     
-%     %wind values
-%     zU_all{i} = zU_all{i}(ind_good); %height of anemometer (m)
-%     u_bar_all{i} = u_bar_all{i}(ind_good); %mean u values
-%     u_std_all{i} = u_std_all{i}(ind_good); %standard deviation u values
-%     u2_all{i} = u2_all{i}(ind_good); %mean u^2
-%     theta_all{i} = theta_all{i}(ind_good); %mean theta (wind angle)
-%     zL_all{i} = zL_all{i}(ind_good); %stability parameter
-%     ustRe_all{i} = ustRe_all{i}(ind_good); %u* for Reynolds stress
-%     tauRe_all{i} = tauRe_all{i}(ind_good); %tau for Reynolds stress
-%     f_uaboveft_all{i} = f_uaboveft_all{i}(ind_good); %frequency of u above fluid threshold
-%     f_ubelowit_all{i} = f_ubelowit_all{i}(ind_good); %frequency of u below impact threshold
-%     f_ubetween_all{i} = f_ubetween_all{i}(ind_good); %frequency of u between thresholds
-%     f_ubetween_frombelow_all{i} = f_ubetween_frombelow_all{i}(ind_good); %frequency of u between thresholds approaching from below it
-%     f_ubetween_fromabove_all{i} = f_ubetween_fromabove_all{i}(ind_good); %frequency of u between thresholds approaching from above ft
-%     uth_TFEM_all{i} = uth_TFEM_all{i}(ind_good); %uth for 1s TFEM
-%     tauth_TFEM_all{i} = tauth_TFEM_all{i}(ind_good); %tau for 1s TFEM
-%     zs_all{i} = zs_all{i}(ind_good);
-%     
-%     tau0_bar_Q0_all{i} = tau0_bar_Q0_all{i}(ind_good); %get mean stress dissipation, times of no transport
-%     tau0_bar_constthr_all{i} = tau0_bar_constthr_all{i}(ind_good); %get mean stress dissipation based on constant impact threshold
-%     tau0_bar_TFEMthr_all{i} = tau0_bar_TFEMthr_all{i}(ind_good); %get mean stress dissipation based on TFEM threshold
-%     
-%     eta_inactive_1s_Q0_all{i} = eta_inactive_1s_Q0_all{i}(ind_good); %mean stress partition based on flux frequency method, times of zero flux
-%     eta_inactive_1s_constthr_all{i} = eta_inactive_1s_constthr_all{i}(ind_good); %mean stress partition based on flux frequency method, constant tau_it
-%     eta_inactive_LP_constthr_all{i} = eta_inactive_LP_constthr_all{i}(ind_good); %mean stress partition based on flux frequency method, constant tau_it
-%     eta_inactive_1s_TFEMthr_all{i} = eta_inactive_1s_TFEMthr_all{i}(ind_good); %mean stress partition based on flux frequency method, TFEM u_th
-%     eta_inactive_LP_TFEMthr_all{i} = eta_inactive_LP_TFEMthr_all{i}(ind_good); %mean stress partition based on flux frequency method, TFEM u_th
-%     
-%     eta_active_1s_constthr_all{i} = eta_active_1s_constthr_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, constant tau_it
-%     eta_active_LP_constthr_all{i} = eta_active_LP_constthr_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, constant tau_it
-%     eta_active_1s_TFEMthr_all{i} = eta_active_1s_TFEMthr_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, TFEM tau_it
-%     eta_active_LP_TFEMthr_all{i} = eta_active_LP_TFEMthr_all{i}(ind_good); %mean stress partition based on friction coefficient estimation from z_s, TFEM tau_it
-% 
-%     %arrays of low-pass timeseries
-%     q_LP_all{i} = q_LP_all{i}(ind_good); %low-pass flux timeseries
-%     u_LP_all{i} = u_LP_all{i}(ind_good); %low-pass wind timeseries
-% 
-%     %arrays of window average timeseries
-%     Qbinary_1s_all{i} = Qbinary_1s_all{i}(ind_good); %timesteps with flux for 1 second wind average
-%     u_1s_all{i} = u_1s_all{i}(ind_good); %window average wind
-%         
-%     %profile values
-%     u_profile_all{i} = u_profile_all{i}(ind_good); %calibrated velocity profile
-%     z_profile_all{i} = z_profile_all{i}(ind_good); %heights for profile
-%     Anemometer_profile_all{i} = Anemometer_profile_all{i}(ind_good); %names of anemometers for profile
-%     u_lowest_all{i} = u_lowest_all{i}(ind_good); %calibrated velocity profile - lowest anemometers
-%     z_lowest_all{i} = z_lowest_all{i}(ind_good); %heights of lowest anemometers
-%     Anemometer_lowest_all{i} = Anemometer_lowest_all{i}(ind_good); %names of lowest anemometers for profile
-%     ustLog_all{i} = ustLog_all{i}(ind_good); %u* calculated from mean of calibrated velocities for lowest anemometers in profile
-%     z0_profile_all{i} = z0_profile_all{i}(ind_good); %z0 calculated from mean of calibrated velocities for lowest anemometers in profile
-% end
-% 
 % SAVE DATA
 save(SaveFullData_Path,'Sites','*all','-v7.3'); %save full size file including all sub-timeseries
 clear('*LP_all','*1s_all'); %remove timeseries to make file smaller

@@ -30,6 +30,34 @@ if nargin == 2
     sigma_z = 0;
 end
 
+%combine values that are at the same height
+z_unique = unique(z);
+[n, bin] = histc(z, z_unique);
+ind_repeat = find(n>1);
+ind_norep = find(n==1);
+if ~isempty(ind_repeat)
+    z_new = z_unique;
+    qz_new = zeros(size(z_new));
+    sigma_z_new = zeros(size(z_new));
+    sigma_qz_new = zeros(size(z_new));
+    for i = ind_norep
+        qz_new(i) = qz(find(z==z_new(i)));
+        sigma_z_new(i) = sigma_z(find(z==z_new(i)));
+        sigma_qz_new(i) = sigma_qz(find(z==z_new(i)));
+    end
+    for i = ind_repeat
+        qz_new(i) = mean(qz(find(z==z_new(i))));
+        sigma_z_new(i) = mean(sigma_z(find(z==z_new(i))));
+        sigma_qz_new(i) = (max(qz(find(z==z_new(i)))+sigma_qz(find(z==z_new(i))))-...
+            min(qz(find(z==z_new(i)))-sigma_qz(find(z==z_new(i)))))...
+            /sqrt(length(find(z==z_new(i))));
+    end
+    z = z_new;
+    qz = qz_new;
+    sigma_z = sigma_z_new;
+    sigma_qz = sigma_qz_new;
+end
+
 %compute log of flux and associated error
 logqz = log(qz); %[log(q)]
 sigma_logqz = sqrt((sigma_qz.^2./qz.^2)+(sigma_z.^2./z.^2)); %[log(q)] (combines height and flux error)

@@ -29,11 +29,13 @@ ind_outlier = {[];[];[]};
 %% PARAMETERS
 kappa = 0.39; %von Karman
 rho_a = 1.23; %air density, kg/m^3
-tau_it = [0.13 0.13 0.087]; %impact threshold stress (Pa)
-tau_ft = [0.18 0.18 0.13]; %fluid threshold stress (Pa)
+tau_it = [0.1 0.1 0.0864]; %impact threshold stress (Pa)
+tau_ft = [0.15 0.15 0.1308]; %fluid threshold stress (Pa)
 ust_it = sqrt(tau_it./rho_a); %impact threshold shear velocity (m/s)
 ust_ft = sqrt(tau_ft./rho_a); %fluid threshold shear velocity (m/s)
 z0f = [1e-4, 1e-4, 1e-4]; %aerodynamic roughness length (m) at threshold
+% tau_it = [0.13 0.13 0.087]; %impact threshold stress (Pa)
+% tau_ft = [0.18 0.18 0.13]; %fluid threshold stress (Pa)
 % tau_it = [0.1 0.1 0.1]; %impact threshold stress (Pa)
 % tau_ft = [0.14 0.14 0.14]; %fluid threshold stress (Pa)
 % ust_it = [0.35, 0.28, 0.28]; %assumed u* threshold (m/s) for each site
@@ -624,7 +626,7 @@ for i = 3;
 % 
     
     %fit to continuous flux points - all points
-    ind_continuous = find(fQ_all{i}>0.9); %get continuous flux points
+    ind_continuous = find(fQ1_all{i}>0.9); %get continuous flux points
     [~, ind_sort] = sort(tauRe_all{i}(ind_continuous)); %sort these points based on stresses
     ind_continuous = ind_continuous(ind_sort); %sort continuous indices accordingly
     tau_continuous = tauRe_all{i}(ind_continuous); %get continuous stresses
