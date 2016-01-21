@@ -1,7 +1,7 @@
 %% SCRIPT TO TO ESTIMATE RIPPLE MIGRATION FLUX
 % 
-% %% initialize
-% clearvars;
+%% initialize
+clearvars;
 close all;
 
 %% parameter values

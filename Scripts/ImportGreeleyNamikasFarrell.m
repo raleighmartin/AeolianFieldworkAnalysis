@@ -23,7 +23,7 @@ ust_Greeley96 = [0.47; 0.51; 0.49; 0.31; 0.35; 0.31; 0.54; 0.49; 0.41; 0.42]; %u
 ust_Namikas03 = [0.32; 0.27; 0.32; 0.30; 0.38; 0.37; 0.38; 0.47; 0.63]; %u* values (m/s) from paper
 ust_Farrell12 = [0.54; 0.47; 0.53; 0.49; 0.50; 0.50; 0.47; 0.45; 0.51; 0.48; 0.41; 0.50; 0.50; 0.49]; %u* values (m/s) from paper
 Q_fit_Farrell12 = [30.16; 29.06; 19.37; 22.49; 19.48; 16.59; 15.10; 14.15; 16.44; 25.46; 19.94; 20.33; 27.51; 22.89]; %Q values (g/m/s) estimated from paper
-zbar_Farrell12 = [0.113; 0.088; 0.088; 0.077; 0.087; 0.075; 0.069; 0.085; 0.081; 0.095; 0.083; 0.118; 0.123; 0.123]; %zQ values (m) estimated from paper 
+zq_Farrell12 = [0.113; 0.088; 0.088; 0.077; 0.087; 0.075; 0.069; 0.085; 0.081; 0.095; 0.083; 0.118; 0.123; 0.123]; %zQ values (m) estimated from paper 
 Q_pub_Greeley96 = [NaN; NaN; NaN; NaN; 16.1; 2.7; 19; 19; 10.4; 10.4]; %values from Table 1 in paper
 Q_pub_Namikas03 = [0.35; 0.76; 2.73; 2.12; 5.61; 5.86; 5.57; 11.80; 29.11]; %values from Table 1 in paper
 d50_Greeley96 = 0.230; %median grain size (mm) value from paper
@@ -125,25 +125,25 @@ q_Greeley96{10} = 1e4*q_gpercm2s_6b(~isnan(q_gpercm2s_6b));
 RunName_Greeley96{10} = '6b';
 
 % Calculate saltation flux and height
-zbar_Greeley96 = zeros(N_Greeley96,1); %(m)
+zq_Greeley96 = zeros(N_Greeley96,1); %(m)
 Q_fit_Greeley96 = zeros(N_Greeley96,1); %(g/m/s)
 
 for i=1:N_Greeley96
-    [q0,zbar] = qz_profilefit(q_Greeley96{i}, z_Greeley96{i}, 0, 0);
-    Q = q0*zbar;
-    zbar_Greeley96(i) = zbar;
+    [q0,zq] = qz_profilefit(q_Greeley96{i}, z_Greeley96{i}, 0, 0);
+    Q = q0*zq;
+    zq_Greeley96(i) = zq;
     Q_fit_Greeley96(i) = Q;
     
     figure(i); clf; hold on;
     plot(q_Greeley96{i},z_Greeley96{i},'x')
     z_range = linspace(0, max(z_Greeley96{i}),50);
-    q_pred = q0*exp(-z_range./zbar);
+    q_pred = q0*exp(-z_range./zq);
     plot(q_pred,z_range);
     set(gca,'xscale','log');
     set(gca,'FontSize',16);
     xlabel('q (g m^{-2} s^{-1})','FontSize',16);
     ylabel('z (m)','FontSize',16);
-    title(['Run = ',RunName_Greeley96{i},', u_{*} = ',num2str(ust_Greeley96(i)),' m/s, Q = ',num2str(Q),' g/m/s, z_{q} = ',num2str(zbar),' m']);
+    title(['Run = ',RunName_Greeley96{i},', u_{*} = ',num2str(ust_Greeley96(i)),' m/s, Q = ',num2str(Q),' g/m/s, z_{q} = ',num2str(zq),' m']);
     print([folder_Plots,'Greeley96_qzprofile_',RunName_Greeley96{i},'.png'],'-dpng');
 end
 
@@ -210,32 +210,32 @@ q_Namikas03{9} = 1e3*q_kgperm2s_14(~isnan(q_kgperm2s_14));
 RunName_Namikas03{9} = '14';
 
 % Calculate saltation flux and height
-zbar_Namikas03 = zeros(N_Namikas03,1); %e-folding height (m)
+zq_Namikas03 = zeros(N_Namikas03,1); %e-folding height (m)
 Q_fit_Namikas03 = zeros(N_Namikas03,1); %total flux (g/m/s)
 
 for i=1:N_Namikas03
-    [q0,zbar] = qz_profilefit(q_Namikas03{i}, z_Namikas03{i});
-    Q = q0*zbar; %calculate total flux (g/m/s)
-    zbar_Namikas03(i) = zbar;
+    [q0,zq] = qz_profilefit(q_Namikas03{i}, z_Namikas03{i});
+    Q = q0*zq; %calculate total flux (g/m/s)
+    zq_Namikas03(i) = zq;
     Q_fit_Namikas03(i) = Q;
     
     figure(i+N_Namikas03); clf; hold on;
     plot(q_Namikas03{i},z_Namikas03{i},'x')
     z_range = linspace(0, max(z_Namikas03{i}),50);
-    q_pred = q0*exp(-z_range./zbar);
+    q_pred = q0*exp(-z_range./zq);
     plot(q_pred,z_range);
     set(gca,'xscale','log');
     set(gca,'FontSize',16);
     xlabel('q (g m^{-2} s^{-1})','FontSize',16);
     ylabel('z (m)','FontSize',16);
-    title(['Run ',RunName_Namikas03{i},', u_{*} = ',num2str(ust_Namikas03(i)),' m/s, Q = ',num2str(Q),' g/m/s, z_{q} = ',num2str(zbar),' m']);
+    title(['Run ',RunName_Namikas03{i},', u_{*} = ',num2str(ust_Namikas03(i)),' m/s, Q = ',num2str(Q),' g/m/s, z_{q} = ',num2str(zq),' m']);
     print([folder_Plots,'Namikas03_qzprofile_',RunName_Namikas03{i},'.png'],'-dpng');
 end
 
-%plot zbar(e) versus u*
+%plot zq(e) versus u*
 figure(20); clf;
-plot(ust_Greeley96,zbar_Greeley96,'r^',...
-    ust_Namikas03,zbar_Namikas03,'gd',...
+plot(ust_Greeley96,zq_Greeley96,'r^',...
+    ust_Namikas03,zq_Namikas03,'gd',...
     'MarkerSize',10);
 xlabel('u_{*} (m/s)','FontSize',16);
 ylabel('z_{q,e} (m)','FontSize',16);
@@ -246,8 +246,8 @@ print([folder_Plots,'GreeleyNamikas_ust_zsalt_e.png'],'-dpng');
 
 %plot z50 versus u*
 figure(21); clf;
-plot(ust_Greeley96,zbar_Greeley96*log(2),'r^',...
-    ust_Namikas03,zbar_Namikas03*log(2),'gd',...
+plot(ust_Greeley96,zq_Greeley96*log(2),'r^',...
+    ust_Namikas03,zq_Namikas03*log(2),'gd',...
     'MarkerSize',10);
 xlabel('u_{*} (m/s)','FontSize',16);
 ylabel('z_{q,50} (m)','FontSize',16);
@@ -277,7 +277,7 @@ Q_fit_Greeley96 =Q_fit_Greeley96(Greeley96_GoodInd);
 RunName_Greeley96 = RunName_Greeley96(Greeley96_GoodInd);
 ust_Greeley96 = ust_Greeley96(Greeley96_GoodInd);
 z_Greeley96 = z_Greeley96{Greeley96_GoodInd};
-zbar_Greeley96 = zbar_Greeley96(Greeley96_GoodInd);
+zq_Greeley96 = zq_Greeley96(Greeley96_GoodInd);
 
 N_Namikas03 = length(Namikas03_GoodInd);
 q_Namikas03 = q_Namikas03{Namikas03_GoodInd};
@@ -286,7 +286,7 @@ Q_fit_Namikas03 =Q_fit_Namikas03(Namikas03_GoodInd);
 RunName_Namikas03 = RunName_Namikas03(Namikas03_GoodInd);
 ust_Namikas03 = ust_Namikas03(Namikas03_GoodInd);
 z_Namikas03 = z_Namikas03{Namikas03_GoodInd};
-zbar_Namikas03 = zbar_Namikas03(Namikas03_GoodInd);
+zq_Namikas03 = zq_Namikas03(Namikas03_GoodInd);
 
 %% calculate shear stresses
 tau_Greeley96 = rho_a*ust_Greeley96.^2;
