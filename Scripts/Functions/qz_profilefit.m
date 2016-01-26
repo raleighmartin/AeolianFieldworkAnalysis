@@ -32,7 +32,7 @@ end
 
 %combine values that are at the same height
 z_unique = unique(z);
-[n, bin] = histc(z, z_unique);
+[n, ~] = histc(z, z_unique);
 ind_repeat = find(n>1);
 ind_norep = find(n==1);
 if ~isempty(ind_repeat)
@@ -40,18 +40,22 @@ if ~isempty(ind_repeat)
     qz_new = zeros(size(z_new));
     sigma_z_new = zeros(size(z_new));
     sigma_qz_new = zeros(size(z_new));
-    for i = ind_norep
-        qz_new(i) = qz(find(z==z_new(i)));
-        sigma_z_new(i) = sigma_z(find(z==z_new(i)));
-        sigma_qz_new(i) = sigma_qz(find(z==z_new(i)));
+    for i = 1:length(ind_norep)
+        ind = ind_norep(i);
+        qz_new(ind) = qz(z==z_new(ind));
+        sigma_z_new(ind) = sigma_z(z==z_new(ind));
+        sigma_qz_new(ind) = sigma_qz(z==z_new(ind));
     end
-    for i = ind_repeat
-        qz_new(i) = mean(qz(find(z==z_new(i))));
-        sigma_z_new(i) = mean(sigma_z(find(z==z_new(i))));
-        sigma_qz_new(i) = (max(qz(find(z==z_new(i)))+sigma_qz(find(z==z_new(i))))-...
-            min(qz(find(z==z_new(i)))-sigma_qz(find(z==z_new(i)))))...
-            /sqrt(length(find(z==z_new(i))));
+    for i = 1:length(ind_repeat)
+        ind = ind_repeat(i);
+        qz_new(ind) = mean(qz(z==z_new(ind)));
+        sigma_z_new(ind) = mean(sigma_z(z==z_new(ind)));
+        sigma_qz_new(ind) = (max(qz(z==z_new(ind))+sigma_qz(z==z_new(ind)))-...
+            min(qz(z==z_new(ind))-sigma_qz(z==z_new(ind))))...
+            /sqrt(length(find(z==z_new(ind))));
     end
+    %rename values
+    z_old = z;
     z = z_new;
     qz = qz_new;
     sigma_z = sigma_z_new;
@@ -101,6 +105,26 @@ else
     qz_fit = NaN;
     sigma_qz_fit = NaN;
     sigma_logqz_fit = NaN;
+end
+
+%update "fit" values if there are repeats
+if ~isempty(ind_repeat)
+    %initialize fit values
+    qz_fit_new = zeros(size(z_old));
+    sigma_qz_fit_new = zeros(size(z_old));
+    sigma_logqz_fit_new = zeros(size(z_old));
+    
+    %go through and add fit values for repeat entries
+    for i = 1:length(z)
+        qz_fit_new(z_old==z(i)) = qz_fit(i);
+        sigma_qz_fit_new(z_old==z(i)) = sigma_qz_fit(i);
+        sigma_logqz_fit_new(z_old==z(i)) = sigma_logqz_fit(i);
+    end
+    
+    %rename values
+    qz_fit = qz_fit_new;
+    sigma_qz_fit = sigma_qz_fit_new;
+    sigma_logqz_fit = sigma_logqz_fit_new;
 end
 
 % %optional plot

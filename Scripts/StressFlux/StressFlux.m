@@ -14,16 +14,18 @@ fQ_moderate = 0.5; %mininum mean fQ for tauex bin to be called "moderate"
 fQ_continuous = 0.9; %minimum mean fQ for tauex bin to be called "continuous"
 
 %information about where to load data and save plots
-folder_ProcessedData = '../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for general data files
-folder_AnalysisData = '../AnalysisData/'; %folder for storing data output
-folder_Plots = '../PlotOutput/StressFlux/'; %folder for plots
+folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for general data files
+folder_AnalysisData = '../../AnalysisData/StressFlux/'; %folder for storing data output
+folder_Plots = '../../PlotOutput/StressFlux/'; %folder for plots
+folder_Functions = '../Functions/'; %folder with functions
+addpath(folder_Functions); %point MATLAB to location of functions
 
 %load flux stress window data
-load(strcat(folder_AnalysisData,'StressFluxWindows_all'));
+load(strcat(folder_AnalysisData,'StressFluxWindows'));
 N_Sites = length(Sites);
 
 %load external data
-load(strcat(folder_AnalysisData,'GreeleyNamikasData')); %literature data
+load(strcat(folder_AnalysisData,'LitData')); %literature data
 LitNames = {'Greeley et al. (1996)'; 'Namikas (2003)';'Farrell et al. (2012)'};
 ust_lit = {ust_Greeley96, ust_Namikas03, ust_Farrell12};
 zq_lit = {zbar_Greeley96, zbar_Namikas03, zbar_Farrell12};
@@ -46,8 +48,6 @@ Markers = {'bx','ro','gv'};
 LineColors = {'b','r','g'};
 
 %% PARAMETERS
-%tauit = [0.1484 0.1078 0.0919]; %impact threshold stress (Pa) - fit
-%tauft = [0.1787 0.1631 0.1299]; %fluid threshold stress (Pa)
 d50_site = [0.57 0.53 0.40]; %mean grain diameter for site (mm)
 z0 = [1e-4, 1e-4, 1e-4]; %aerodynamic roughness length (m) at threshold
 theta_limit = 20; %highest angle (deg) for Oceano observations
@@ -70,60 +70,6 @@ for i = 1:N_Sites
         eval([variable_list{j},'{i}=',variable_list{j},'{i}(ind_zL);']);
     end
 end
-
-% remove points with no flux measurement
-for i = 1:N_Sites
-    ind_Q_notempty = find(cellfun(@length,q_all{i})>0);
-    for j = 1:N_variables
-        eval([variable_list{j},'{i}=',variable_list{j},'{i}(ind_Q_notempty);']);
-    end
-end
-    
-% redo profiles for NaN flux points - using only qz's above 0
-for i = 1:N_Sites
-    ind_Q_NaN = find(isnan(Q_all{i})|isnan(sigma_Q_all{i}));
-    for j = 1:length(ind_Q_NaN);
-        ind_fit = find(q_all{i}{ind_Q_NaN(j)}>0);
-        if length(ind_fit)>=3
-            q_profile = q_all{i}{ind_Q_NaN(j)}(ind_fit);
-            zW_profile = zW_all{i}{ind_Q_NaN(j)}(ind_fit);
-            sigma_q_profile = sigma_q_all{i}{ind_Q_NaN(j)}(ind_fit); %use later after re-running CreateStressFluxWindows
-            sigma_zW_profile = sigma_zW_all{i}{ind_Q_NaN(j)}(ind_fit); %use later after re-running CreateStressFluxWindows
-            [q0,zq,sigma_q0,sigma_zq] = qz_profilefit(q_profile,zW_profile,sigma_q_profile,sigma_zW_profile);
-            Q = q0*zq; %get total flux [g/m/s]
-            sigma_Q = sqrt((sigma_q0*zq)^2+(sigma_zq*q0)^2); %estimate uncertainty in total flux
-        else
-            Q = 0;
-            sigma_Q = 0;
-        end
-        Q_all{i}(ind_Q_NaN(j))=Q;
-        sigma_Q_all{i}(ind_Q_NaN(j))=sigma_Q;
-    end
-end
-
-% remove (redo) profiles with repeated Wenglor heights (Jeri only)
-for i = 1:N_Sites
-    N_windows = length(q_all{i});
-    ind_norepeat = [];
-    for j = 1:N_windows
-        [n, bin] = histc(zW_all{i}{j}, unique(zW_all{i}{j}));
-        if max(n)==1
-            ind_norepeat = [ind_norepeat; j];
-        end
-    end
-    for j = 1:N_variables
-        eval([variable_list{j},'{i}=',variable_list{j},'{i}(ind_norepeat);']);
-    end
-end
-
-% remove outlier points for Rancho Guadalupe (March 23, 17:29-18:29)
-ind_outlier = 26:32;
-ind_notoutlier = setdiff(1:length(Q_all{2}),ind_outlier);
-i = 2;
-for j = 1:N_variables
-    eval([variable_list{j},'{i}=',variable_list{j},'{i}(ind_notoutlier);']);
-end
-
 
 
 %% COMPUTE ZQNORM BASED ON GRAIN SIZE BY SITE
