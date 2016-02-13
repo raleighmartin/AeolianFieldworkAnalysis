@@ -90,8 +90,8 @@ for i = 1:N_Intervals
     for j = 1:N_ProfileBSNEs %go through each BSNE in profile
         %compute mass uncertainty
         sigma_MassBSNE_g = ...
-            WeightBSNE.Weight_g(indices_Intervals(j))*sigma_FluxSampling+...
-            WeightBSNE.WeightErr_g(indices_Intervals(j));
+            sqrt((WeightBSNE.Weight_g(indices_Intervals(j))*sigma_FluxSampling).^2+...
+            (WeightBSNE.WeightErr_g(indices_Intervals(j))).^2);
         
         %perform flux computation
         [qz_sample, sigma_qz_sample] = qzCalc(WeightBSNE.Weight_g(indices_Intervals(j)),...
@@ -145,28 +145,7 @@ for i = 1:N_Intervals
         z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
         z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
     end
-    
-%     %% optional plot (comment out to hide)
-%     
-%     %get predicted values
-%     qz_pred_minus = qz_pred - sigma_qz_pred;
-%     qz_pred_plus = qz_pred + sigma_qz_pred;
-%     [z_sort, ind_sort] = sort(z_profile);
-%     qz_pred_sort = qz_pred(ind_sort);
-%     qz_pred_minus_sort = qz_pred_minus(ind_sort);
-%     qz_pred_plus_sort = qz_pred_plus(ind_sort);
-%     
-%     %make plot
-%     figure(1); clf;
-%     errorbar(z_profile,qz_profile,sigma_qz_profile,'bx'); hold on;
-%     plot(z_sort,qz_pred_sort,'k');
-%     plot(z_sort,qz_pred_minus_sort,'r--',z_sort,qz_pred_plus_sort,'r--');
-%     set(gca,'yscale','log');
-%     xlabel('z (m)');
-%     ylabel('q (g/m^2/s)');
-%     set(gca,'FontSize',16);
-%     pause;
-    
+   
     %% add to structured array
     FluxBSNE(i).qz.q0 = q0;
     FluxBSNE(i).qz.qz_pred = qz_pred;
@@ -177,6 +156,32 @@ for i = 1:N_Intervals
     FluxBSNE(i).z.sigma_zq = sigma_zq;
     FluxBSNE(i).z.z = z_profile;
     FluxBSNE(i).z.sigma_z = sigma_z_profile;
+    
+    %% calculate Q and sigma_Q, add to structured array
+    Q = q0*zq; %get total flux [g/m/s]
+    sigma_Q = sqrt((sigma_q0*zq)^2+(sigma_zq*q0)^2); %estimate uncertainty in total flux
+    FluxBSNE(i).Q = struct('Q', Q, 'sigma_Q', sigma_Q,'units',{'g/m/s'});
+    
+%     %% optional plot (comment out to hide)
+% 
+%     %get predicted values
+%     qz_pred_minus = qz_pred - sigma_qz_pred;
+%     qz_pred_plus = qz_pred + sigma_qz_pred;
+%     [z_sort, ind_sort] = sort(z_profile);
+%     qz_pred_sort = qz_pred(ind_sort);
+%     qz_pred_minus_sort = qz_pred_minus(ind_sort);
+%     qz_pred_plus_sort = qz_pred_plus(ind_sort);
+% 
+%     %make plot
+%     figure(1); clf;
+%     errorbar(z_profile,qz_profile,sigma_qz_profile,'bx'); hold on;
+%     plot(z_sort,qz_pred_sort,'k');
+%     plot(z_sort,qz_pred_minus_sort,'r--',z_sort,qz_pred_plus_sort,'r--');
+%     set(gca,'yscale','log');
+%     xlabel('z (m)');
+%     ylabel('q (g/m^2/s)');
+%     set(gca,'FontSize',16);
+%     pause;
 end
 
 %reshape FluxBSNE so it is a column vector like all other structured arrays

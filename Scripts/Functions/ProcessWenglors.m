@@ -42,6 +42,8 @@ for i=1:length(FluxBSNE);
     %get BSNE flux information for time interval
     q0_BSNE = FluxBSNE(i).qz.q0; %qz at 0, (g/m^2/s)
     zq_BSNE = FluxBSNE(i).z.zq; %get BSNE e-folding height (m)
+    sigma_q0_BSNE = FluxBSNE(i).qz.sigma_q0;
+    sigma_zq_BSNE = FluxBSNE(i).z.sigma_zq;
     
     %create enlarged time intervals for calibrating Wenglor times outside of BSNE profile times
     if i == 1 %earliest start time is beginning of first BSNE day
@@ -65,36 +67,48 @@ for i=1:length(FluxBSNE);
         %perform calculations assuming single set of Wenglor counts within interval, otherwise ignore
         if length(PrimaryInterval_IntervalNumber)==1
 
-            %extract information about Wenglor and reference distance sensor for primary interval
-            HeightRef = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).HeightRef; %get reference distance sensor for Wenglor height calculation
-            z_ref_mm = ExtractVariableTimeInterval(Data.Distance.(HeightRef),StartTimeBSNE_Primary,EndTimeBSNE_Primary,'z','int','int'); %get reference elevations for this interval (mm)
-            z_rel = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).StartHeight_m; %get relative height of Wenglor (m)
-            sigma_z_rel = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).HeightErr_m; %get uncertainty in relative height of Wenglor from reported value (m)
-            
-            %get mean and uncertainty in reference height
-            z_ref = mean(z_ref_mm*1e-3); %get mean reference height (m)
-            sigma_z_ref = std(z_ref_mm*1e-3); %get uncertainty in reference height based on standard deviation (m)
+%             %extract information about Wenglor and reference distance sensor for primary interval
+%             HeightRef = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).HeightRef; %get reference distance sensor for Wenglor height calculation
+%             z_ref_mm = ExtractVariableTimeInterval(Data.Distance.(HeightRef),StartTimeBSNE_Primary,EndTimeBSNE_Primary,'z','int','int'); %get reference elevations for this interval (mm)
+%             z_rel = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).StartHeight_m; %get relative height of Wenglor (m)
+%             sigma_z_rel = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).HeightErr_m; %get uncertainty in relative height of Wenglor from reported value (m)
+%             
+%             %get mean and uncertainty in reference height
+%             z_ref = mean(z_ref_mm*1e-3); %get mean reference height (m)
+%             sigma_z_ref = std(z_ref_mm*1e-3); %get uncertainty in reference height based on standard deviation (m)
+%             
+%             %get mean and uncertainty in overall Wenglor height
+%             z_Wenglor = z_ref+z_rel; %get Wenglor height by combining reference and relative values
+%             sigma_z_Wenglor = sqrt(sigma_z_ref.^2+sigma_z_rel.^2); %get total error in Wenglor height by adding relative and reference errors in quadrature
             
             %get mean and uncertainty in overall Wenglor height
-            z_Wenglor = z_ref+z_rel; %get Wenglor height by combining reference and relative values
-            sigma_z_Wenglor = sqrt(sigma_z_ref.^2+sigma_z_rel.^2); %get total error in Wenglor height by adding relative and reference errors in quadrature
+            z_Wenglor = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).z.z;
+            sigma_z_Wenglor = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).z.sigma_z;
             
             %compute expected flux at Wenglor height
             qz_pred = q0_BSNE.*exp(-z_Wenglor/zq_BSNE); %(g/m^2/s)
             
-            %convert uncertainty in Wenglor height to uncertainty in flux
-            sigma_qz_z = (-q0_BSNE/zq_BSNE)*exp(-z_Wenglor/zq_BSNE)*sigma_z_Wenglor;
+            %get contribution of uncertainty in Wenglor height to uncertainty in flux
+            sigma_qz_z = abs((-q0_BSNE/zq_BSNE)*exp(-z_Wenglor/zq_BSNE)*sigma_z_Wenglor);
             
-            %get uncertainty in fitted flux based on uncertainty of fit for nearest BSNE in profile
-            ind_nearestBSNE = find(abs(FluxBSNE(i).z.z-z_Wenglor)==min(abs(FluxBSNE(i).z.z-z_Wenglor)),1);
-            sigma_qz_fit = FluxBSNE(i).qz.sigma_qz_pred(ind_nearestBSNE);
+            %get contribution of uncertainty in BSNE q0 to uncertainty in flux
+            sigma_qz_q0 = abs(exp(-z_Wenglor/zq_BSNE)*sigma_q0_BSNE);
+            sigma_qz_zq = abs((-q0_BSNE*z_Wenglor)/(zq_BSNE^2)*exp(-z_Wenglor/zq_BSNE)*sigma_zq_BSNE);
             
-            %add uncertainties due to z and fit to get total uncertainty in predicted qz
-            sigma_qz_pred = sqrt(sigma_qz_z^2+sigma_qz_fit^2);
+            %add uncertainties to get total uncertainty in predicted qz
+            sigma_qz_pred = sqrt(sigma_qz_z^2+sigma_qz_q0^2+sigma_qz_zq^2);
+            
+%             %get uncertainty in fitted flux based on relative uncertainty of fit for nearest BSNE in profile
+%             ind_nearestBSNE = find(abs(FluxBSNE(i).z.z-z_Wenglor)==min(abs(FluxBSNE(i).z.z-z_Wenglor)),1);
+%             sigma_qz_fit = FluxBSNE(i).qz.sigma_qz_pred(ind_nearestBSNE);
+%             
+%             %add uncertainties due to z and fit to get total uncertainty in predicted qz
+%             sigma_qz_pred = sqrt(sigma_qz_z^2+sigma_qz_fit^2);
             
             %compute counts per second for Wenglor during BSNE time interval
             T_BSNE = seconds(EndTimeBSNE_Primary - StartTimeBSNE_Primary);
             W_CountsPerSecond = sum(PrimaryInterval_n)/T_BSNE;
+            sigma_W_CountsPerSecond = sqrt(sum(PrimaryInterval_n))/T_BSNE; %counting error
             
             %get time increment for Wenglor observations
             W_dt = seconds(mode(diff(PrimaryInterval_t)));
@@ -103,7 +117,12 @@ for i=1:length(FluxBSNE);
             qzPerCount = qz_pred/(W_CountsPerSecond*W_dt);
             
             %uncertainty estimation for calibration coefficient
-            sigma_qzPerCount = (1/W_CountsPerSecond)*sqrt(sigma_qz_pred^2+qz_pred^2/(T_BSNE*W_CountsPerSecond));
+            sigma_qzPerCount_qz_pred = abs(sigma_qz_pred/(W_CountsPerSecond*W_dt)); %uncertainty due to qz_pred
+            sigma_qzPerCount_qzPerCount = abs(sigma_W_CountsPerSecond*(qz_pred/(W_CountsPerSecond.^2*W_dt))); %uncertainty due to W_CountsPerSecond
+            sigma_qzPerCount = sqrt(sigma_qzPerCount_qz_pred.^2+sigma_qzPerCount_qzPerCount.^2);
+            
+%             %uncertainty estimation for calibration coefficient
+%             sigma_qzPerCount = (1/W_CountsPerSecond)*sqrt(sigma_qz_pred^2+qz_pred^2/(T_BSNE*W_CountsPerSecond));
             
             %get interval numbers for enlarged interval subject to this calibration (there may be more than one)
             [~, ~, EnlargedInterval_IntervalNumbers, EnlargedInterval_IntervalIndices] = ...

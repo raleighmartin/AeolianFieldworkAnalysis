@@ -24,10 +24,10 @@
 %use method of bevington and robinson (p. 105)
 function [q0,zq,sigma_q0,sigma_zq,qz_fit,sigma_qz_fit,sigma_logqz_fit] = qz_profilefit(qz, z, sigma_qz, sigma_z)
 
-%set input error values to 0 if not given
+%set input error values arbitrarily as one if input is not given
 if nargin == 2
-    sigma_qz = 0;
-    sigma_z = 0;
+    sigma_qz = ones(size(qz)); 
+    sigma_z = ones(size(z));
 end
 
 %combine values that are at the same height
@@ -68,25 +68,20 @@ sigma_logqz = sqrt((sigma_qz.^2./qz.^2)+(sigma_z.^2./z.^2)); %[log(q)] (combines
 
 %perform fit if sufficient number of observations
 if length(z)>=3
-    if (max(sigma_qz)>0)&&(max(sigma_z)>0); %calculations if error is included
-        delta = sum(1./sigma_logqz.^2).*sum(z.^2./sigma_logqz.^2)-(sum(z./sigma_logqz.^2)).^2; %[m^2/log(q)^4] (Bevington and Robinson, Eq. 6.12c)
-        a = (1/delta)*(sum(z.^2./sigma_logqz.^2)*sum(logqz./sigma_logqz.^2)-sum(z./sigma_logqz.^2)*sum(z.*logqz./sigma_logqz.^2)); %[log(q)] (Bevington and Robinson, Eq. 6.12a)
-        b = (1/delta)*(sum(1./sigma_logqz.^2)*sum(z.*logqz./sigma_logqz.^2)-sum(z./sigma_logqz.^2)*sum(logqz./sigma_logqz.^2)); %[1/m] (Bevington and Robinson, Eq. 6.12b)
-        sigma_a = sqrt((1/delta)*(sum(z.^2./sigma_logqz.^2))); %[log(q)]
-        sigma_b = sqrt((1/delta)*(sum(1./sigma_logqz.^2))); %[1/m]
-        da_dlogqz = (1./(delta*sigma_logqz.^2)).*(sum(z.^2./sigma_logqz.^2)-z*sum(z./sigma_logqz.^2)); %[] (Bevington and Robinson, Eq. 6.20)
-        db_dlogqz = (1./(delta*sigma_logqz.^2)).*(z*sum(1./sigma_logqz.^2)-sum(z./sigma_logqz.^2)); %[1/m] (Bevington and Robinson, Eq. 6.20)
-        sigma2_ab = sum(sigma_logqz.^2.*da_dlogqz.*db_dlogqz); %[log(q)^2/m] (Bevington and Robinson, Eq. 7.23)
+    if (max(sigma_qz)>0)&&(max(sigma_z)>0); %calculations if error is nonzero
+        %call linearfit.m to get fitting parameters
+        if nargin == 2; %if errors were not provided, exclude them in call to linearfit
+            [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit] = linearfit(z,logqz);
+        else %otherwise, use errors
+            [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit] = linearfit(z,logqz,sigma_z,sigma_logqz);
+        end
         q0 = exp(a); %[g/m^2/s]
         zq = -1/b; %[m]
         sigma_q0 = sigma_a*q0; %[g/m^2/s]
         sigma_zq = sigma_b*zq.^2; %[m]
         qz_fit = q0*exp(-z/zq); %prediction of qz [g/m^2/s] from least squares fit
-        sigma_logqz_fit = sqrt(sigma_a^2+sigma_b^2*z.^2+2*sigma2_ab*z); %[log(q)] uncertainty in prediction of log(qz) (Kok et al. 2014, Eq. A19)
         sigma_qz_fit = sigma_logqz_fit.*qz_fit;
-        %sigma_logqz_fit = sqrt((1/(length(z)-2))*sum((logqz-a-b*z).^2)); %[log(q)], Bevington and Robinson (2003) Eq. 6.15
-        %sigma_qz_fit = sigma_logqz_fit*qz_fit;
-    else %calculations if no error included
+    else %calculations if error is zero
         P = polyfit(z,logqz,1); %perform linear fit
         a = P(2); b = P(1); %get fit parameters
         q0 = exp(a); %[g/m^2/s]

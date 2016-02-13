@@ -2,10 +2,17 @@
 clearvars;
 
 %% information about where to load data and save plots
-folder_ProcessedData = '../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_Plots = '../PlotOutput/GrainSize/'; %folder for plots
+folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
+folder_Plots = '../../PlotOutput/GrainSize/'; %folder for plots
+
+%% Information about sites
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
 N_Sites = length(Sites);
+zq_Sites = [0.0960, 0.1079, 0.0550]; %Saltation height by site.  Use this to identify BSNE height for grain size distribution
+
+%% initialize combined surface grain size distribution
+GrainSizeSurface_Combined = cell(N_Sites,1);
+GrainSizeBSNE_Combined = cell(N_Sites,1);
 
 %% plotting information
 PlotFont = 12;
@@ -18,10 +25,10 @@ for i = 1:N_Sites
     GrainSizeData_Path = strcat(folder_ProcessedData,'GrainSize_',Sites{i});
     load(GrainSizeData_Path);
     
-%     %load processed data
-%     ProcessedData_Path = strcat(folder_ProcessedData,'ProcessedData_',Sites{i});
-%     load(ProcessedData_Path);
-    
+    %load processed data
+    ProcessedData_Path = strcat(folder_ProcessedData,'ProcessedData_',Sites{i});
+    load(ProcessedData_Path);
+        
     %get unique BSNE names
     DateBSNE = [GrainSize_BSNE.Date]; %BSNE dates
     StartTimeBSNE = [GrainSize_BSNE.StartTime]; %BSNE start times
@@ -43,6 +50,8 @@ for i = 1:N_Sites
         NameBSNE_day = {GrainSize_BSNE(indBSNE_day).NameBSNE}; %BSNE names
         NameBSNE = unique(NameBSNE_day); %unique BSNE names
         N_BSNE = length(NameBSNE);
+        
+        %get height from StressFluxWindows for nearest BSNE height
         
         %initialize grain sizes for BSNE
         d_BSNE = cell(N_BSNE,1);

@@ -6,20 +6,22 @@
 clearvars;
 
 %% parameter values
-rho_a = 1.23; %air density kg/m^3
+rho_a = 1.18; %air density kg/m^3
 g = 9.8; %gravity m/s^2
 kappa = 0.4; %von Karman parameter
 z0 = [1e-4 1e-4 1e-4]; %aerodynamic roughness length (m)
 
 %% information about sites for analysis
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
+AnemometerType = {'Ultrasonic';'Ultrasonic';'Sonic'};
+BaseAnemometer = {'U1';'U1';'S1'};
+dt_u_s = [0.04; 0.04; 0.02]; %time interval of sonic (s)
 N_Sites = length(Sites);
 
+
 %% set time interval for computing wind/flux windows
-WindowTimeInterval = duration(0,30,0); %duration of window for computations
-RunningTimeInterval = duration(0,5,0); %offset to use for running averages, to enrich dataset
-N_RunningPerProfile = floor(WindowTimeInterval/RunningTimeInterval)-1; %number of offsets for starting times
 dt_fQ = duration(0,0,1); %time interval for window averaging to compute fQ
+
 
 %% information about where to load/save data, plots, and functions
 folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
@@ -27,16 +29,28 @@ folder_AnalysisData = '../../AnalysisData/StressFlux/'; %folder for outputs of t
 folder_Functions = '../Functions/'; %folder with functions
 TimeWindow_Path = strcat(folder_AnalysisData,'TimeWindows'); %path for loading time windows
 SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows'); %path for saving output data
+BSNEData_Path = strcat(folder_AnalysisData,'FluxBSNE'); %path for saving output data
 addpath(folder_Functions); %point MATLAB to location of functions
 
 
-%% load processed and metadata for each site, add to structured arrays of all data and metadata
-Data = cell(N_Sites,1);
+%% load time windows
+load(TimeWindow_Path);
+
+
+%% load processed data for each site, add to cell arrays of all sites 
+WindData = cell(N_Sites,1);
+FluxData = cell(N_Sites,1);
+WeatherData = cell(N_Sites,1);
+FluxBSNE = cell(N_Sites,1);
 for i = 1:N_Sites
     ProcessedData_Path = strcat(folder_ProcessedData,'ProcessedData_',Sites{i});
-    Data{i} = load(ProcessedData_Path); %load processed data
+    load(ProcessedData_Path); %load processed data
+    WindData{i} = ProcessedData.(AnemometerType{i}).(BaseAnemometer{i}); %data only for base anemometer
+    FluxData{i} = ProcessedData.FluxWenglor; %Wenglor flux data
+    WeatherData{i} = ProcessedData.Weather.WS; %all weather station data
+    FluxBSNE{i} = ProcessedData.FluxBSNE; %BSNE flux data
+    clear ProcessedData; %remove 'ProcessedData' to clear up memory
 end
-load(TimeWindow_Path); %load time windows
 
 
 %% initialize variable lists
@@ -65,33 +79,14 @@ uth_TFEM_all = cell(N_Sites,1); %1-second TFEM estimate of u_th
 tauth_TFEM_all = cell(N_Sites,1); %1-second TFEM estimate of tau_th
 zs_all = cell(N_Sites,1); %observed roughness height from lowest anemometer
 
+%initialize lists of other values
+RH_all = cell(N_Sites,1);
+ubar_all = cell(N_Sites,1); %mean wind velocity from lowest anemometer
+uw_all = cell(N_Sites,1); %mean wind product from lowest anemometer
 
 %% PERFORM ANALYSIS FOR EACH SITE
 for i = 1:N_Sites
         
-    %% choose anemometer type based on site of interest
-    if strcmp(Sites{i},'Oceano')
-        AnemometerType = 'Sonic';
-        BaseAnemometer = 'S1';
-        dt_u_s = 0.02; %time interval of sonic (s)
-    elseif strcmp(Sites{i},'RanchoGuadalupe')
-        AnemometerType = 'Ultrasonic';
-        BaseAnemometer = 'U1';
-        dt_u_s = 0.04; %time interval of sonic (s)
-    elseif strcmp(Sites{i},'Jericoacoara')
-        AnemometerType = 'Ultrasonic';
-        BaseAnemometer = 'U1';
-        dt_u_s = 0.04; %time interval of sonic (s)
-    end
-    
-    
-    %% extract wind and flux data from overall processed data file
-    WindDataAll = Data{i}.ProcessedData.(AnemometerType); %all wind data
-    Anemometer_profile = fieldnames(WindDataAll); %get names of anemometers in profile
-    N_Anemometers = length(Anemometer_profile); %get number of anemometers in profile
-    WindDataBase = WindDataAll.(BaseAnemometer); %data only for base anemometer
-    FluxData = Data{i}.ProcessedData.FluxWenglor; %Wenglor flux data
-    
     
     %% get start times and end times from file
     BlockStartTimes = StartTime_all{i};
@@ -122,7 +117,12 @@ for i = 1:N_Sites
     ustRe_all{i} = zeros(N_Blocks,1)*NaN; %calibrated u* for Reynolds stress
     tauRe_all{i} = zeros(N_Blocks,1)*NaN; %calibrated tau for Reynolds stress
     zs_all{i} = zeros(N_Blocks,1)*NaN; %observed roughness height from lowest anemometer
-
+    
+    %other values
+    RH_all{i} = zeros(N_Blocks,1)*NaN; %relative humidity
+    ubar_all{i} = zeros(N_Blocks,1)*NaN; %observed wind velocity from lowest anemometer
+    uw_all{i} = zeros(N_Blocks,1)*NaN; %mean wind product from lowest anemometer
+    
     %threshold values
     uth_TFEM_all{i} = zeros(N_Blocks,1)*NaN; %1 second TFEM calc of threshold
     tauth_TFEM_all{i} = zeros(N_Blocks,1)*NaN; %1 second TFEM calc of threshold stress
@@ -141,32 +141,35 @@ for i = 1:N_Sites
     %% FLUX CALCULATIONS FOR INTERVAL
 
     %extract time interval - get interval number and indices within interval for analysis
-    [~, ~, IntervalN, IntervalInd] = ExtractVariableTimeInterval(FluxData,StartTime,EndTime,'t','t','t');
+    [~, ~, IntervalN, IntervalInd] = ExtractVariableTimeInterval(FluxData{i},StartTime,EndTime,'t','t','t');
 
         %use only longest interval
         ind_longest = find(cellfun(@length,IntervalInd)==max(cellfun(@length,IntervalInd)));
         IntervalN = IntervalN(ind_longest);
         IntervalInd = IntervalInd{ind_longest};
-        StartTime_Extraction = FluxData(IntervalN).t.t(IntervalInd(1));
-        EndTime_Extraction = FluxData(IntervalN).t.t(IntervalInd(end));
+        StartTime_Extraction = FluxData{i}(IntervalN).t.t(IntervalInd(1));
+        EndTime_Extraction = FluxData{i}(IntervalN).t.t(IntervalInd(end));
 
         %further reduce IntervalInd based on eliminating error times
-        [~, ErrInd, ~] = intersect(FluxData(IntervalN).t.t,FluxData(IntervalN).t.err);
+        [~, ErrInd, ~] = intersect(FluxData{i}(IntervalN).t.t,FluxData{i}(IntervalN).t.err);
         IntervalInd = setdiff(IntervalInd,ErrInd);
-        t_Interval = FluxData(IntervalN).t.t(IntervalInd);
+        t_Interval = FluxData{i}(IntervalN).t.t(IntervalInd);
 
         %get raw qz and qcal values, determine n from this
-        qz = FluxData(IntervalN).qz.qz(IntervalInd,:);
-        qcal = FluxData(IntervalN).qz.qzPerCount(IntervalInd,:);
-        sigma_qcal = FluxData(IntervalN).qz.sigma_qzPerCount(IntervalInd,:);
-        n = FluxData(IntervalN).qz.n(IntervalInd,:); %particle arrival rates
+        qz = FluxData{i}(IntervalN).qz.qz(IntervalInd,:);
+        qcal = FluxData{i}(IntervalN).qz.qzPerCount(IntervalInd,:);
+        sigma_qcal = FluxData{i}(IntervalN).qz.sigma_qzPerCount(IntervalInd,:);
+        n = FluxData{i}(IntervalN).qz.n(IntervalInd,:); %particle arrival rates
         N = sum(sum(n)); %total detected particles
 
         %get profile information for fitting
         q_profile = mean(qz); %compute mean qz profile
-        sigma_q_profile = mean(sigma_qcal.*n); %compute uncertainty in qz profile
-        zW_profile = mean(FluxData(IntervalN).qz.z(IntervalInd,:)); %compute mean Wenglor heights
-        sigma_zW_profile = mean(FluxData(IntervalN).qz.sigma_z(IntervalInd,:)); %compute uncertainty in Wenglor heights
+        sigma_q_n_profile = abs(q_profile.*(1./sqrt(sum(n)))); %contribution of uncertainty in counting particles
+        sigma_q_qcal_profile = abs(q_profile.*(mean(sigma_qcal)./mean(qcal))); %contribution of uncertainty in calibration coefficient
+        sigma_q_profile = sqrt(sigma_q_n_profile.^2+sigma_q_qcal_profile.^2); %compute uncertainty in qz profile
+        %sigma_q_profile = mean(sigma_qcal.*n); %compute uncertainty in qz profile
+        zW_profile = mean(FluxData{i}(IntervalN).qz.z(IntervalInd,:)); %compute mean Wenglor heights
+        sigma_zW_profile = mean(FluxData{i}(IntervalN).qz.sigma_z(IntervalInd,:)); %compute uncertainty in Wenglor heights
 
         %deal with repeated values
         zW_unique = unique(zW_profile);
@@ -181,7 +184,7 @@ for i = 1:N_Sites
         end
 
         %Perform profile fit to get q0, zq, and Q
-        ind_fit = find(q_unique>0); %only use values with q>0
+        ind_fit = intersect(find(q_unique>0),find(zW_unique>0)); %only use values with q>0 and zW>0
         [q0,zq,sigma_q0,sigma_zq] = qz_profilefit(q_unique(ind_fit),zW_unique(ind_fit),sigma_q_unique(ind_fit),sigma_zW_unique(ind_fit));
         Q = q0*zq; %get total flux [g/m/s]
         sigma_Q = sqrt((sigma_q0*zq)^2+(sigma_zq*q0)^2); %estimate uncertainty in total flux
@@ -246,27 +249,27 @@ for i = 1:N_Sites
         
         %% WIND CALCULATIONS FOR INTERVAL - BASE ANEMOMETER
         %extract time interval
-        [~, ~, IntervalN, IntervalInd] = ExtractVariableTimeInterval(WindDataBase,StartTime,EndTime,'u','int','int');
+        [~, ~, IntervalN, IntervalInd] = ExtractVariableTimeInterval(WindData{i},StartTime,EndTime,'u','int','int');
         
         %use only first interval
         IntervalN = IntervalN(1);
         IntervalInd = IntervalInd{1};
-        StartTime_Extraction = WindDataBase(IntervalN).t.int(IntervalInd(1));
-        EndTime_Extraction = WindDataBase(IntervalN).t.int(IntervalInd(end));
+        StartTime_Extraction = WindData{i}(IntervalN).t.int(IntervalInd(1));
+        EndTime_Extraction = WindData{i}(IntervalN).t.int(IntervalInd(end));
 
         %further reduce IntervalInd based on eliminating error times
-        [~, ErrInd, ~] = intersect(WindDataBase(IntervalN).t.int,WindDataBase(IntervalN).t.err);
+        [~, ErrInd, ~] = intersect(WindData{i}(IntervalN).t.int,WindData{i}(IntervalN).t.err);
         IntervalInd_NoErr = setdiff(IntervalInd,ErrInd);
 
         %get anemometer height
-        zU = WindDataBase(IntervalN).z.z;
+        zU = WindData{i}(IntervalN).z.z;
 
         %get velocity values using no error points
-        u = WindDataBase(IntervalN).u.int(IntervalInd_NoErr);
-        v = WindDataBase(IntervalN).v.int(IntervalInd_NoErr);
-        w = WindDataBase(IntervalN).w.int(IntervalInd_NoErr);
-        t = WindDataBase(IntervalN).t.int(IntervalInd_NoErr);
-        T_raw = WindDataBase(IntervalN).T.int(IntervalInd_NoErr);
+        u = WindData{i}(IntervalN).u.int(IntervalInd_NoErr);
+        v = WindData{i}(IntervalN).v.int(IntervalInd_NoErr);
+        w = WindData{i}(IntervalN).w.int(IntervalInd_NoErr);
+        t = WindData{i}(IntervalN).t.int(IntervalInd_NoErr);
+        T_raw = WindData{i}(IntervalN).T.int(IntervalInd_NoErr);
 
         %compute wind angle
         theta_all{i}(j) = atan(mean(v./u))*180/pi;
@@ -289,7 +292,9 @@ for i = 1:N_Sites
 
         %add velocity values to list
         zU_all{i}(j) = zU; %height of anemometer
-
+        ubar_all{i}(j) = u_bar_raw;
+        uw_all{i}(j) = mean(u_raw.*w_raw);
+        
         %add stress values to list - using raw values
         ustRe_all{i}(j) = ustRe_raw;
         tauRe_all{i}(j) = rho_a*ustRe_raw.^2;
@@ -301,13 +306,20 @@ for i = 1:N_Sites
         zL_all{i}(j) = zL;
 
         %% create averaged / low-pass wind timeseries, get velocity values including error points
-        u_witherror = WindDataBase(IntervalN).u.int(IntervalInd);
-        v_witherror = WindDataBase(IntervalN).v.int(IntervalInd);
-        w_witherror = WindDataBase(IntervalN).w.int(IntervalInd);
-        t_witherror = WindDataBase(IntervalN).t.int(IntervalInd);
+        u_witherror = WindData{i}(IntervalN).u.int(IntervalInd);
+        v_witherror = WindData{i}(IntervalN).v.int(IntervalInd);
+        w_witherror = WindData{i}(IntervalN).w.int(IntervalInd);
+        t_witherror = WindData{i}(IntervalN).t.int(IntervalInd);
         [u_raw_witherror, ~, ~] = reorient_anemometers_vanboxel2004(u_witherror, v_witherror, w_witherror); %rotate instrument
         u_avg = window_average(u_raw_witherror, t, dt_fQ); %compute 1 second window average wind timeseries - using raw values
 
+        
+        %% HUMIDITY VALUE FOR INTERVAL
+        %extract humidity values
+        [H_Interval, ~, ~, ~] = ExtractVariableTimeInterval(WeatherData{i},StartTime,EndTime,'H','int','int');
+        RH_all{i}(j) = mean(H_Interval);
+        
+        
         %% TFEM threshold calcs
         if fQ_all{i}(j)~=1 %calculation only valid if 0<fQ<1
             uth_TFEM = prctile(u_avg,100*(1-fQ_all{i}(j))); %generate uth from TFEM method based on fQ and 1 s window averaged u
@@ -322,3 +334,4 @@ end
 
 % SAVE DATA
 save(SaveData_Path,'Sites','*all'); %save reduced file in GitHub folder
+save(BSNEData_Path,'FluxBSNE'); %save BSNE data to avoid having to open full fill in future
