@@ -4,9 +4,11 @@ clearvars;
 %% information about where to load data and save plots
 folder_AnalysisData = '../../AnalysisData/StressFlux/'; %folder for outputs
 folder_GrainSizeData = '../../AnalysisData/GrainSize/'; %folder for outputs
+folder_DataBSNE = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder containing BSNE data
 SiteTable_Path = strcat(folder_AnalysisData,'SiteTable.csv'); %path for saving site table
 DailyTable_Path = strcat(folder_AnalysisData,'DailyTable.csv'); %path for saving daily table
-FitTable_Path = strcat(folder_AnalysisData,'FitTable.csv'); %path for saving daily table
+FitTable_Path = strcat(folder_AnalysisData,'FitTable.csv'); %path for saving fit table
+StressFluxTable_Path = strcat(folder_AnalysisData,'StressFluxTable.csv'); %path for saving stress flux table
 
 %% Information about sites
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
@@ -27,9 +29,12 @@ load(strcat(folder_AnalysisData,'StressFluxWindows_Analysis'));
 load(strcat(folder_GrainSizeData,'MeanGrainSize'));
 
 %% load BSNE data
-load(strcat(folder_AnalysisData,'FluxBSNE'));
-
-
+FluxBSNE = cell(N_Sites,1);
+for i = 1:N_Sites
+    FluxBSNE_Site = load(strcat(folder_DataBSNE,'FluxBSNE_',Sites{i})); 
+    FluxBSNE{i} = FluxBSNE_Site.FluxBSNE;
+end
+    
 %% SITE TABLE
 SiteTable = cell(6,N_Sites+1);
 SiteTable{1,1} = 'd10_surface';
@@ -62,31 +67,31 @@ d50_fit = cell(N_Sites+N_Lit,1);
 zq_a_fit = cell(N_Sites+N_Lit,1);
 zq_b_fit = cell(N_Sites+N_Lit,1);
 zqnorm_bar_fit = cell(N_Sites+N_Lit,1);
-tauit_fit = cell(N_Sites+N_Lit,1);
-ustit_fit = cell(N_Sites+N_Lit,1);
+tauit_linearfit = cell(N_Sites+N_Lit,1);
+ustit_linearfit = cell(N_Sites+N_Lit,1);
 Qhat_bar_fit = cell(N_Sites+N_Lit,1);
 for i = 1:N_Sites
     site_fit{i} = Sites{i};
     d50_fit{i} = num2str(d50_surface_site(i),'%.2f');
-    zq_a_fit{i} = [num2str(slope_zq_ust_all(i),'%.3f'),' +/- ',num2str(sigmaslope_zq_ust_all(i),'%.3f')];
-    zq_b_fit{i} = [num2str(intercept_zq_ust_all(i),'%.3f'),' +/- ',num2str(sigmaintercept_zq_ust_all(i),'%.3f')];
+    zq_a_fit{i} = [num2str(slope_zqustfit_all(i),'%.3f'),' +/- ',num2str(sigma_slope_zqustfit_all(i),'%.3f')];
+    zq_b_fit{i} = [num2str(intercept_zqustfit_all(i),'%.3f'),' +/- ',num2str(sigma_intercept_zqustfit_all(i),'%.3f')];
     zqnorm_bar_fit{i} = [int2str(zqnorm_bar_all(i)),' +/- ',int2str(sigma_zqnorm_bar_all(i))];
-    tauit_fit{i} = [num2str(tauit_fit_all(i),'%.3f'),' +/- ',num2str(sigma_tauit_fit_all(i),'%.3f')];
-    ustit_fit{i} = [num2str(ustit_fit_all(i),'%.3f'),' +/- ',num2str(sigma_ustit_fit_all(i),'%.3f')];
+    tauit_linearfit{i} = [num2str(tauit_linearfit_all(i),'%.3f'),' +/- ',num2str(tauit_sigma_linearfit_all(i),'%.3f')];
+    ustit_linearfit{i} = [num2str(ustit_linearfit_all(i),'%.3f'),' +/- ',num2str(ustit_sigma_linearfit_all(i),'%.3f')];
     Qhat_bar_fit{i} = [num2str(Qhat_bar_all(i),'%.2f'),' +/- ',num2str(sigma_Qhat_bar_all(i),'%.2f')];
 end
 for i = 1:N_Lit
     site_fit{i+N_Sites} = LitNames{i};
     d50_fit{i+N_Sites} = d50_Lit{i};
-    zq_a_fit{i+N_Sites} = [num2str(slope_zq_ust_lit(i),'%.3f'),' +/- ',num2str(sigmaslope_zq_ust_lit(i),'%.3f')];
-    zq_b_fit{i+N_Sites} = [num2str(intercept_zq_ust_lit(i),'%.3f'),' +/- ',num2str(sigmaintercept_zq_ust_lit(i),'%.3f')];
+    zq_a_fit{i+N_Sites} = [num2str(slope_zqust_lit_all(i),'%.3f'),' +/- ',num2str(sigma_slope_zqust_lit_all(i),'%.3f')];
+    zq_b_fit{i+N_Sites} = [num2str(intercept_zqust_lit_all(i),'%.3f'),' +/- ',num2str(sigma_intercept_zqust_lit_all(i),'%.3f')];
     if i ~= 3
-        zqnorm_bar_fit{i+N_Sites} = [int2str(zqnorm_bar_lit(i)),' +/- ',int2str(sigma_zqnorm_bar_lit(i))];
+        zqnorm_bar_fit{i+N_Sites} = [int2str(zqnorm_bar_lit_all(i)),' +/- ',int2str(sigma_zqnorm_bar_lit_all(i))];
     elseif i == 3
         zqnorm_bar_fit{i+N_Sites} = 'NaN'; %leave last entry (for Namikas) empty
     end
-    tauit_fit{i+N_Sites} = 'NaN';
-    ustit_fit{i+N_Sites} = 'NaN';
+    tauit_linearfit{i+N_Sites} = 'NaN';
+    ustit_linearfit{i+N_Sites} = 'NaN';
     Qhat_bar_fit{i+N_Sites} = 'NaN';
 end
 
@@ -97,12 +102,50 @@ FitTable = struct(...
     'a',zq_a_fit,...
     'b',zq_b_fit,...
     'zqnorm',zqnorm_bar_fit,...
-    'tauit',tauit_fit,...
-    'ustit',ustit_fit,...
+    'tauit',tauit_linearfit,...
+    'ustit',ustit_linearfit,...
     'Qhat',Qhat_bar_fit);
 
 %% convert to table
 FitTable = struct2table(FitTable);
+
+
+%% STRESS FLUX TABLE
+site_fit = cell(N_Sites,1);
+d50_fit = cell(N_Sites,1);
+C_linearfit = cell(N_Sites,1);
+tauit_linearfit = cell(N_Sites,1);
+Chi2nu_linearfit = cell(N_Sites,1);
+C_nonlinearfit = cell(N_Sites,1);
+n_nonlinearfit = cell(N_Sites,1);
+tauit_nonlinearfit = cell(N_Sites,1);
+Chi2nu_nonlinearfit = cell(N_Sites,1);
+for i = 1:N_Sites
+    site_fit{i} = Sites{i};
+    d50_fit{i} = num2str(d50_surface_site(i),'%.2f');
+    C_linearfit{i} = [num2str(C_linearfit_all(i),'%.0f'),' +/- ',num2str(C_sigma_linearfit_all(i),'%.0f')];
+    tauit_linearfit{i} = [num2str(tauit_linearfit_all(i),'%.3f'),' +/- ',num2str(tauit_sigma_linearfit_all(i),'%.3f')];
+    Chi2nu_linearfit{i} = num2str(Chi2_linearfit_all(i)./df_linearfit_all(i),'%.2f');
+    C_nonlinearfit{i} = [num2str(C_nonlinearfit_all(i),'%.0f'),' [',num2str(C_range_nonlinearfit_all(i,1),'%.0f'),' ',num2str(C_range_nonlinearfit_all(i,2),'%.0f'),']'];
+    n_nonlinearfit{i} = [num2str(n_nonlinearfit_all(i),'%.2f'),' [',num2str(n_range_nonlinearfit_all(i,1),'%.2f'),' ',num2str(n_range_nonlinearfit_all(i,2),'%.2f'),']'];
+    tauit_nonlinearfit{i} = [num2str(tauit_nonlinearfit_all(i),'%.3f'),' [',num2str(tauit_range_nonlinearfit_all(i,1),'%.3f'),' ',num2str(tauit_range_nonlinearfit_all(i,2),'%.3f'),']'];
+    Chi2nu_nonlinearfit{i} = num2str(Chi2_nonlinearfit_all(i)./df_nonlinearfit_all(i),'%.2f');
+end
+    
+%create structured array
+StressFluxTable = struct(...
+    'site',site_fit,...
+    'd50',d50_fit,...
+    'C_linearfit',C_linearfit,...
+    'tauit_linearfit',tauit_linearfit,...
+    'Chi2nu_linearfit',Chi2nu_linearfit,...
+    'C_nonlinearfit',C_nonlinearfit,...
+    'n_nonlinearfit',n_nonlinearfit,... 
+    'tauit_nonlinearfit',tauit_nonlinearfit,...
+    'Chi2nu_nonlinearfit',Chi2nu_nonlinearfit);
+
+%% convert to table
+StressFluxTable = struct2table(StressFluxTable);
 
 
 %% DAILY TABLE
@@ -113,7 +156,9 @@ ind_analysis = cell(N_Sites,1); %get indices of windows for analysis at site
 
 %go through each site to populate cell arrays
 for i = 1:N_Sites
-    ind_analysis{i} = union(find(tauex_all{i}>sigma_tauit_fit_all(i)*N_sigma_tauit),find(Q_all{i}>0));
+    ind_abovethreshold = find(tauRe_all{i}>tauit_linearfit_all(i)+tauit_sigma_linearfit_all(i)*N_sigma_tauit);
+    ind_transport = find(Q_all{i}>0);
+    ind_analysis{i} = union(ind_abovethreshold,ind_transport);
     dates_site{i} = unique(Date_all{i}(ind_analysis{i}));
 end
 N_dates_site = cellfun(@length,dates_site); %get number of dates for each site
@@ -145,18 +190,13 @@ for i = 1:N_Sites
     ust_max_daily{i} = zeros(N_dates_site(i),1);
     for j = 1:N_dates_site(i)
         ind_date = intersect(find(Date_all{i}==dates_site{i}(j)),ind_analysis{i});
+       
         N_windows_daily{i}(j) = length(ind_date);
+
         zU_daily{i}(j) = mode(zU_all{i}(ind_date));
-        
-        zW_min_profile = zeros(size(ind_date));
-        zW_max_profile = zeros(size(ind_date));
-        for k = 1:length(ind_date)
-            zW_profile = zW_all{i}{ind_date(k)};
-            zW_min_profile(k) = min(zW_profile);
-            zW_max_profile(k) = max(zW_profile);
-        end
-        zW_min_daily{i}(j) = min(zW_min_profile);
-        zW_max_daily{i}(j) = max(zW_max_profile);
+
+        zW_min_daily{i}(j) = min(zW_min_all{i}(ind_date));
+        zW_max_daily{i}(j) = max(zW_max_all{i}(ind_date));
         
         Q_min_daily{i}(j) = min(Q_all{i}(ind_date));
         Q_max_daily{i}(j) = max(Q_all{i}(ind_date));
@@ -296,4 +336,5 @@ DailyTable = struct2table(DailyTable);
 %% SAVE TABLES
 writetable(SiteTable,SiteTable_Path);
 writetable(FitTable,FitTable_Path);
+writetable(StressFluxTable,StressFluxTable_Path);
 writetable(DailyTable,DailyTable_Path);

@@ -2,6 +2,9 @@
  
 function DataWithHeights = ProcessInstrumentHeights(Data)
 
+%ignore baseline uncertainty in reference height, becuase this is also captured in other uncertainties... but could change later
+RefHeightErr_baseline_m = 0;
+
 %% GO THROUGH INSTRUMENT TYPES, DETERMINE ABSOLUTE HEIGHTS BASED ON DISTANCE SENSOR READINGS
 InstrumentTypes = fieldnames(Data); %get list of instrument types
 N_InstrumentTypes = length(InstrumentTypes); %how many instrument types
@@ -40,7 +43,8 @@ for i = 1:N_InstrumentTypes
                 %if values are contained in this interval, compute mean of them 
                 if ~isempty(z_interval_mm)
                     RefHeight_m = mean(z_interval_mm)/1000; %compute mean, convert to meters
-                    RefHeightErr_m = std(z_interval_mm)/1000; %error is standard deviation, convert to meters
+                    RefHeightErr_sensor_m = std(z_interval_mm)/1000; %sensor error is bed elevation standard deviation, convert to meters
+                    RefHeightErr_m = sqrt(RefHeightErr_baseline_m.^2+RefHeightErr_sensor_m.^2); %total error from sensor fluctuations and baseline error
                     
                 %if no values contained in interval, use values from previous interval
                 else
@@ -68,5 +72,5 @@ for i = 1:N_InstrumentTypes
     end
 end
 
-%% now, rename "InterpolatedData" as "InterpolatedDataWithHeights"
+%% now, rename "Data" as "DataWithHeights"
 DataWithHeights = Data;

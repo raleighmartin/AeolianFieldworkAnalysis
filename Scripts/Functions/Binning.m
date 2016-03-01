@@ -1,3 +1,5 @@
+%BINNING DATA BY ABSOLUTE RANGES
+
 function [y_bin_values, y_bin_N, y_bin_min, y_bin_max, y_bin_avg, y_bin_SE] = ...
     Binning(y, y_bin_minrange, y_bin_maxrange, bin_N_min)
 

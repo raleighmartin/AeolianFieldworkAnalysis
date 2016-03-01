@@ -10,32 +10,33 @@ rho_a = 1.18; %air density kg/m^3
 g = 9.8; %gravity m/s^2
 kappa = 0.4; %von Karman parameter
 z0 = [1e-4 1e-4 1e-4]; %aerodynamic roughness length (m)
+Q_min = 0.05; %detection limit for Q, set to zero if below this value
+zq_Q_min = 0.10; %assumed saltation height for detection limit for exponential profile for detection limit for individual Wenglor
+zW_min = 0.018; %minimum Wenglor height (m) = 1.5*height of instrument (to allow one full instrument height between bottom of instrument and bed)
+u_sigma_max = 5; %maximum standard deviation in total wind for error detection
 
 %% information about sites for analysis
+%Sites = {'Jericoacoara'}
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
 AnemometerType = {'Ultrasonic';'Ultrasonic';'Sonic'};
 BaseAnemometer = {'U1';'U1';'S1'};
 dt_u_s = [0.04; 0.04; 0.02]; %time interval of sonic (s)
 N_Sites = length(Sites);
 
-
 %% set time interval for computing wind/flux windows
 dt_fQ = duration(0,0,1); %time interval for window averaging to compute fQ
-
 
 %% information about where to load/save data, plots, and functions
 folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
 folder_AnalysisData = '../../AnalysisData/StressFlux/'; %folder for outputs of this analysis
+folder_Plots = '../../PlotOutput/WenglorFluxProfiles/'; %folder for plots
 folder_Functions = '../Functions/'; %folder with functions
+addpath(folder_Functions); %point MATLAB to location of functions
 TimeWindow_Path = strcat(folder_AnalysisData,'TimeWindows'); %path for loading time windows
 SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows'); %path for saving output data
-BSNEData_Path = strcat(folder_AnalysisData,'FluxBSNE'); %path for saving output data
-addpath(folder_Functions); %point MATLAB to location of functions
-
 
 %% load time windows
 load(TimeWindow_Path);
-
 
 %% load processed data for each site, add to cell arrays of all sites 
 WindData = cell(N_Sites,1);
@@ -52,7 +53,6 @@ for i = 1:N_Sites
     clear ProcessedData; %remove 'ProcessedData' to clear up memory
 end
 
-
 %% initialize variable lists
 
 %initialize lists of flux values
@@ -64,17 +64,25 @@ fD_all = cell(N_Sites,1); %Wenglor detection frequency list - 1 second
 fQ_all = cell(N_Sites,1); %Wenglor transport frequency matrix - 1 second
 q_all = cell(N_Sites,1); %partial flux
 sigma_q_all = cell(N_Sites,1); %partial flux uncertainty
+W_ID_all = cell(N_Sites,1); %get IDs of Wenglors in profiles
 zW_all = cell(N_Sites,1); %Wenglor flux height list
 sigma_zW_all = cell(N_Sites,1); %Wenglor flux height uncertainty list
+N_zW_unique_all = cell(N_Sites,1); %number of unique Wenglor heights
+zW_min_all = cell(N_Sites,1); %Wenglor min height list
+zW_max_all = cell(N_Sites,1); %Wenglor min height list
 qcal_all = cell(N_Sites,1); %calibration factor list
 Qbinary_avg_all = cell(N_Sites,1); %1 second wind average flux occurrence timeseries
+Chi2_Qfit_all = cell(N_Sites,1); %calculate Chi2 value for flux profiles
+df_Qfit_all = cell(N_Sites,1); %calculate degrees of freedom for fitting flux profiles
 
 %initialize lists of wind values for lowest anemometer
 zU_all = cell(N_Sites,1); %height of anemometer
 theta_all = cell(N_Sites,1); %mean theta
 zL_all = cell(N_Sites,1); %stability parameter
 ustRe_all = cell(N_Sites,1); %u* for Reynolds stress
+sigma_ustRe_all = cell(N_Sites,1); %uncertainty in u*
 tauRe_all = cell(N_Sites,1); %tau for Reynolds stress
+sigma_tauRe_all = cell(N_Sites,1); %uncertainty in tau
 uth_TFEM_all = cell(N_Sites,1); %1-second TFEM estimate of u_th
 tauth_TFEM_all = cell(N_Sites,1); %1-second TFEM estimate of tau_th
 zs_all = cell(N_Sites,1); %observed roughness height from lowest anemometer
@@ -83,6 +91,15 @@ zs_all = cell(N_Sites,1); %observed roughness height from lowest anemometer
 RH_all = cell(N_Sites,1);
 ubar_all = cell(N_Sites,1); %mean wind velocity from lowest anemometer
 uw_all = cell(N_Sites,1); %mean wind product from lowest anemometer
+
+%initialize plot
+close all;
+h = figure;
+set(h,'visible','off');
+set(gca,'FontSize',14,'XMinorTick','On','YMinorTick','On','Box','On');
+xlabel('$$z$$ (m)','Interpreter','Latex');
+ylabel('$$q$$ (g/m$$^2$$/s)','Interpreter','Latex');
+set(gcf, 'PaperPosition',[0 0 8 6]);
 
 %% PERFORM ANALYSIS FOR EACH SITE
 for i = 1:N_Sites
@@ -105,17 +122,25 @@ for i = 1:N_Sites
     fQ_all{i} = zeros(N_Blocks,1)*NaN; %Wenglor total transport frequency - 1 s
     q_all{i} = cell(N_Blocks,1); %partial flux
     sigma_q_all{i} = cell(N_Blocks,1); %partial flux uncertainty
+    W_ID_all{i} = cell(N_Blocks,1); %get names of Wenglors in profiles
     zW_all{i} = cell(N_Blocks,1); %Wenglor height
     sigma_zW_all{i} = cell(N_Blocks,1); %Wenglor height uncertainty
+    N_zW_unique_all{i} = zeros(N_Blocks,1); %number of unique Wenglor heights
+    zW_min_all{i} = zeros(N_Blocks,1); %minimum Wenglor height
+    zW_max_all{i} = zeros(N_Blocks,1); %maximum Wenglor height
     qcal_all{i} = cell(N_Blocks,1); %calibration factor
     Qbinary_avg_all{i} = cell(N_Blocks,1); %1 second wind average flux occurrence timeseries
+    Chi2_Qfit_all{i} = zeros(N_Blocks,1); %calculate Chi2 for flux profiles
+    df_Qfit_all{i} = zeros(N_Blocks,1); %calculate degrees of freedom for fitting flux profiles
     
     %wind values
     zU_all{i} = zeros(N_Blocks,1)*NaN; %height of anemometer
     theta_all{i} = zeros(N_Blocks,1)*NaN; %mean theta
     zL_all{i} = zeros(N_Blocks,1)*NaN; %stability parameter
-    ustRe_all{i} = zeros(N_Blocks,1)*NaN; %calibrated u* for Reynolds stress
-    tauRe_all{i} = zeros(N_Blocks,1)*NaN; %calibrated tau for Reynolds stress
+    ustRe_all{i} = zeros(N_Blocks,1)*NaN; %u* for Reynolds stress
+    sigma_ustRe_all{i} = zeros(N_Blocks,1)*NaN; %uncertainty in u*
+    tauRe_all{i} = zeros(N_Blocks,1)*NaN; %tau for Reynolds stress
+    sigma_tauRe_all{i} = zeros(N_Blocks,1)*NaN; %uncertainty in tau
     zs_all{i} = zeros(N_Blocks,1)*NaN; %observed roughness height from lowest anemometer
     
     %other values
@@ -130,68 +155,121 @@ for i = 1:N_Sites
     %% go through time blocks
     for j = 1:N_Blocks
 
-    %display processing status
-    processing_status = [Sites{i},', ',int2str(j),' of ',int2str(N_Blocks),', ',datestr(now)]
+        %display processing status
+        processing_status = [Sites{i},', ',int2str(j),' of ',int2str(N_Blocks),', ',datestr(now)]
 
-    %get specific start and end time
-    StartTime = BlockStartTimes(j);
-    EndTime = BlockEndTimes(j);
+        %get specific start and end time
+        StartTime = BlockStartTimes(j);
+        EndTime = BlockEndTimes(j);
 
 
-    %% FLUX CALCULATIONS FOR INTERVAL
+        %% FLUX CALCULATIONS FOR INTERVAL
 
-    %extract time interval - get interval number and indices within interval for analysis
-    [~, ~, IntervalN, IntervalInd] = ExtractVariableTimeInterval(FluxData{i},StartTime,EndTime,'t','t','t');
+        %extract time interval - get interval number and indices within interval for analysis
+        [~, ~, IntervalN, IntervalInd] = ExtractVariableTimeInterval(FluxData{i},StartTime,EndTime,'t','t','t');
 
         %use only longest interval
         ind_longest = find(cellfun(@length,IntervalInd)==max(cellfun(@length,IntervalInd)));
         IntervalN = IntervalN(ind_longest);
         IntervalInd = IntervalInd{ind_longest};
-        StartTime_Extraction = FluxData{i}(IntervalN).t.t(IntervalInd(1));
-        EndTime_Extraction = FluxData{i}(IntervalN).t.t(IntervalInd(end));
 
         %further reduce IntervalInd based on eliminating error times
         [~, ErrInd, ~] = intersect(FluxData{i}(IntervalN).t.t,FluxData{i}(IntervalN).t.err);
         IntervalInd = setdiff(IntervalInd,ErrInd);
         t_Interval = FluxData{i}(IntervalN).t.t(IntervalInd);
 
-        %get raw qz and qcal values, determine n from this
-        qz = FluxData{i}(IntervalN).qz.qz(IntervalInd,:);
-        qcal = FluxData{i}(IntervalN).qz.qzPerCount(IntervalInd,:);
-        sigma_qcal = FluxData{i}(IntervalN).qz.sigma_qzPerCount(IntervalInd,:);
-        n = FluxData{i}(IntervalN).qz.n(IntervalInd,:); %particle arrival rates
+        %get Wenglor heights
+        zW_profile = mean(FluxData{i}(IntervalN).qz.z(IntervalInd,:)); %compute mean Wenglor heights
+        ind_zW_positive = find(zW_profile>zW_min); %find indices of points definitely above zero (based on 2 sigma)
+        
+        %get raw qz, qcal, sigma_qcal and n values
+        qz = FluxData{i}(IntervalN).qz.qz(IntervalInd,ind_zW_positive);
+        qcal = FluxData{i}(IntervalN).qz.qzPerCount(IntervalInd,ind_zW_positive);
+        sigma_qcal = FluxData{i}(IntervalN).qz.sigma_qzPerCount(IntervalInd,ind_zW_positive);
+        n = FluxData{i}(IntervalN).qz.n(IntervalInd,ind_zW_positive); %particle arrival rates
         N = sum(sum(n)); %total detected particles
 
         %get profile information for fitting
         q_profile = mean(qz); %compute mean qz profile
         sigma_q_n_profile = abs(q_profile.*(1./sqrt(sum(n)))); %contribution of uncertainty in counting particles
         sigma_q_qcal_profile = abs(q_profile.*(mean(sigma_qcal)./mean(qcal))); %contribution of uncertainty in calibration coefficient
-        sigma_q_profile = sqrt(sigma_q_n_profile.^2+sigma_q_qcal_profile.^2); %compute uncertainty in qz profile
-        %sigma_q_profile = mean(sigma_qcal.*n); %compute uncertainty in qz profile
-        zW_profile = mean(FluxData{i}(IntervalN).qz.z(IntervalInd,:)); %compute mean Wenglor heights
-        sigma_zW_profile = mean(FluxData{i}(IntervalN).qz.sigma_z(IntervalInd,:)); %compute uncertainty in Wenglor heights
-
+        sigma_q_profile = sqrt(sigma_q_n_profile.^2+sigma_q_qcal_profile.^2); %compute uncertainty in qz profile, from counts and calibration coefficient
+        zW_profile = mean(FluxData{i}(IntervalN).qz.z(IntervalInd,ind_zW_positive)); %compute mean Wenglor heights (but now only positive values)
+        sigma_zW_profile = mean(FluxData{i}(IntervalN).qz.sigma_z(IntervalInd,ind_zW_positive)); %compute uncertainty in Wenglor heights (but now only positive values)
+        
+        %get associated Wenglor IDs only for heights included in profile
+        W_ID = FluxData{i}(IntervalN).qz.WenglorID(ind_zW_positive);
+        
         %deal with repeated values
         zW_unique = unique(zW_profile);
+        N_zW_unique = length(zW_unique);
         q_unique = zeros(size(zW_unique));
         sigma_q_unique = zeros(size(zW_unique));
         sigma_zW_unique = zeros(size(zW_unique));
-        for k = 1:length(zW_unique);
+        for k = 1:N_zW_unique;
             ind_zW = find(zW_profile==zW_unique(k));
-            q_unique(k) = mean(q_profile(ind_zW));
-            sigma_q_unique(k) = mean(sigma_q_profile(ind_zW))/sqrt(length(ind_zW)); %reduce error based on number of values
-            sigma_zW_unique(k) = mean(sigma_zW_profile(ind_zW))/sqrt(length(ind_zW)); %reduce error based on number of values
+            if length(ind_zW)>1 %compute mean and uncertainty for repeated heights
+                q_min = (Q_min/zW_unique(k))*exp(-zW_unique(k)/zq_Q_min); %get min q detection limit for this height
+                q_bar = mean(q_profile(ind_zW)); %get mean q for this height
+                if q_bar < q_min; %if mean q at height is below detection limit
+                    q = 0; sigma_q = 0; %then just set values to zero
+                else %otherwise, use script "MeanUncertainty.m"
+                    [q, sigma_q] = MeanUncertainty(q_profile(ind_zW), sigma_q_profile(ind_zW)); %compute flux mean and uncertainy for repeated heights
+                end
+                sigma_zW = mean(sigma_zW_profile(ind_zW)); %no reduction in uncertainty for height, because all uncertainties are correlated, so just take mean of values
+                q_unique(k) = q;
+                sigma_q_unique(k) = sigma_q;
+                sigma_zW_unique(k) = sigma_zW;
+            else %otherwise, if only Wenglor at given height, just use existing values
+                q_unique(k) = q_profile(ind_zW);
+                sigma_q_unique(k) = sigma_q_profile(ind_zW);
+                sigma_zW_unique(k) = sigma_zW_profile(ind_zW);
+            end
         end
+        
+        %Remove 0 values for fitting
+        ind_fit = find(q_unique>0);
+        N_fit = length(ind_fit);
+        q_fit = q_unique(ind_fit);
+        zW_fit = zW_unique(ind_fit);
+        sigma_q_fit = sigma_q_unique(ind_fit);
+        sigma_zW_fit = sigma_zW_unique(ind_fit);
+        
+        %Perform profile fit to get q0, zq, and Q if sufficient points for fitting
+        if N_fit>=3
+            [q0,zq,sigma_q0,sigma_zq] = qz_profilefit(q_fit,zW_fit,sigma_q_fit,sigma_zW_fit);
+            Q = q0*zq; %get total flux [g/m/s]
+            sigma_Q = sqrt((sigma_q0*zq)^2+(sigma_zq*q0)^2); %estimate uncertainty in total flux
+            q_pred = q0*exp(-zW_fit/zq); %predict q's based on fitting values
+            q_residuals = q_pred - q_fit; %residuals between observed and predicted q
+            sigma_q_z = (sigma_zW_fit/zq).*q_fit; %estimate contribution of z uncertainty to q uncertainty
+            sigma_q_total = sqrt(sigma_q_z.^2+sigma_q_fit.^2); %estimate total uncertainty in q for chi2 calculation
+            %Chi2_Qfit = sum((q_residuals./sigma_q_fit).^2);
+            Chi2_Qfit = sum((q_residuals./sigma_q_total).^2); %compute Chi2 (Bevington and Robinson, Eq. 8.4)
+            df_Qfit = N_fit-2; %compute degrees of freedom for Qfit
 
-        %Perform profile fit to get q0, zq, and Q
-        ind_fit = intersect(find(q_unique>0),find(zW_unique>0)); %only use values with q>0 and zW>0
-        [q0,zq,sigma_q0,sigma_zq] = qz_profilefit(q_unique(ind_fit),zW_unique(ind_fit),sigma_q_unique(ind_fit),sigma_zW_unique(ind_fit));
-        Q = q0*zq; %get total flux [g/m/s]
-        sigma_Q = sqrt((sigma_q0*zq)^2+(sigma_zq*q0)^2); %estimate uncertainty in total flux
-
-        %convert to 0 if Q<0.05 or if Q=NaN AND expected Q<0.05 g/m/s based on lowest Wenglor and zq = 5 cm
-        if Q<0.05||(isnan(Q)&&((0.1*q_unique(1))/exp(-zW_unique(1)/0.1)<0.05));
+            %plot flux profile fit
+            cla; hold on;
+            %errorbar(zW_fit,q_fit,sigma_q_fit,'b+','MarkerSize',10);
+            errorbar(zW_fit,q_fit,sigma_q_total,'b+','MarkerSize',10);
+            plot(zW_fit,q_pred,'k');
+            legend('data',['fit, \chi^2_{\nu} = ',num2str((Chi2_Qfit/df_Qfit),'%.2f')],'Location','NorthEast');
+            print([folder_Plots,'WenglorFluxProfile_',Sites{i},'_',int2str(j),'.png'],'-dpng');
+        else %otherwise, set to NaN
+            Q=NaN;
+            sigma_Q = NaN;
+            zq=NaN;
+            sigma_q0=NaN;
+            sigma_zq=NaN;
+            Chi2_Qfit=NaN;
+            df_Qfit=NaN;
+        end
+        
+        %convert to 0 if Q<Q_min or if Q=NaN AND expected Q<Q_min g/m/s based on lowest Wenglor and zq = 10 cm
+        if Q<Q_min||(isnan(Q)&&...
+                ((zq_Q_min*q_unique(1))/exp(-zW_unique(1)/zq_Q_min)<Q_min));
             Q=0;
+            sigma_Q=0;
             zq=0;
             sigma_q0=0;
             sigma_zq=0;
@@ -241,11 +319,16 @@ for i = 1:N_Sites
         sigma_zq_all{i}(j) = sigma_zq; %uncertainty in flux height
         q_all{i}{j} = q_profile; %partial flux
         sigma_q_all{i}{j} = sigma_q_profile; %partial flux uncertainty
+        W_ID_all{i}{j} = W_ID; %get names of Wenglors in profiles
         zW_all{i}{j} = zW_profile; %Wenglor flux height
         sigma_zW_all{i}{j} = sigma_zW_profile; %uncertainty in Wenglor flux height
+        N_zW_unique_all{i}(j) = N_zW_unique; %number of unique Wenglor heights
+        zW_min_all{i}(j) = min(zW_profile); %minimum Wenglor height
+        zW_max_all{i}(j) = max(zW_profile); %maximum Wenglor height
         qcal_all{i}{j} = qcal_profile; %calibration factor
         Qbinary_avg_all{i}{j} = Qbinary_avg; %flux occurence timeseries
-
+        Chi2_Qfit_all{i}(j) = Chi2_Qfit; %normalized Chi2 for flux profile fit
+        df_Qfit_all{i}(j) = df_Qfit; %degrees of freedom for flux profile fit
         
         %% WIND CALCULATIONS FOR INTERVAL - BASE ANEMOMETER
         %extract time interval
@@ -254,8 +337,6 @@ for i = 1:N_Sites
         %use only first interval
         IntervalN = IntervalN(1);
         IntervalInd = IntervalInd{1};
-        StartTime_Extraction = WindData{i}(IntervalN).t.int(IntervalInd(1));
-        EndTime_Extraction = WindData{i}(IntervalN).t.int(IntervalInd(end));
 
         %further reduce IntervalInd based on eliminating error times
         [~, ErrInd, ~] = intersect(WindData{i}(IntervalN).t.int,WindData{i}(IntervalN).t.err);
@@ -268,39 +349,57 @@ for i = 1:N_Sites
         u = WindData{i}(IntervalN).u.int(IntervalInd_NoErr);
         v = WindData{i}(IntervalN).v.int(IntervalInd_NoErr);
         w = WindData{i}(IntervalN).w.int(IntervalInd_NoErr);
-        t = WindData{i}(IntervalN).t.int(IntervalInd_NoErr);
-        T_raw = WindData{i}(IntervalN).T.int(IntervalInd_NoErr);
+        Temp = WindData{i}(IntervalN).T.int(IntervalInd_NoErr);
 
+        %remove additional error points based on large deviations in wind velocity
+        u_total = sqrt(u.^2+v.^2+w.^2); %total wind
+        u_total_max = mean(u_total)+u_sigma_max*std(u_total); %maximum total wind based on multiple of std dev
+        ind_good_wind = find(u_total<=u_total_max); %get indices of points with total wind below upper limit
+        u = u(ind_good_wind); %keep only good u
+        v = v(ind_good_wind); %keep only good v
+        w = w(ind_good_wind); %keep only good w
+        Temp = Temp(ind_good_wind); %keep only good temperatures
+                
         %compute wind angle
         theta_all{i}(j) = atan(mean(v./u))*180/pi;
 
-        %rotate instrument, call these 'raw' values
-        [u_raw, ~, w_raw] = reorient_anemometers_vanboxel2004(u, v, w); %rotate instrument
+        %rotate instrument, call these 'rot' values
+        [u_rot, ~, w_rot] = reorient_anemometers_vanboxel2004(u, v, w); %rotate instrument
 
-        %make computations - raw values
-        u_bar_raw = mean(u_raw);
-        w_bar_raw = mean(w_raw);
-        T_bar_raw = mean(T_raw);
-        ustRe_kernal = mean((u_raw-u_bar_raw).*(w_raw-w_bar_raw));
-        if ustRe_kernal<=0
-            ustRe_raw = sqrt(-ustRe_kernal);
+        %make computations
+        u_bar = mean(u_rot);
+        w_bar = mean(w_rot);
+        T_bar = mean(Temp);
+        uw = (u_rot-u_bar).*(w_rot-w_bar); %u'w' product
+        tauRe_kernal = mean(uw);
+        if tauRe_kernal<=0
+            ustRe = sqrt(-tauRe_kernal);
+            tauRe = -rho_a*tauRe_kernal;
         else
-            ustRe_raw = NaN;
+            tauRe = NaN;
+            ustRe = NaN;
         end
-        heatflux_raw = mean((T_raw-T_bar_raw).*(w_raw-w_bar_raw));
-        zL = (-(g./(T_bar_raw+273.15)).*heatflux_raw)./(ustRe_raw.^3./(kappa*zU));
+        heatflux = mean((Temp-T_bar).*(w_rot-w_bar));
+        zL = (-(g./(T_bar+273.15)).*heatflux)./(ustRe.^3./(kappa*zU));
 
+        %compute stress uncertainty using Marcelo's code
+        [sigma_uw_bar, ~] = random_error(uw, length(uw), 1/dt_u_s(i), zU, u_bar, 0, 0, 0, 1); %use script from Salesky et al (2012)
+        sigma_tauRe_all{i}(j) = rho_a*sigma_uw_bar; %uncertainty in tau
+        sigma_ustRe_all{i}(j) = sigma_uw_bar/(2*ustRe); %uncertainty in u*
+        % Q: Would it be better to use interpolated data for random_error.m, since it examines temporal features of the dataset?
+        % see Vickers and Mahrt (1997) for best procedure for data despiking
+               
         %add velocity values to list
         zU_all{i}(j) = zU; %height of anemometer
-        ubar_all{i}(j) = u_bar_raw;
-        uw_all{i}(j) = mean(u_raw.*w_raw);
+        ubar_all{i}(j) = u_bar;
+        uw_all{i}(j) = mean(u_rot.*w_rot);
         
         %add stress values to list - using raw values
-        ustRe_all{i}(j) = ustRe_raw;
-        tauRe_all{i}(j) = rho_a*ustRe_raw.^2;
+        ustRe_all{i}(j) = ustRe;
+        tauRe_all{i}(j) = tauRe;
 
         %add zs to list - using raw values
-        zs_all{i}(j) = zU*exp(-kappa*u_bar_raw/ustRe_raw); %observed roughness height from lowest anemometer
+        zs_all{i}(j) = zU*exp(-kappa*u_bar/ustRe); %observed roughness height from lowest anemometer
 
         %add stability value to list
         zL_all{i}(j) = zL;
@@ -310,8 +409,8 @@ for i = 1:N_Sites
         v_witherror = WindData{i}(IntervalN).v.int(IntervalInd);
         w_witherror = WindData{i}(IntervalN).w.int(IntervalInd);
         t_witherror = WindData{i}(IntervalN).t.int(IntervalInd);
-        [u_raw_witherror, ~, ~] = reorient_anemometers_vanboxel2004(u_witherror, v_witherror, w_witherror); %rotate instrument
-        u_avg = window_average(u_raw_witherror, t, dt_fQ); %compute 1 second window average wind timeseries - using raw values
+        [u_rot_witherror, ~, ~] = reorient_anemometers_vanboxel2004(u_witherror, v_witherror, w_witherror); %rotate instrument
+        u_avg = window_average(u_rot_witherror, t_witherror, dt_fQ); %compute 1 second window average wind timeseries - using raw values
 
         
         %% HUMIDITY VALUE FOR INTERVAL
@@ -334,4 +433,3 @@ end
 
 % SAVE DATA
 save(SaveData_Path,'Sites','*all'); %save reduced file in GitHub folder
-save(BSNEData_Path,'FluxBSNE'); %save BSNE data to avoid having to open full fill in future

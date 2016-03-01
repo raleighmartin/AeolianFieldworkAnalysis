@@ -66,20 +66,6 @@ for i=1:length(FluxBSNE);
         
         %perform calculations assuming single set of Wenglor counts within interval, otherwise ignore
         if length(PrimaryInterval_IntervalNumber)==1
-
-%             %extract information about Wenglor and reference distance sensor for primary interval
-%             HeightRef = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).HeightRef; %get reference distance sensor for Wenglor height calculation
-%             z_ref_mm = ExtractVariableTimeInterval(Data.Distance.(HeightRef),StartTimeBSNE_Primary,EndTimeBSNE_Primary,'z','int','int'); %get reference elevations for this interval (mm)
-%             z_rel = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).StartHeight_m; %get relative height of Wenglor (m)
-%             sigma_z_rel = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).HeightErr_m; %get uncertainty in relative height of Wenglor from reported value (m)
-%             
-%             %get mean and uncertainty in reference height
-%             z_ref = mean(z_ref_mm*1e-3); %get mean reference height (m)
-%             sigma_z_ref = std(z_ref_mm*1e-3); %get uncertainty in reference height based on standard deviation (m)
-%             
-%             %get mean and uncertainty in overall Wenglor height
-%             z_Wenglor = z_ref+z_rel; %get Wenglor height by combining reference and relative values
-%             sigma_z_Wenglor = sqrt(sigma_z_ref.^2+sigma_z_rel.^2); %get total error in Wenglor height by adding relative and reference errors in quadrature
             
             %get mean and uncertainty in overall Wenglor height
             z_Wenglor = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).z.z;
@@ -210,7 +196,7 @@ FluxWenglor = struct(...
     'EndTime', num2cell(FluxWenglor_EndTimes),...
     't',struct('t',[],'dt',FluxWenglor_dt),...
     'qz',struct('n',[],'qz',[],'qzPerCount',[],'sigma_qzPerCount',[],...
-    'z',[],'sigma_z',[],'WenglorNames',[],'Units','g/m^2/s'),...
+    'z',[],'sigma_z',[],'WenglorNames',[],'WenglorID',[],'Units','g/m^2/s'),...
     'z',struct('z',[],'Units','m'));
 
 %figure out which Wenglors are contained in each interval
@@ -259,6 +245,9 @@ for i = 1:N_FluxWenglorIntervals
     qz_StartInd = zeros(N_qz,1);
     qz_EndInd = zeros(N_qz,1);
     
+    %initialize lists of Wenglor IDs
+    FluxWenglor(i).qz.WenglorID = cell(1,N_qz);
+    
     %fill in values
     for j = 1:N_qz
         WenglorName = FluxWenglor(i).qz.WenglorNames{j}; %get specific Wenglor name
@@ -282,6 +271,9 @@ for i = 1:N_FluxWenglorIntervals
                 
         %get information about average Wenglor height
         FluxWenglor(i).z.z(j) = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).z.z;
+        
+        %get information about Wenglor ID
+        FluxWenglor(i).qz.WenglorID{j} = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).InstrumentID;
     end
     
     %sort values by z, compute order of data columns from this

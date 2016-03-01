@@ -88,7 +88,7 @@ for i = 1:N_InstrumentTypes
                 RawData.(InstrumentType).(Instrument)(k).(Variables{l}).int = values_int; %add interpolation field to variable values
             end
             t_err = unique(t_err); %keep only unique error times
-            RawData.(InstrumentType).(Instrument)(k).t = struct('raw',t_raw,'int',t_int,'err',t_err); %record interpolated times (with raw and error times) in structured array
+            RawData.(InstrumentType).(Instrument)(k).t = struct('raw',t_raw,'int',t_int,'err',t_err,'ind',error_ind); %record interpolated times (with raw and error times and their indices) in structured array
         end 
     end
 end
