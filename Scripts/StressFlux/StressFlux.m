@@ -277,57 +277,55 @@ for i = 1:N_Sites
     fQ_bin_sigma_all{i} = fQ_bin_SE_all{i}; 
 end
 
-% %% RECOMPUTE SIGMA FOR BINS WITH FEW VALUES
-% 
-% %record original sigma values for comparison to later changed values
-% tau_bin_sigma_original_all = tau_bin_sigma_all;
-% ust_bin_sigma_original_all = ust_bin_sigma_all;
-% fQ_bin_sigma_original_all = fQ_bin_sigma_all;
-% Q_bin_sigma_original_all = Q_bin_sigma_all;
-% zq_bin_sigma_original_all = zq_bin_sigma_all;
-% 
-% %recompute sigma for bins with fewer than bin_N_min values based on nearest Oceano tau
-% i_Oceano = find(strncmp(Sites,'Oceano',6),1); %get index among site list for Oceano
-% ind_Oceano = find(bin_N_all{i_Oceano}>=bin_N_min); %indices of Oceano bins with bin_N >= bin_N_min
-% tau_avg_Oceano = tau_bin_avg_all{i_Oceano}(ind_Oceano); %avg tau values for these bins
-% tau_std_Oceano = max([tau_bin_std_all{i_Oceano}(ind_Oceano)'; tau_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev tau values from these bins (from max of std and stdalt)
-% tau_CV_Oceano = tau_std_Oceano./tau_avg_Oceano; %std/mean of tau values for these bins
-% ust_avg_Oceano = ust_bin_avg_all{i_Oceano}(ind_Oceano); %avg ust values for these bins
-% ust_std_Oceano = max([ust_bin_std_all{i_Oceano}(ind_Oceano)'; ust_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev ust values from these bins (from max of std and stdalt)
-% ust_CV_Oceano = ust_std_Oceano./ust_avg_Oceano; %std/mean of ust values for these bins
-% fQ_avg_Oceano = fQ_bin_avg_all{i_Oceano}(ind_Oceano); %avg fQ values for these bins
-% fQ_std_Oceano = fQ_bin_std_all{i_Oceano}(ind_Oceano); %std dev fQ values for these bins
-% fQ_CV_Oceano = fQ_std_Oceano./fQ_avg_Oceano; %std/mean of fQ values for these bins
-% Q_avg_Oceano = Q_bin_avg_all{i_Oceano}(ind_Oceano); %avg Q values for these bins
-% Q_std_Oceano = max([Q_bin_std_all{i_Oceano}(ind_Oceano)'; Q_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev Q values from these bins (from max of std and stdalt)
-% Q_CV_Oceano = Q_std_Oceano./Q_avg_Oceano; %std/mean of Q values for these bins
-% zq_avg_Oceano = zq_bin_avg_all{i_Oceano}(ind_Oceano); %avg zq values for these bins
-% zq_std_Oceano = max([zq_bin_std_all{i_Oceano}(ind_Oceano)'; zq_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev zq values from these bins (from max of std and stdalt)
-% zq_CV_Oceano = zq_std_Oceano./zq_avg_Oceano; %std/mean of zq values for these bins
-% for i = 1:N_Sites
-%     ind_recompute_sigma = find(bin_N_all{i}<bin_N_min);
-%     N_ind = length(ind_recompute_sigma);
-%     for j = 1:N_ind
-%         k = ind_recompute_sigma(j);
-%         tau_bin = tau_bin_avg_all{i}(k); %get avg tau for bin
-%         tau_diff_Oceano = abs(tau_bin-tau_avg_Oceano); %get distance of this tau from Oceano taus
-%         ind_Oceano = find(tau_diff_Oceano==min(tau_diff_Oceano),1); %get closest Oceano tau
-%         %compute sigma based on this nearest std dev and N values in bin
-%         tau_bin_sigma_pred = tau_CV_Oceano(ind_Oceano)*tau_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         ust_bin_sigma_pred = ust_CV_Oceano(ind_Oceano)*ust_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         fQ_bin_sigma_pred = fQ_CV_Oceano(ind_Oceano)*fQ_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         Q_bin_sigma_pred = Q_CV_Oceano(ind_Oceano)*Q_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         zq_bin_sigma_pred = zq_CV_Oceano(ind_Oceano)*zq_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         %final sigma is max of current value in bin and this new predicted value
-%         tau_bin_sigma_all{i}(k) = max([tau_bin_sigma_all{i}(k) tau_bin_sigma_pred]);
-%         ust_bin_sigma_all{i}(k) = max([ust_bin_sigma_all{i}(k) ust_bin_sigma_pred]);
-%         fQ_bin_sigma_all{i}(k) = max([fQ_bin_sigma_all{i}(k) fQ_bin_sigma_pred]);
-%         Q_bin_sigma_all{i}(k) = max([Q_bin_sigma_all{i}(k) Q_bin_sigma_pred]);
-%         zq_bin_sigma_all{i}(k) = max([zq_bin_sigma_all{i}(k) zq_bin_sigma_pred]);
-%     end
-% %     %recompute ust_bin_sigma_all{i} based on new tau_bin_sigma_all{i}
-% %     ust_bin_sigma_all{i} = tau_bin_sigma_all{i}./(2*rho_a*ust_bin_avg_all{i});
-% end
+%% RECOMPUTE SIGMA FOR BINS WITH FEW VALUES
+
+%record original sigma values for comparison to later changed values
+tau_bin_sigma_original_all = tau_bin_sigma_all;
+ust_bin_sigma_original_all = ust_bin_sigma_all;
+fQ_bin_sigma_original_all = fQ_bin_sigma_all;
+Q_bin_sigma_original_all = Q_bin_sigma_all;
+zq_bin_sigma_original_all = zq_bin_sigma_all;
+
+%recompute sigma for bins with fewer than bin_N_min values based on nearest Oceano tau
+i_Oceano = find(strncmp(Sites,'Oceano',6),1); %get index among site list for Oceano
+ind_Oceano = find(bin_N_all{i_Oceano}>=bin_N_min); %indices of Oceano bins with bin_N >= bin_N_min
+tau_avg_Oceano = tau_bin_avg_all{i_Oceano}(ind_Oceano); %avg tau values for these bins
+tau_std_Oceano = max([tau_bin_std_all{i_Oceano}(ind_Oceano)'; tau_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev tau values from these bins (from max of std and stdalt)
+tau_CV_Oceano = tau_std_Oceano./tau_avg_Oceano; %std/mean of tau values for these bins
+ust_avg_Oceano = ust_bin_avg_all{i_Oceano}(ind_Oceano); %avg ust values for these bins
+ust_std_Oceano = max([ust_bin_std_all{i_Oceano}(ind_Oceano)'; ust_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev ust values from these bins (from max of std and stdalt)
+ust_CV_Oceano = ust_std_Oceano./ust_avg_Oceano; %std/mean of ust values for these bins
+fQ_avg_Oceano = fQ_bin_avg_all{i_Oceano}(ind_Oceano); %avg fQ values for these bins
+fQ_std_Oceano = fQ_bin_std_all{i_Oceano}(ind_Oceano); %std dev fQ values for these bins
+fQ_CV_Oceano = fQ_std_Oceano./fQ_avg_Oceano; %std/mean of fQ values for these bins
+Q_avg_Oceano = Q_bin_avg_all{i_Oceano}(ind_Oceano); %avg Q values for these bins
+Q_std_Oceano = max([Q_bin_std_all{i_Oceano}(ind_Oceano)'; Q_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev Q values from these bins (from max of std and stdalt)
+Q_CV_Oceano = Q_std_Oceano./Q_avg_Oceano; %std/mean of Q values for these bins
+zq_avg_Oceano = zq_bin_avg_all{i_Oceano}(ind_Oceano); %avg zq values for these bins
+zq_std_Oceano = max([zq_bin_std_all{i_Oceano}(ind_Oceano)'; zq_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev zq values from these bins (from max of std and stdalt)
+zq_CV_Oceano = zq_std_Oceano./zq_avg_Oceano; %std/mean of zq values for these bins
+for i = 1:N_Sites
+    ind_recompute_sigma = find(bin_N_all{i}<bin_N_min);
+    N_ind = length(ind_recompute_sigma);
+    for j = 1:N_ind
+        k = ind_recompute_sigma(j);
+        tau_bin = tau_bin_avg_all{i}(k); %get avg tau for bin
+        tau_diff_Oceano = abs(tau_bin-tau_avg_Oceano); %get distance of this tau from Oceano taus
+        ind_Oceano = find(tau_diff_Oceano==min(tau_diff_Oceano),1); %get closest Oceano tau
+        %compute sigma based on this nearest std dev and N values in bin
+        tau_bin_sigma_pred = tau_CV_Oceano(ind_Oceano)*tau_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
+        ust_bin_sigma_pred = ust_CV_Oceano(ind_Oceano)*ust_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
+        fQ_bin_sigma_pred = fQ_CV_Oceano(ind_Oceano)*fQ_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
+        Q_bin_sigma_pred = Q_CV_Oceano(ind_Oceano)*Q_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
+        zq_bin_sigma_pred = zq_CV_Oceano(ind_Oceano)*zq_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
+        %final sigma is max of current value in bin and this new predicted value
+        tau_bin_sigma_all{i}(k) = max([tau_bin_sigma_all{i}(k) tau_bin_sigma_pred]);
+        ust_bin_sigma_all{i}(k) = max([ust_bin_sigma_all{i}(k) ust_bin_sigma_pred]);
+        fQ_bin_sigma_all{i}(k) = max([fQ_bin_sigma_all{i}(k) fQ_bin_sigma_pred]);
+        Q_bin_sigma_all{i}(k) = max([Q_bin_sigma_all{i}(k) Q_bin_sigma_pred]);
+        zq_bin_sigma_all{i}(k) = max([zq_bin_sigma_all{i}(k) zq_bin_sigma_pred]);
+    end
+end
 
 %% COMPUTE ZQNORM
 for i=1:N_Sites
@@ -348,6 +346,8 @@ zq_zqustfit_all = cell(N_Sites,1);
 zq_sigma_zqustfit_all = cell(N_Sites,1);
 zqnorm_zqustfit_all = cell(N_Sites,1);
 zqnorm_sigma_zqustfit_all = cell(N_Sites,1);
+Chi2_zqustfit_all = zeros(N_Sites,1);
+df_zqustfit_all = zeros(N_Sites,1);
 
 %values resulting from zq-ust linear fit
 intercept_zqustfit_all = zeros(N_Sites,1); %intercept of fit
@@ -356,6 +356,7 @@ slope_zqustfit_all = zeros(N_Sites,1); %slope of fit for zq versus ustar
 sigma_slope_zqustfit_all = zeros(N_Sites,1); %uncertainty in slope for zq versus ustar
 zq_pred_zqustfit_all = cell(N_Sites,1); %predicted zq
 zq_pred_relativerange_all = zeros(N_Sites,1); %relative range of zq prediction
+sigma_zq_pred_relativerange_all = zeros(N_Sites,1); %uncertainty in relative range of zq prediction
 zqnorm_pred_zqustfit_all = cell(N_Sites,1); %predicted zqnorm
 zqnorm_bar_all = zeros(N_Sites,1); %mean of zqnorm
 sigma_zqnorm_bar_all = zeros(N_Sites,1); %uncertainty of zqnorm bar
@@ -373,14 +374,20 @@ for i = 1:N_Sites
     zqnorm_sigma_zqustfit_all{i} = zqnorm_bin_sigma_all{i}(ind_fit);
 
     %perform linear fit for each site
-    [intercept, slope, sigma_intercept, sigma_slope, zq_pred, ~] = linearfit(ust_zqustfit_all{i}, zq_zqustfit_all{i}, ust_sigma_zqustfit_all{i}, zq_sigma_zqustfit_all{i});
+    [intercept, slope, sigma_intercept, sigma_slope, zq_pred, ~] = linearfit(ust_zqustfit_all{i}, zq_zqustfit_all{i}, zq_sigma_zqustfit_all{i});
     intercept_zqustfit_all(i) = intercept; %intercept of fit
     sigma_intercept_zqustfit_all(i) = sigma_intercept; %uncertainty in intercept of fit
     slope_zqustfit_all(i) = slope; %slope of fit
     sigma_slope_zqustfit_all(i) = sigma_slope; %uncertainty in slope of fit
     zq_pred_zqustfit_all{i} = zq_pred; %predicted zq
     zqnorm_pred_zqustfit_all{i} = 1000*zq_pred./d50_site(i); %predicted zq norm
-    zq_pred_relativerange_all(i) = range(zq_pred)./mean(zq_pred); %relative range of zq predictions
+    zq_pred_relativerange_all(i) = sign(slope)*range(zq_pred)./mean(zq_pred); %relative range of zq predictions
+    sigma_zq_pred_relativerange_all(i) = abs(sigma_slope/slope)*range(zq_pred)/mean(zq_pred); %relative range of zq predictions
+        
+    %compute Chi2
+    zq_residuals = zq_pred - zq_zqustfit_all{i};
+    Chi2_zqustfit_all(i) = sum((zq_residuals./zq_sigma_zqustfit_all{i}).^2); %compute total Chi2
+    df_zqustfit_all(i) = length(zq_residuals)-2;
     
     %get mean zqnorm
     [zqnorm_bar, sigma_zqnorm_bar] = MeanUncertainty(zqnorm_zqustfit_all{i}, zqnorm_sigma_zqustfit_all{i});
@@ -395,21 +402,23 @@ slope_zqust_lit_all = zeros(N_lit,1); %slope of fit for zq versus ustar
 sigma_slope_zqust_lit_all = zeros(N_lit,1); %uncertainty in slope for zq versus ustar
 zq_pred_lit_all = cell(N_lit,1); %predicted zq for lit data
 zq_pred_relativerange_lit_all = zeros(N_lit,1); %relative range of zq prediction
+sigma_zq_pred_relativerange_lit_all = zeros(N_lit,1); %uncertainty in relative range of zq prediction
 
 zqnorm_pred_lit_all = cell(N_lit,1); %predicted zqnorm
 zqnorm_bar_lit_all = zeros(N_lit,1); %mean of zqnorm
 sigma_zqnorm_bar_lit_all = zeros(N_lit,1); %uncertainty of zqnorm bar
 
 for i = 1:N_lit
-    [intercept, slope, sigma_intercept, sigma_slope, zq_pred, ~] = linearfit(ust_lit{i},zq_lit{i},sigma_ust_lit{i},sigma_zq_lit{i});
+    [intercept, slope, sigma_intercept, sigma_slope, zq_pred, ~] = linearfit(ust_lit{i},zq_lit{i},sigma_zq_lit{i});
     intercept_zqust_lit_all(i) = intercept; %intercept of fit
     sigma_intercept_zqust_lit_all(i) = sigma_intercept; %uncertainty in intercept of fit
     slope_zqust_lit_all(i) = slope; %slope of fit
     sigma_slope_zqust_lit_all(i) = sigma_slope; %uncertainty in slope of fit
     zq_pred_lit_all{i} = zq_pred; %predicted zq for lit data
-    zq_pred_relativerange_lit_all(i) = range(zq_pred)/mean(zq_pred);
+    zq_pred_relativerange_lit_all(i) = sign(slope)*range(zq_pred)/mean(zq_pred);
+    sigma_zq_pred_relativerange_lit_all(i) = abs(sigma_slope/slope)*range(zq_pred)/mean(zq_pred); %relative range of zq predictions
     
-    [intercept, slope, sigma_intercept, sigma_slope, zqnorm_pred, ~] = linearfit(ust_lit{i},zqnorm_lit{i},sigma_ust_lit{i},sigma_zqnorm_lit{i});
+    [intercept, slope, sigma_intercept, sigma_slope, zqnorm_pred, ~] = linearfit(ust_lit{i},zqnorm_lit{i},sigma_zqnorm_lit{i});
     zqnorm_pred_lit_all{i} = zqnorm_pred;
     [zqnorm_bar, sigma_zqnorm_bar] = MeanUncertainty(zqnorm_lit{i}, sigma_zqnorm_lit{i});
     zqnorm_bar_lit_all(i) = zqnorm_bar;
@@ -481,7 +490,7 @@ for i = 1:N_Sites
 
     %perform linear fit for each site
     [intercept, slope, sigma_intercept, sigma_slope, Q_pred, ~] = ...
-        linearfit(tau_Qtaufit_all{i}, Q_Qtaufit_all{i}, tau_sigma_Qtaufit_all{i}, Q_sigma_Qtaufit_all{i});
+        linearfit(tau_Qtaufit_all{i}, Q_Qtaufit_all{i}, Q_sigma_Qtaufit_all{i});
     C_linearfit_all(i) = slope;
     C_sigma_linearfit_all(i) = sigma_slope;
     tauit_linearfit_all(i) = -intercept/slope;
@@ -591,7 +600,7 @@ for i = 1:N_Sites;
     
     %perform fits
     if i==3
-        [a, b, ~, ~, ~, ~] = linearfit(fQ_fQth_TFEM_all{i}, tauth_fQth_TFEM_all{i}, sigma_fQ_fQth_TFEM_all{i}, sigma_tauth_fQth_TFEM_all{i});
+        [a, b, ~, ~, ~, ~] = linearfit(fQ_fQth_TFEM_all{i}, tauth_fQth_TFEM_all{i}, sigma_tauth_fQth_TFEM_all{i});
     else %don't use confidence intervals for Jeri and RG, because there are insufficient data for these
         [a, b, ~, ~, ~, ~] = linearfit(fQ_fQth_TFEM_all{i}, tauth_fQth_TFEM_all{i});
     end
@@ -665,9 +674,11 @@ end
 
 %PANEL A - dimensional
 figure; subplot(2,1,1); hold on;
+legend_items = cell(N_Sites,1);
 %plot binned field data
 for i = 1:N_Sites
     errorbar(ust_zqustfit_all{i},zq_zqustfit_all{i},zq_sigma_zqustfit_all{i},Markers_field{i},'Color',Colors_field{i},'MarkerSize',MarkerSize_field,'LineWidth',LineWidth_field);
+    legend_items{i} = ['\chi^2_{\nu} = ', num2str(Chi2_zqustfit_all(i)/df_zqustfit_all(i),'%.2f')];
 end
 %plot literature data
 for i = 1:N_lit
@@ -684,6 +695,7 @@ end
 %organize plot
 xlim([0.25 0.6]);
 ylim([0 0.15]);
+legend(legend_items,'Location','SouthEast');
 text(0.255, 0.14,'(a)','FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 xlabel('\textbf{Shear velocity, $$u_{*}$$ (m/s)}','Interpreter','Latex');
@@ -765,7 +777,7 @@ for i = 1:N_Sites
     plot(tauex_fit,Qhat_bar_all(i)*ones(2,1),'Color',Colors_field{i});
 end
 xlim([0 0.3]);
-ylim([0 11]);
+ylim([0 12]);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 xlabel('\textbf{Excess shear stress, $$\tau_{ex}$$ (Pa)}','Interpreter','Latex');
 ylabel('\textbf{Dimensionless saltation flux, $$\hat{Q}$$}','Interpreter','Latex');
@@ -977,6 +989,39 @@ set(gca,'FontSize',PlotFont);
 set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf, 'PaperPosition',[0 0 8 6]);
 print([folder_Plots,'sigma_tau.png'],'-dpng');
+
+%% PLOT RELATIVE UNCERTAINTY IN Q VERSUS TOTAL UNCERTAINTY
+figure; hold on;
+for i = 1:N_Sites
+    plot(Q_all{i},sigma_Q_all{i}./Q_all{i},Markers_field{i},'Color',Colors_field{i},'MarkerSize',MarkerSize_field);
+end
+xlim([0 55]);
+ylim([0 0.3]);
+xlabel('\textbf{Saltation flux, $$Q$$ (g m$$^{-2}$$ s$$^{-1}$$)}','Interpreter','Latex');
+ylabel('\textbf{Wenglor relative uncertainty, $$\sigma_Q/Q$$}','Interpreter','Latex');
+set(gca,'FontSize',PlotFont);
+
+%print plot
+set(gca, 'LooseInset', get(gca,'TightInset'));
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 6]);
+print([folder_Plots,'sigma_Q_Wenglor_profilefit.png'],'-dpng');
+
+%% PLOT RELATIVE UNCERTAINTY IN ZQ VERSUS TOTAL UNCERTAINTY
+figure; hold on;
+for i = 1:N_Sites
+    plot(Q_all{i},sigma_zq_all{i}./zq_all{i},Markers_field{i},'Color',Colors_field{i},'MarkerSize',MarkerSize_field);
+end
+xlim([0 55]);
+ylim([0 0.15]);
+xlabel('\textbf{Saltation flux, $$Q$$ (g m$$^{-2}$$ s$$^{-1}$$)}','Interpreter','Latex');
+ylabel('\textbf{Wenglor relative uncertainty, $$\sigma_{zq}/{z_q}$$}','Interpreter','Latex');
+set(gca,'FontSize',PlotFont);
+
+%print plot
+set(gca, 'LooseInset', get(gca,'TightInset'));
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 6]);
+print([folder_Plots,'sigma_zq_Wenglor_profilefit.png'],'-dpng');
+
 
 %% PLOT VARIANTS ON TAU BIN UNCERTAINTY
 figure;

@@ -15,8 +15,14 @@ zq_Q_min = 0.10; %assumed saltation height for detection limit for exponential p
 zW_min = 0.018; %minimum Wenglor height (m) = 1.5*height of instrument (to allow one full instrument height between bottom of instrument and bed)
 u_sigma_max = 5; %maximum standard deviation in total wind for error detection
 
+% %% information about sites for analysis - only Oceano
+% Sites = {'Oceano'};
+% AnemometerType = {'Sonic'};
+% BaseAnemometer = {'S1'};
+% dt_u_s = 0.02;
+% N_Sites = length(Sites);
+
 %% information about sites for analysis
-%Sites = {'Jericoacoara'}
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
 AnemometerType = {'Ultrasonic';'Ultrasonic';'Sonic'};
 BaseAnemometer = {'U1';'U1';'S1'};
@@ -32,8 +38,12 @@ folder_AnalysisData = '../../AnalysisData/StressFlux/'; %folder for outputs of t
 folder_Plots = '../../PlotOutput/WenglorFluxProfiles/'; %folder for plots
 folder_Functions = '../Functions/'; %folder with functions
 addpath(folder_Functions); %point MATLAB to location of functions
+
+% TimeWindow_Path = strcat(folder_AnalysisData,'TimeWindows_OceanoJune2'); %path for loading time windows
+% SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows_OceanoJune2'); %path for saving output data
 TimeWindow_Path = strcat(folder_AnalysisData,'TimeWindows'); %path for loading time windows
 SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows'); %path for saving output data
+
 
 %% load time windows
 load(TimeWindow_Path);
@@ -181,6 +191,8 @@ for i = 1:N_Sites
         %get Wenglor heights
         zW_profile = mean(FluxData{i}(IntervalN).qz.z(IntervalInd,:)); %compute mean Wenglor heights
         ind_zW_positive = find(zW_profile>zW_min); %find indices of points definitely above zero (based on 2 sigma)
+        zW_profile = mean(FluxData{i}(IntervalN).qz.z(IntervalInd,ind_zW_positive)); %compute mean Wenglor heights (but now only positive values)
+        sigma_zW_profile = mean(FluxData{i}(IntervalN).qz.sigma_z(IntervalInd,ind_zW_positive)); %compute uncertainty in Wenglor heights (but now only positive values)
         
         %get raw qz, qcal, sigma_qcal and n values
         qz = FluxData{i}(IntervalN).qz.qz(IntervalInd,ind_zW_positive);
@@ -194,9 +206,7 @@ for i = 1:N_Sites
         sigma_q_n_profile = abs(q_profile.*(1./sqrt(sum(n)))); %contribution of uncertainty in counting particles
         sigma_q_qcal_profile = abs(q_profile.*(mean(sigma_qcal)./mean(qcal))); %contribution of uncertainty in calibration coefficient
         sigma_q_profile = sqrt(sigma_q_n_profile.^2+sigma_q_qcal_profile.^2); %compute uncertainty in qz profile, from counts and calibration coefficient
-        zW_profile = mean(FluxData{i}(IntervalN).qz.z(IntervalInd,ind_zW_positive)); %compute mean Wenglor heights (but now only positive values)
-        sigma_zW_profile = mean(FluxData{i}(IntervalN).qz.sigma_z(IntervalInd,ind_zW_positive)); %compute uncertainty in Wenglor heights (but now only positive values)
-        
+                
         %get associated Wenglor IDs only for heights included in profile
         W_ID = FluxData{i}(IntervalN).qz.WenglorID(ind_zW_positive);
         
@@ -233,24 +243,21 @@ for i = 1:N_Sites
         q_fit = q_unique(ind_fit);
         zW_fit = zW_unique(ind_fit);
         sigma_q_fit = sigma_q_unique(ind_fit);
-        sigma_zW_fit = sigma_zW_unique(ind_fit);
+        sigma_zW_fit = zeros(1,N_fit); %neglect uncertainty in Wenglor height, which is already accounted for by calibration
+        %sigma_zW_fit = sigma_zW_unique(ind_fit);
         
         %Perform profile fit to get q0, zq, and Q if sufficient points for fitting
         if N_fit>=3
-            [q0,zq,sigma_q0,sigma_zq] = qz_profilefit(q_fit,zW_fit,sigma_q_fit,sigma_zW_fit);
-            Q = q0*zq; %get total flux [g/m/s]
-            sigma_Q = sqrt((sigma_q0*zq)^2+(sigma_zq*q0)^2); %estimate uncertainty in total flux
+            [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q] = qz_profilefit(q_fit,zW_fit,sigma_q_fit,sigma_zW_fit);
             q_pred = q0*exp(-zW_fit/zq); %predict q's based on fitting values
             q_residuals = q_pred - q_fit; %residuals between observed and predicted q
             sigma_q_z = (sigma_zW_fit/zq).*q_fit; %estimate contribution of z uncertainty to q uncertainty
             sigma_q_total = sqrt(sigma_q_z.^2+sigma_q_fit.^2); %estimate total uncertainty in q for chi2 calculation
-            %Chi2_Qfit = sum((q_residuals./sigma_q_fit).^2);
             Chi2_Qfit = sum((q_residuals./sigma_q_total).^2); %compute Chi2 (Bevington and Robinson, Eq. 8.4)
             df_Qfit = N_fit-2; %compute degrees of freedom for Qfit
 
             %plot flux profile fit
             cla; hold on;
-            %errorbar(zW_fit,q_fit,sigma_q_fit,'b+','MarkerSize',10);
             errorbar(zW_fit,q_fit,sigma_q_total,'b+','MarkerSize',10);
             plot(zW_fit,q_pred,'k');
             legend('data',['fit, \chi^2_{\nu} = ',num2str((Chi2_Qfit/df_Qfit),'%.2f')],'Location','NorthEast');

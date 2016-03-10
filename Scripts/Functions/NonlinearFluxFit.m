@@ -20,12 +20,12 @@ n_fit = linspace(n_fit_min,n_fit_max,n_fit_N);
 %threshold stress
 tauit_fit_min = 0;
 tauit_fit_max = 0.2;
-tauit_fit_N = 51;
+tauit_fit_N = 201;
 tauit_fit = linspace(tauit_fit_min,tauit_fit_max,tauit_fit_N);
 %scaling value
 C_fit_min = 0;
 C_fit_max = 300;
-C_fit_N = 61;
+C_fit_N = 301;
 C_fit = linspace(C_fit_min,C_fit_max,C_fit_N);
 
 %% Basic info

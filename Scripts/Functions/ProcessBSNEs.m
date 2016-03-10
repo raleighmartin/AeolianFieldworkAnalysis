@@ -1,8 +1,6 @@
 %% function to take info about BSNE trap weights ('WeightBSNE') and grain sizes ('GrainSize_BSNE')
 % and aggregate this into mass and grain-size profiles
-% Dependencies: IntervalsStartsWithin, qzCalc, qz_profilefit,
-% z_profile_calc
-% Used by: DataExtraction_Jericoacoara2014.m
+% Dependencies: IntervalsStartsWithin, qzCalc, qz_profilefit
 
 function FluxBSNE = ProcessBSNEs(WeightBSNE,GrainSize_BSNE)
 
@@ -79,6 +77,10 @@ for i = 1:N_Intervals
     z_bottom = WeightBSNE.BottomHeight_cm(indices_Intervals)/100;
     sigma_z_bottom = WeightBSNE.BottomHeightErr_cm(indices_Intervals)/100;
     z_trapheight = WeightBSNE.HeightBSNE_cm(indices_Intervals)/100;
+ 
+    %get BSNE lateral position
+    y = WeightBSNE.Spanwise_m(indices_Intervals);
+    FluxBSNE(i).y = y;
     
     %put all height info together into structured array, add to FluxBSNE
     z = struct('bottom', z_bottom, 'sigma_bottom', sigma_z_bottom, 'trapheight', z_trapheight, 'units',{'m'});
@@ -113,75 +115,148 @@ for i = 1:N_Intervals
     FluxBSNE(i).qz = qz;
     
     %put all surface and profile grain size values together into structured array
-    %d_Surface = struct('d_10',
     d = struct('d_10',d_10_profile,'d_50',d_50_profile,'d_90',d_90_profile,'IsCombined',d_IsCombined_profile,'StartTime',d_StartTime_profile','EndTime',d_EndTime_profile','units',{'mm'});
     FluxBSNE(i).d = d;
 end
 
 %% Iteratively compute BSNE heights, flux profiles, and uncertainties for each interval
 for i = 1:N_Intervals
-    %get flux and height profiles for fitting    
-    qz_profile = FluxBSNE(i).qz.qz;
-    z_bottom_profile = FluxBSNE(i).z.bottom; %bottom heights of BSNEs
-    z_trapheight_profile = FluxBSNE(i).z.trapheight; %trap heights of BSNEs
-    sigma_qz_profile = FluxBSNE(i).qz.sigma;
-    sigma_z_profile = FluxBSNE(i).z.sigma_bottom;
+    %get site name
+    Site = FluxBSNE(i).Site;
+    
+    if strcmp(Site,'Oceano')
+        %get indices of profile values on each side of tower
+        ind_1 = find(FluxBSNE(i).y>=0); %indices of BSNEs to right of Wenglors (looking from upwind perspective)
+        ind_2 = find(FluxBSNE(i).y<0); %indices of BSNEs to left of Wenglors (looking from upwind perspective)
+        
+        %separate flux and height profiles for fitting    
+        qz_profile_1 = FluxBSNE(i).qz.qz(ind_1);
+        qz_profile_2 = FluxBSNE(i).qz.qz(ind_2);
+        z_bottom_profile_1 = FluxBSNE(i).z.bottom(ind_1); %bottom heights of BSNEs
+        z_bottom_profile_2 = FluxBSNE(i).z.bottom(ind_2); %bottom heights of BSNEs
+        z_trapheight_profile_1 = FluxBSNE(i).z.trapheight(ind_1); %trap heights of BSNEs
+        z_trapheight_profile_2 = FluxBSNE(i).z.trapheight(ind_2); %trap heights of BSNEs
+        sigma_qz_profile_1 = FluxBSNE(i).qz.sigma(ind_1);
+        sigma_qz_profile_2 = FluxBSNE(i).qz.sigma(ind_2);
+        sigma_z_profile_1 = FluxBSNE(i).z.sigma_bottom(ind_1);
+        sigma_z_profile_2 = FluxBSNE(i).z.sigma_bottom(ind_2);
 
-    %start with guess of BSNE midpoint heights as arithmetic mean of traps
-    z_profile = z_bottom_profile+z_trapheight_profile/2;
-    
-    %height-integrated flux from exponential fit
-    [q0,zq,sigma_q0,sigma_zq,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(qz_profile, z_profile, sigma_qz_profile, sigma_z_profile);
-    
-    %now that we have zq, redo calculation of BSNE heights
-    z_profile_old = z_profile; %document previous z-profile to see difference
-    z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
-    z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
-    
-    %iterate until the z_profile is minutely small
-    while(z_profile_difference>1e-8)
-        [q0,zq,sigma_q0,sigma_zq,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(qz_profile, z_profile, sigma_qz_profile, sigma_z_profile); %height-integrated flux from exponential fit
-        z_profile_old = z_profile; %document previous z-profile to see difference
-        z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
-        z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
+        %fit profile 1
+        [z_profile_1,q0_1,zq_1,Q_1,sigma_q0_1,sigma_zq_1,sigma_Q_1,qz_pred_1,sigma_qz_pred_1,sigma_logqz_pred_1,sigma2_q0zq_1] = ...
+            BSNE_profilefit(qz_profile_1, z_bottom_profile_1, z_trapheight_profile_1, sigma_qz_profile_1, sigma_z_profile_1);
+
+        %fit profile 2
+        [z_profile_2,q0_2,zq_2,Q_2,sigma_q0_2,sigma_zq_2,sigma_Q_2,qz_pred_2,sigma_qz_pred_2,sigma_logqz_pred_2,sigma2_q0zq_2] = ...
+            BSNE_profilefit(qz_profile_2, z_bottom_profile_2, z_trapheight_profile_2, sigma_qz_profile_2, sigma_z_profile_2);
+        
+        %compute averaged values and their uncertainties
+        if (~isnan(q0_1))&&(~isnan(q0_2))
+%             [q0, sigma_q0] = MeanUncertainty([q0_1;q0_2],[sigma_q0_1;sigma_q0_2]);
+            q0 = mean([q0_1 q0_2]);
+            sigma_q0 = sqrt(sigma_q0_1.^2+sigma_q0_2.^2)./2;
+%             [zq, sigma_zq] = MeanUncertainty([zq_1;zq_2],[sigma_zq_1;sigma_zq_2]);
+            zq = mean([zq_1 zq_2]);
+            sigma_zq = sqrt(sigma_zq_1.^2+sigma_zq_2.^2)./2;
+%            [Q, sigma_Q] = MeanUncertainty([Q_1;Q_2],[sigma_Q_1;sigma_Q_2]);
+            Q = mean([Q_1 Q_2]);
+            sigma_Q = sqrt(sigma_Q_1.^2+sigma_Q_2.^2)./2;
+            sigma2_q0zq = mean([sigma2_q0zq_1, sigma2_q0zq_2]);  %% is this correct??
+        elseif ~isnan(q0_1)
+            q0 = q0_1;
+            sigma_q0 = sigma_q0_1;
+            zq = zq_1;
+            sigma_zq = sigma_zq_1;
+            Q = Q_1;
+            sigma_Q = sigma_Q_1;
+            sigma2_q0zq = sigma2_q0zq_1;
+        elseif ~isnan(q0_2)
+            q0 = q0_2;
+            sigma_q0 = sigma_q0_2;
+            zq = zq_2;
+            sigma_zq = sigma_zq_2;
+            Q = Q_2;
+            sigma_Q = sigma_Q_2;
+            sigma2_q0zq = sigma2_q0zq_2;
+        end
+            
+        %combine profile values based on original ordering
+        N_profile = length(ind_1)+length(ind_2);
+        qz_pred = zeros(N_profile,1);
+        sigma_qz_pred = zeros(N_profile,1);
+        sigma_logqz_pred = zeros(N_profile,1);
+        z_profile = zeros(N_profile,1);
+        sigma_z_profile = zeros(N_profile,1);
+        qz_pred(ind_1) = qz_pred_1; qz_pred(ind_2) = qz_pred_2;
+        sigma_qz_pred(ind_1) = sigma_qz_pred_1; sigma_qz_pred(ind_2) = sigma_qz_pred_2;
+        sigma_logqz_pred(ind_1) = sigma_logqz_pred_1; sigma_logqz_pred(ind_2) = sigma_logqz_pred_2;
+        z_profile(ind_1) = z_profile_1; z_profile(ind_2) = z_profile_2;
+        sigma_z_profile(ind_1) = sigma_z_profile_1; sigma_z_profile(ind_2) = sigma_z_profile_2;
+        
+        %add combined values to structured array
+        FluxBSNE(i).qz.q0 = q0;
+        FluxBSNE(i).qz.sigma_q0 = sigma_q0;
+        FluxBSNE(i).z.zq = zq;
+        FluxBSNE(i).z.sigma_zq = sigma_zq;
+        FluxBSNE(i).Q = struct('Q', Q, 'sigma_Q', sigma_Q, 'sigma2_q0zq', sigma2_q0zq, 'units',{'g/m/s'});
+        FluxBSNE(i).qz.qz_pred = qz_pred;
+        FluxBSNE(i).qz.sigma_qz_pred = sigma_qz_pred;
+        FluxBSNE(i).qz.sigma_logqz_pred = sigma_logqz_pred;
+        FluxBSNE(i).z.z = z_profile;
+        FluxBSNE(i).z.sigma_z = sigma_z_profile;
+        
+        %add subprofile values to structured array
+        FluxBSNE(i).qz.qz_1 = qz_profile_1;
+        FluxBSNE(i).qz.qz_2 = qz_profile_2;
+        FluxBSNE(i).qz.sigma_1 = sigma_qz_profile_1;
+        FluxBSNE(i).qz.sigma_2 = sigma_qz_profile_2;
+        FluxBSNE(i).qz.q0_1 = q0_1;
+        FluxBSNE(i).qz.q0_2 = q0_2;
+        FluxBSNE(i).qz.sigma_q0_1 = sigma_q0_1;
+        FluxBSNE(i).qz.sigma_q0_2 = sigma_q0_2;
+        FluxBSNE(i).z.zq_1 = zq_1;
+        FluxBSNE(i).z.zq_2 = zq_2;
+        FluxBSNE(i).z.sigma_zq_1 = sigma_zq_1;
+        FluxBSNE(i).z.sigma_zq_2 = sigma_zq_2;
+        FluxBSNE(i).Q.Q_1 = Q_1;
+        FluxBSNE(i).Q.Q_2 = Q_2;
+        FluxBSNE(i).Q.sigma_Q_1 = sigma_Q_1;
+        FluxBSNE(i).Q.sigma_Q_2 = sigma_Q_2;
+        FluxBSNE(i).Q.sigma2_q0zq_1 = sigma2_q0zq_1;
+        FluxBSNE(i).Q.sigma2_q0zq_2 = sigma2_q0zq_2;
+        FluxBSNE(i).qz.qz_pred_1 = qz_pred_1;
+        FluxBSNE(i).qz.qz_pred_2 = qz_pred_2;
+        FluxBSNE(i).qz.sigma_qz_pred_1 = sigma_qz_pred_1;
+        FluxBSNE(i).qz.sigma_qz_pred_2 = sigma_qz_pred_2;
+        FluxBSNE(i).qz.sigma_logqz_pred_1 = sigma_logqz_pred_1;
+        FluxBSNE(i).qz.sigma_logqz_pred_2 = sigma_logqz_pred_2;
+        FluxBSNE(i).z.z_1 = z_profile_1;
+        FluxBSNE(i).z.z_2 = z_profile_2;
+        FluxBSNE(i).z.sigma_z_1 = sigma_z_profile_1;
+        FluxBSNE(i).z.sigma_z_2 = sigma_z_profile_2;
+    else
+        %get flux and height profiles for fitting    
+        qz_profile = FluxBSNE(i).qz.qz;
+        z_bottom_profile = FluxBSNE(i).z.bottom; %bottom heights of BSNEs
+        z_trapheight_profile = FluxBSNE(i).z.trapheight; %trap heights of BSNEs
+        sigma_qz_profile = FluxBSNE(i).qz.sigma;
+        sigma_z_profile = FluxBSNE(i).z.sigma_bottom;
+
+        %fit profile
+        [z_profile,q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_pred,sigma_qz_pred,sigma_logqz_pred,sigma2_q0zq] = ...
+            BSNE_profilefit(qz_profile, z_bottom_profile, z_trapheight_profile, sigma_qz_profile, sigma_z_profile);
+
+        %add to structured array
+        FluxBSNE(i).qz.q0 = q0;
+        FluxBSNE(i).qz.sigma_q0 = sigma_q0;
+        FluxBSNE(i).z.zq = zq;
+        FluxBSNE(i).z.sigma_zq = sigma_zq;
+        FluxBSNE(i).Q = struct('Q', Q, 'sigma_Q', sigma_Q, 'sigma2_q0zq', sigma2_q0zq, 'units',{'g/m/s'});
+        FluxBSNE(i).qz.qz_pred = qz_pred;
+        FluxBSNE(i).qz.sigma_qz_pred = sigma_qz_pred;
+        FluxBSNE(i).qz.sigma_logqz_pred = sigma_logqz_pred;
+        FluxBSNE(i).z.z = z_profile;
+        FluxBSNE(i).z.sigma_z = sigma_z_profile;
     end
-   
-    %% add to structured array
-    FluxBSNE(i).qz.q0 = q0;
-    FluxBSNE(i).qz.qz_pred = qz_pred;
-    FluxBSNE(i).qz.sigma_q0 = sigma_q0;
-    FluxBSNE(i).qz.sigma_qz_pred = sigma_qz_pred;
-    FluxBSNE(i).qz.sigma_logqz_pred = sigma_logqz_pred;
-    FluxBSNE(i).z.zq = zq;
-    FluxBSNE(i).z.sigma_zq = sigma_zq;
-    FluxBSNE(i).z.z = z_profile;
-    FluxBSNE(i).z.sigma_z = sigma_z_profile;
-    
-    %% calculate Q and sigma_Q, add to structured array
-    Q = q0*zq; %get total flux [g/m/s]
-    sigma_Q = sqrt((sigma_q0*zq)^2+(sigma_zq*q0)^2); %estimate uncertainty in total flux
-    FluxBSNE(i).Q = struct('Q', Q, 'sigma_Q', sigma_Q,'units',{'g/m/s'});
-    
-%     %% optional plot (comment out to hide)
-% 
-%     %get predicted values
-%     qz_pred_minus = qz_pred - sigma_qz_pred;
-%     qz_pred_plus = qz_pred + sigma_qz_pred;
-%     [z_sort, ind_sort] = sort(z_profile);
-%     qz_pred_sort = qz_pred(ind_sort);
-%     qz_pred_minus_sort = qz_pred_minus(ind_sort);
-%     qz_pred_plus_sort = qz_pred_plus(ind_sort);
-% 
-%     %make plot
-%     figure(1); clf;
-%     errorbar(z_profile,qz_profile,sigma_qz_profile,'bx'); hold on;
-%     plot(z_sort,qz_pred_sort,'k');
-%     plot(z_sort,qz_pred_minus_sort,'r--',z_sort,qz_pred_plus_sort,'r--');
-%     set(gca,'yscale','log');
-%     xlabel('z (m)');
-%     ylabel('q (g/m^2/s)');
-%     set(gca,'FontSize',16);
-%     pause;
 end
 
 %reshape FluxBSNE so it is a column vector like all other structured arrays
