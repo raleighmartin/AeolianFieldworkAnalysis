@@ -166,11 +166,6 @@ zqnorm_bin_sigma_all = cell(N_Sites,1); %get uncertainty in zqnorm for tau bins
 zqnorm_bin_sigmaust_all = cell(N_Sites,1); %additional ust contribution to zq uncertainty
 zqnorm_bin_sigmatotal_all = cell(N_Sites,1); %total uncertainty in zqnorm from zqnorm and ust contributions
 
-%separate Qhats into tau bins
-Qhat_bin_avg_all = cell(N_Sites,1); %get average Qhat for tau bins
-Qhat_bin_sigma_all = cell(N_Sites,1); %total estimated Qhat uncertainty for bin
-Qhat_bin_sigmatau_all = cell(N_Sites,1); %additional tau contribution to Qhat uncertainty
-Qhat_bin_sigmatotal_all = cell(N_Sites,1);  %total uncertainty in Qhat from Qhat and tau contributions
 
 %get binned values for all sites
 for i = 1:N_Sites
@@ -358,6 +353,10 @@ zq_pred_zqustfit_all = cell(N_Sites,1); %predicted zq
 zq_pred_relativerange_all = zeros(N_Sites,1); %relative range of zq prediction
 sigma_zq_pred_relativerange_all = zeros(N_Sites,1); %uncertainty in relative range of zq prediction
 zqnorm_pred_zqustfit_all = cell(N_Sites,1); %predicted zqnorm
+
+%mean values
+zq_bar_all = zeros(N_Sites,1); %mean of zq
+sigma_zq_bar_all = zeros(N_Sites,1); %uncertainty of zq
 zqnorm_bar_all = zeros(N_Sites,1); %mean of zqnorm
 sigma_zqnorm_bar_all = zeros(N_Sites,1); %uncertainty of zqnorm bar
 
@@ -389,7 +388,11 @@ for i = 1:N_Sites
     Chi2_zqustfit_all(i) = sum((zq_residuals./zq_sigma_zqustfit_all{i}).^2); %compute total Chi2
     df_zqustfit_all(i) = length(zq_residuals)-2;
     
-    %get mean zqnorm
+    %get mean zq and zqnorm
+    [zq_bar, sigma_zq_bar] = MeanUncertainty(zq_zqustfit_all{i}, zq_sigma_zqustfit_all{i});
+    zq_bar_all(i) = zq_bar; %mean of zq
+    sigma_zq_bar_all(i) = sigma_zq_bar; %uncertainty of zq bar
+    
     [zqnorm_bar, sigma_zqnorm_bar] = MeanUncertainty(zqnorm_zqustfit_all{i}, zqnorm_sigma_zqustfit_all{i});
     zqnorm_bar_all(i) = zqnorm_bar; %mean of zqnorm
     sigma_zqnorm_bar_all(i) = sigma_zqnorm_bar; %uncertainty of zqnorm bar
@@ -621,15 +624,30 @@ end
 %%%%%%%%%%%%%%%%%%
 
 %% COMPUTE DERIVED VARIABLES
+%initialize Qhats 
+Qhat_bin_avg_all = cell(N_Sites,1); %get average Qhat for tau bins
+Qhat_bin_sigma_all = cell(N_Sites,1); %total estimated Qhat uncertainty for bin
+
+%initialize alternative Qhats into tau bins
+Qhatalt_bin_avg_all = cell(N_Sites,1); %get average alternative Qhat for tau bins
+Qhatalt_bin_sigma_all = cell(N_Sites,1); %total estimated alternative Qhat uncertainty for bin
+
 for i=1:N_Sites
     tauex_bin_avg_all{i} = tau_bin_avg_all{i} - tauit_linearfit_all(i); %determine tauex based on threshold by site
     tauex_bin_sigma_all{i} = sqrt(tau_bin_sigma_all{i}.^2 + tauit_sigma_linearfit_all(i).^2); %uncertainty in tauex combines tau uncertainty and threshold uncertainty
     tauex_bin_min_all{i} = tau_bin_min_all{i} - tauit_linearfit_all(i); %determine minimum tauex in bin based on threshold by site
+    
     Qhat_bin_avg_all{i} = (Q_bin_avg_all{i}*1e-3)./((1/g)*ustit_linearfit_all(i).*tauex_bin_avg_all{i}); %compute Qhat
     Qhat_Q_sigma = Q_bin_sigma_all{i}.*(Qhat_bin_avg_all{i}./Q_bin_avg_all{i}); %contribution of Q to Qhat uncertainty
-    Qhat_ustit_sigma = ustit_sigma_linearfit_all(i).*(Qhat_bin_avg_all{i}./ustit_linearfit_all(i)); %contribution of Q to Qhat uncertainty
-    Qhat_tauex_sigma = tauex_bin_sigma_all{i}.*(Qhat_bin_avg_all{i}./tauex_bin_avg_all{i}); %contribution of Q to Qhat uncertainty
+    Qhat_ustit_sigma = ustit_sigma_linearfit_all(i).*(Qhat_bin_avg_all{i}./ustit_linearfit_all(i)); %contribution of ustit to Qhat uncertainty
+    Qhat_tauex_sigma = tauex_bin_sigma_all{i}.*(Qhat_bin_avg_all{i}./tauex_bin_avg_all{i}); %contribution of tauex to Qhat uncertainty
     Qhat_bin_sigma_all{i} = sqrt(Qhat_Q_sigma.^2+Qhat_ustit_sigma.^2+Qhat_tauex_sigma.^2); %total Qhat uncertainty
+    
+    Qhatalt_bin_avg_all{i} = (Q_bin_avg_all{i}*1e-3)./(sqrt(zq_bar_all(i)/g).*tauex_bin_avg_all{i}); %compute alternative Qhat
+    Qhatalt_Q_sigma = Q_bin_sigma_all{i}.*(Qhatalt_bin_avg_all{i}./Q_bin_avg_all{i}); %contribution of Q to alternative Qhat uncertainty
+    Qhatalt_zq_sigma = (1/2)*sigma_zq_bar_all(i).*(Qhatalt_bin_avg_all{i}./zq_bar_all(i)); %contribution of zq to alternative Qhat uncertainty
+    Qhatalt_tauex_sigma = tauex_bin_sigma_all{i}.*(Qhatalt_bin_avg_all{i}./tauex_bin_avg_all{i}); %contribution of tauex to alternative Qhat uncertainty
+    Qhatalt_bin_sigma_all{i} = sqrt(Qhatalt_Q_sigma.^2+Qhatalt_zq_sigma.^2+Qhatalt_tauex_sigma.^2); %total alternative Qhat uncertainty
 end
 
 %% COMPUTE PARAMETERS ASSOCIATED WITH DERIVED VALUES
@@ -638,11 +656,17 @@ tauex_Qtauexfit_all = cell(N_Sites,1); %tauex's for fit
 sigma_tauex_Qtauexfit_all = cell(N_Sites,1); %sigma tauex's for fit
 Q_Qtauexfit_all = cell(N_Sites,1); %Q's for fit
 sigma_Q_Qtauexfit_all = cell(N_Sites,1); %sigma_Q's for fit
+Qtauratio_bar_all = zeros(N_Sites,1); %scaling coefficient for Q/tauex versus tauex 
+
 Qhat_Qtauexfit_all = cell(N_Sites,1); %Qhat's for fit
 sigma_Qhat_Qtauexfit_all = cell(N_Sites,1); %sigma_Qhat's for fit
-Qtauratio_bar_all = zeros(N_Sites,1); %scaling coefficient for Q/tauex versus tauex 
 Qhat_bar_all = zeros(N_Sites,1); %scaling coefficient for Qhat versus tauex
 sigma_Qhat_bar_all = zeros(N_Sites,1); %scaling coefficient for Qhat versus tauex
+
+Qhatalt_Qtauexfit_all = cell(N_Sites,1); %alternative Qhat's for fit
+sigma_Qhatalt_Qtauexfit_all = cell(N_Sites,1); %alternative Qhat's for fit
+Qhatalt_bar_all = zeros(N_Sites,1); %scaling coefficient for alternative Qhat versus tauex
+sigma_Qhatalt_bar_all = zeros(N_Sites,1); %scaling coefficient for alternative Qhat versus tauex
 
 %go through sites
 for i = 1:N_Sites
@@ -656,13 +680,18 @@ for i = 1:N_Sites
     sigma_Qtauratio_fit = sigma_Q_Qtauexfit_all{i}./tauex_Qtauexfit_all{i};
     Qhat_Qtauexfit_all{i} = Qhat_bin_avg_all{i}(ind_fit);
     sigma_Qhat_Qtauexfit_all{i} = Qhat_bin_sigma_all{i}(ind_fit);
+    Qhatalt_Qtauexfit_all{i} = Qhatalt_bin_avg_all{i}(ind_fit);
+    sigma_Qhatalt_Qtauexfit_all{i} = Qhatalt_bin_sigma_all{i}(ind_fit);
     
-    %perform fitting
+    %get mean values and uncertainties
     [Qtauratio_bar, ~] = MeanUncertainty(Qtauratio_fit, sigma_Qtauratio_fit);
     Qtauratio_bar_all(i) = Qtauratio_bar;
     [Qhat_bar, sigma_Qhat_bar] = MeanUncertainty(Qhat_Qtauexfit_all{i}, sigma_Qhat_Qtauexfit_all{i});
     Qhat_bar_all(i) = Qhat_bar;
     sigma_Qhat_bar_all(i) = sigma_Qhat_bar;
+    [Qhatalt_bar, sigma_Qhatalt_bar] = MeanUncertainty(Qhatalt_Qtauexfit_all{i}, sigma_Qhatalt_Qtauexfit_all{i});
+    Qhatalt_bar_all(i) = Qhatalt_bar;
+    sigma_Qhatalt_bar_all(i) = sigma_Qhatalt_bar;
 end
 
 %%
@@ -678,7 +707,7 @@ legend_items = cell(N_Sites,1);
 %plot binned field data
 for i = 1:N_Sites
     errorbar(ust_zqustfit_all{i},zq_zqustfit_all{i},zq_sigma_zqustfit_all{i},Markers_field{i},'Color',Colors_field{i},'MarkerSize',MarkerSize_field,'LineWidth',LineWidth_field);
-    legend_items{i} = ['\chi^2_{\nu} = ', num2str(Chi2_zqustfit_all(i)/df_zqustfit_all(i),'%.2f')];
+    %legend_items{i} = ['\chi^2_{\nu} = ', num2str(Chi2_zqustfit_all(i)/df_zqustfit_all(i),'%.2f')];
 end
 %plot literature data
 for i = 1:N_lit
@@ -695,7 +724,7 @@ end
 %organize plot
 xlim([0.25 0.6]);
 ylim([0 0.15]);
-legend(legend_items,'Location','SouthEast');
+%legend(legend_items,'Location','SouthEast');
 text(0.255, 0.14,'(a)','FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 xlabel('\textbf{Shear velocity, $$u_{*}$$ (m/s)}','Interpreter','Latex');

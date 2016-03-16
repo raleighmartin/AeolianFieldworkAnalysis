@@ -69,6 +69,7 @@ zq_b_fit = cell(N_Sites+N_Lit,1);
 zqnorm_bar_fit = cell(N_Sites+N_Lit,1);
 tauit_linearfit = cell(N_Sites+N_Lit,1);
 ustit_linearfit = cell(N_Sites+N_Lit,1);
+Qhatalt_bar_fit = cell(N_Sites+N_Lit,1);
 Qhat_bar_fit = cell(N_Sites+N_Lit,1);
 for i = 1:N_Sites
     site_fit{i} = Sites{i};
@@ -78,6 +79,7 @@ for i = 1:N_Sites
     zqnorm_bar_fit{i} = [int2str(zqnorm_bar_all(i)),' +/- ',int2str(sigma_zqnorm_bar_all(i))];
     tauit_linearfit{i} = [num2str(tauit_linearfit_all(i),'%.3f'),' +/- ',num2str(tauit_sigma_linearfit_all(i),'%.3f')];
     ustit_linearfit{i} = [num2str(ustit_linearfit_all(i),'%.3f'),' +/- ',num2str(ustit_sigma_linearfit_all(i),'%.3f')];
+    Qhatalt_bar_fit{i} = [num2str(Qhatalt_bar_all(i),'%.2f'),' +/- ',num2str(sigma_Qhatalt_bar_all(i),'%.2f')];
     Qhat_bar_fit{i} = [num2str(Qhat_bar_all(i),'%.2f'),' +/- ',num2str(sigma_Qhat_bar_all(i),'%.2f')];
 end
 for i = 1:N_Lit
@@ -104,6 +106,7 @@ FitTable = struct(...
     'zqnorm',zqnorm_bar_fit,...
     'tauit',tauit_linearfit,...
     'ustit',ustit_linearfit,...
+    'Qhatalt',Qhatalt_bar_fit,...
     'Qhat',Qhat_bar_fit);
 
 %% convert to table
