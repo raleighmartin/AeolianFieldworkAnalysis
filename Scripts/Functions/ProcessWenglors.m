@@ -72,13 +72,23 @@ for i=1:length(FluxBSNE);
             z_Wenglor = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).z.z;
             sigma_z_Wenglor = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).z.sigma_z;
             
-            %compute expected flux at Wenglor height
-            qz_pred = q0_BSNE.*exp(-z_Wenglor/zq_BSNE); %(g/m^2/s)
+%             %compute expected flux at Wenglor height
+%             qz_pred = q0_BSNE.*exp(-z_Wenglor/zq_BSNE); %(g/m^2/s)
+%             
+%             %compute uncertainty in expected flux at Wenglor height
+%             sigma_qz_pred = sqrt((sigma_q0_BSNE*qz_pred/q0_BSNE).^2 + ...
+%                 (sigma_zq_BSNE*qz_pred.*z_Wenglor/zq_BSNE^2).^2 + ...
+%                 (2*sigma2_q0zq_BSNE*qz_pred.^2.*z_Wenglor/(q0_BSNE*zq_BSNE^2)));
             
-            %compute uncertainty in expected flux at Wenglor height
-            sigma_qz_pred = sqrt((sigma_q0_BSNE*qz_pred/q0_BSNE).^2 + ...
-                (sigma_zq_BSNE*qz_pred.*z_Wenglor/zq_BSNE^2).^2 + ...
-                (2*sigma2_q0zq_BSNE*qz_pred.^2.*z_Wenglor/(q0_BSNE*zq_BSNE^2)));
+            %compute expected flux and uncertainty at Wenglor height
+            [qz_pred, sigma_qz_pred] = qz_prediction(z_Wenglor, q0_BSNE, zq_BSNE, sigma_q0_BSNE, sigma_zq_BSNE, sigma2_q0zq_BSNE);
+            
+            %compute uncertainty due height uncertainty of Wenglor
+            sigma_qz_z = abs((qz_pred/zq_BSNE)*sigma_z_Wenglor); %(g/m^2/s)
+            
+            %compute calibration flux and uncertainty
+            qz_cal = qz_pred; %calibration flux equals BSNE expected flux
+            sigma_qz_cal = sqrt(sigma_qz_pred.^2+sigma_qz_z.^2); %calibration flux uncertainty equals expected flux uncertainty plus Wenglor height uncertainty
             
 %             %get contribution of uncertainty in Wenglor height to uncertainty in flux
 %             sigma_qz_z = abs((-q0_BSNE/zq_BSNE)*exp(-z_Wenglor/zq_BSNE)*sigma_z_Wenglor);
@@ -106,8 +116,8 @@ for i=1:length(FluxBSNE);
             W_dt = seconds(mode(diff(PrimaryInterval_t)));
 
             %compute conversion factor from Wenglor counts to flux, "qzPerCount"
-            qzPerCount = qz_pred/(W_CountsPerSecond*W_dt);
-            sigma_qzPerCount = sigma_qz_pred/(W_CountsPerSecond*W_dt); %calibration uncertainty directly from uncertainty in qz pred
+            qzPerCount = qz_cal/(W_CountsPerSecond*W_dt);
+            sigma_qzPerCount = sigma_qz_cal/(W_CountsPerSecond*W_dt); %calibration uncertainty directly from uncertainty in qz pred
             
 %             %uncertainty estimation for calibration coefficient
 %             sigma_qzPerCount_qz_pred = abs(sigma_qz_pred/(W_CountsPerSecond*W_dt)); %uncertainty due to qz_pred

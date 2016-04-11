@@ -27,18 +27,22 @@
 %use method of bevington and robinson (p. 105)
 function [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_fit,sigma_qz_fit,sigma_logqz_fit,sigma2_q0zq] = qz_profilefit(qz, z, sigma_qz, sigma_z)
 
-%set input error values arbitrarily as one if input is not given
-if nargin == 2
-    sigma_qz = ones(size(qz)); 
-    sigma_z = ones(size(z));
-end
+% %set input error values arbitrarily as one if input is not given
+% if nargin == 2
+%     sigma_qz = ones(size(qz)); 
+%     sigma_z = ones(size(z));
+% end
 
-%compute log of flux and associated error
+%compute log of flux
 logqz = log(qz); %[log(q)]
-sigma_logqz = sqrt((sigma_qz.^2./qz.^2)+(sigma_z.^2./z.^2)); %[log(q)] (combines height and flux error)
 
 %perform linear fit and estimate parameters from fit
-[a, b, sigma_a, sigma_b, ~, sigma_logqz_fit, sigma2_ab] = linearfit(z,logqz,sigma_logqz);
+if nargin == 2 %if no uncertainties given, use function linearfit without sigma_logqz
+    [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit, sigma2_ab] = linearfit(z,logqz);
+else
+    sigma_logqz = sqrt((sigma_qz.^2./qz.^2)+(sigma_z.^2./z.^2)); %[log(q)] compute uncertainty in log(qz)
+    [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit, sigma2_ab] = linearfit(z,logqz,sigma_logqz);
+end
 q0 = exp(a); %[g/m^2/s]
 zq = -1/b; %[m]
 sigma_q0 = sigma_a*q0; %[g/m^2/s]

@@ -26,11 +26,12 @@ startRow = 2;
 filename_Greeley96 = [folder_LiteratureData,'Greeley96.dat'];
 formatSpec_Greeley96 = '%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%f%[^\n\r]';
 N_Greeley96 = 10;
-ust_Greeley96 = [0.47; 0.51; 0.49; 0.31; 0.35; 0.31; 0.54; 0.49; 0.41; 0.42]; %u* values (m/s) used in Kok et al. (2008)
+ust_Greeley96 = [0.47; 0.51; 0.49; 0.31; 0.35; 0.31; 0.54; 0.49; 0.41; 0.42]; %u* values (m/s) used in Kok and Renno (2008)
 sigma_ust_Greeley96 = ust_Greeley96*ust_relerr; %calculate u* uncertainty based on assumed relative error
 Q_pub_Greeley96 = [NaN; NaN; NaN; NaN; 16.1; 2.7; 19; 19; 10.4; 10.4]; %values from Table 1 in paper
 d50_Greeley96 = 0.230; %median grain size (mm) value from paper
-Greeley96_OutlierInd = [4];
+%Greeley96_OutlierInd = [4];
+Greeley96_OutlierInd = [];
 
 % Namikas 2003
 filename_Namikas03 = [folder_LiteratureData,'Namikas03verMF.dat'];
@@ -40,7 +41,8 @@ ust_Namikas03 = [0.32; 0.27; 0.32; 0.30; 0.38; 0.37; 0.38; 0.47; 0.63]; %u* valu
 sigma_ust_Namikas03 = ust_Namikas03*ust_relerr; %calculate u* uncertainty based on assumed relative error
 Q_pub_Namikas03 = [0.35; 0.76; 2.73; 2.12; 5.61; 5.86; 5.57; 11.80; 29.11]; %values from Table 1 in paper
 d50_Namikas03 = 0.250; %median grain size (mm) value from paper
-Namikas03_OutlierInd = [9];
+%Namikas03_OutlierInd = [9];
+Namikas03_OutlierInd = [];
 
 % Farrell 2012
 filename_Farrell12 = [folder_LiteratureData,'FarrellEtAl2012.dat'];
@@ -49,7 +51,9 @@ N_Farrell12 = 14;
 ust_Farrell12 = [0.54; 0.47; 0.53; 0.49; 0.50; 0.50; 0.47; 0.45; 0.51; 0.48; 0.41; 0.50; 0.50; 0.49]; %u* values (m/s) from paper
 sigma_ust_Farrell12 = ust_Farrell12*ust_relerr; %calculate u* uncertainty based on assumed relative error
 d50_Farrell12 = 0.545659491010631; %use median grain size (mm) from Jeri deployment since they don't report it
-Farrell12_OutlierInd = [];
+Farrell12_OutlierInd = [1,12:14];
+%exclude first sample because of shorter time interval
+%exclude last three because they are from coarser CSFC (as opposed to the rest of the samples from finer CSFF)
 
 
 %% Load and process Greeley et al. 1996 data
@@ -130,7 +134,7 @@ sigma_zq_Greeley96 = zeros(N_Greeley96,1); %(m)
 Q_fit_Greeley96 = zeros(N_Greeley96,1); %(g/m/s)
 
 for i=1:N_Greeley96
-    [q0,zq,sigma_q0,sigma_zq] = qz_profilefit(q_Greeley96{i}, z_Greeley96{i}); %fit will assume equal uncertainties
+    [q0,zq,~,sigma_q0,sigma_zq,~] = qz_profilefit(q_Greeley96{i}, z_Greeley96{i}); %fit will assume equal uncertainties
     Q = q0*zq;
     zq_Greeley96(i) = zq;
     sigma_zq_Greeley96(i) = sigma_zq; %flux height uncertainty
@@ -221,7 +225,7 @@ sigma_zq_Namikas03 = zeros(N_Namikas03,1); %e-folding height (m)
 Q_fit_Namikas03 = zeros(N_Namikas03,1); %total flux (g/m/s)
 
 for i=1:N_Namikas03
-    [q0,zq,~,sigma_zq] = qz_profilefit(q_Namikas03{i}, z_Namikas03{i});
+    [q0,zq,~,sigma_q0,sigma_zq,~] = qz_profilefit(q_Namikas03{i}, z_Namikas03{i});
     Q = q0*zq; %calculate total flux (g/m/s)
     zq_Namikas03(i) = zq;
     sigma_zq_Namikas03(i) = sigma_zq;
@@ -258,34 +262,35 @@ RunName_Farrell12 = cell(N_Farrell12,1); %run name
 for i = 1:N_Farrell12
     ind_profile = find(dataArray_Farrell12{1}==i);
     
-    %compute sediment flux
+    %compute sediment flux and trap heights
     m_profile = dataArray_Farrell12{4}(ind_profile); %mass (g)
     T_profile = dataArray_Farrell12{3}(ind_profile); %duration (s)
     H_profile = dataArray_Farrell12{6}(ind_profile); %trap height (m)
     W_profile = dataArray_Farrell12{7}(ind_profile); %trap width (m)
     q_Farrell12{i} = m_profile./(T_profile.*H_profile.*W_profile);
+    z_bottom_profile = dataArray_Farrell12{5}(ind_profile)-H_profile; %bottom height of profile traps (m)
     
-    %get trap height
-    z_bottom_profile = dataArray_Farrell12{5}(ind_profile)-H_profile; %top height of profile traps (m)
+    %iterative fit to profile to optimize trap heights for fitting
+    [z_profile,q0,zq,Q,~,sigma_zq] = BSNE_profilefit(q_Farrell12{i}, z_bottom_profile, H_profile);
     
-    %start with guess of trap midpoint heights as arithmetic mean of traps
-    z_profile = z_bottom_profile + H_profile/2;
-    
-    %height-integrated flux from exponential fit
-    [q0,zq,sigma_q0,sigma_zq,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(q_Farrell12{i}, z_profile);
-    
-    %now that we have zq, redo calculation of trap heights
-    z_profile_old = z_profile; %document previous z-profile to see difference
-    z_profile = z_profile_calc(z_bottom_profile,H_profile,zq); %calculate new trap midpoint heights based on zq
-    z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
-    
-    %iterate until the z_profile_difference is minutely small
-    while(z_profile_difference>1e-8)
-        [q0,zq,sigma_q0,sigma_zq,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(q_Farrell12{i}, z_profile); %height-integrated flux from exponential fit
-        z_profile_old = z_profile; %document previous z-profile to see difference
-        z_profile = z_profile_calc(z_bottom_profile,H_profile,zq); %calculate new trap midpoint heights based on zq
-        z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
-    end
+%     %start with guess of trap midpoint heights as arithmetic mean of traps
+%     z_profile = z_bottom_profile + H_profile/2;
+%     
+%     %height-integrated flux from exponential fit
+%     [q0,zq,sigma_q0,sigma_zq,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(q_Farrell12{i}, z_profile);
+%     
+%     %now that we have zq, redo calculation of trap heights
+%     z_profile_old = z_profile; %document previous z-profile to see difference
+%     z_profile = z_profile_calc(z_bottom_profile,H_profile,zq); %calculate new trap midpoint heights based on zq
+%     z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
+%     
+%     %iterate until the z_profile_difference is minutely small
+%     while(z_profile_difference>1e-8)
+%         [q0,zq,~,sigma_q0,sigma_zq,~] = qz_profilefit(q_Farrell12{i}, z_profile); %height-integrated flux from exponential fit
+%         z_profile_old = z_profile; %document previous z-profile to see difference
+%         z_profile = z_profile_calc(z_bottom_profile,H_profile,zq); %calculate new trap midpoint heights based on zq
+%         z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
+%     end
     
     %add final list of profile heights to array
     z_Farrell12{i} = z_profile;
