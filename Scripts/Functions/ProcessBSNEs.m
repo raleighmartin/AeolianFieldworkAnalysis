@@ -151,16 +151,13 @@ for i = 1:N_Intervals
         
         %compute averaged values and their uncertainties
         if (~isnan(q0_1))&&(~isnan(q0_2))
-%             [q0, sigma_q0] = MeanUncertainty([q0_1;q0_2],[sigma_q0_1;sigma_q0_2]);
             q0 = mean([q0_1 q0_2]);
-            sigma_q0 = sqrt(sigma_q0_1.^2+sigma_q0_2.^2)./2;
-%             [zq, sigma_zq] = MeanUncertainty([zq_1;zq_2],[sigma_zq_1;sigma_zq_2]);
+            sigma_q0 = sqrt(sigma_q0_1.^2+sigma_q0_2.^2);
             zq = mean([zq_1 zq_2]);
-            sigma_zq = sqrt(sigma_zq_1.^2+sigma_zq_2.^2)./2;
-%            [Q, sigma_Q] = MeanUncertainty([Q_1;Q_2],[sigma_Q_1;sigma_Q_2]);
+            sigma_zq = sqrt(sigma_zq_1.^2+sigma_zq_2.^2);
             Q = mean([Q_1 Q_2]);
-            sigma_Q = sqrt(sigma_Q_1.^2+sigma_Q_2.^2)./2;
-            sigma2_q0zq = mean([sigma2_q0zq_1, sigma2_q0zq_2]);  %% is this correct??
+            sigma_Q = sqrt(sigma_Q_1.^2+sigma_Q_2.^2);
+            sigma2_q0zq = sigma2_q0zq_1 + sigma2_q0zq_2;
         elseif ~isnan(q0_1)
             q0 = q0_1;
             sigma_q0 = sigma_q0_1;

@@ -38,10 +38,10 @@ logqz = log(qz); %[log(q)]
 
 %perform linear fit and estimate parameters from fit
 if nargin == 2 %if no uncertainties given, use function linearfit without sigma_logqz
-    [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit, sigma2_ab] = linearfit(z,logqz);
-else
+    [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit, sigma2_ab, da_dy, db_dy] = linearfit(z,logqz);
+else %otherwise, use function with sigma_logqz
     sigma_logqz = sqrt((sigma_qz.^2./qz.^2)+(sigma_z.^2./z.^2)); %[log(q)] compute uncertainty in log(qz)
-    [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit, sigma2_ab] = linearfit(z,logqz,sigma_logqz);
+    [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit, sigma2_ab, da_dy, db_dy] = linearfit(z,logqz,sigma_logqz);
 end
 q0 = exp(a); %[g/m^2/s]
 zq = -1/b; %[m]
@@ -53,4 +53,5 @@ sigma_qz_fit = sigma_logqz_fit.*qz_fit; %confidence on prediction of qz [g/m^2/s
 %calculate Q and sigma_Q
 Q = q0*zq; %get total flux [g/m/s]
 sigma2_q0zq = (exp(a)/b^2)*sigma2_ab;
+%sigma2_q0zq = (exp(a)/b^2)*sum((sigma_qz.^2/qz.^2).*da_dy.*db_dy); %%technically more correct, produces slightly larger covariance by accounting for z
 sigma_Q = sqrt((sigma_q0*zq)^2 + (sigma_zq*q0)^2 + 2*sigma2_q0zq*Q); %estimate uncertainty in total flux including covariance of parameters (Bevington and Robinson, Eq. 3.13)

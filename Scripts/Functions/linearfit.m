@@ -14,9 +14,11 @@
 % sigma2_ab - covarying uncertainty in a and b
 % yfit = predicted values of y based on linear fit with x-values as input
 % sigma_yfit - corresponding uncertainty in predictions of y
+% da_dy = sensitivity of parameter a
+% db_dy = sensitivity of parameter b
 
 %use method of bevington and robinson (p. 105)
-function [a, b, sigma_a, sigma_b, yfit, sigma_yfit, sigma2_ab] = linearfit(x, y, sigma_y)
+function [a, b, sigma_a, sigma_b, yfit, sigma_yfit, sigma2_ab, da_dy, db_dy] = linearfit(x, y, sigma_y)
 
 N = length(x); %number of observations
 N_min = 2; %minimum number of observations for fit
@@ -29,9 +31,9 @@ if (nargin==2 && N>=N_min)
     sigma_y = sqrt((1/(N-2))*sum((y-a-b*x).^2));
     sigma_a = sqrt(sigma_y^2*sum(x.^2)/delta);
     sigma_b = sqrt(N*sigma_y^2/delta);
-	da_dy = (1/delta)*(sum(x.^2)-x*sum(x));
-    db_dy = (1/delta)*(N*x-sum(x));
-    sigma2_ab = sum(sigma_y.^2.*da_dy.*db_dy); %(Bevington and Robinson, Eq. 7.23)
+	da_dy = (1/delta)*(sum(x.^2)-x*sum(x)); 
+    db_dy = (1/delta)*(N*x-sum(x)); 
+    sigma2_ab = sum(sigma_y.^2.*da_dy.*db_dy);
 	yfit = a+b*x;
 	sigma_yfit = sqrt(sigma_a^2+sigma_b^2*x.^2+2*sigma2_ab*x); %uncertainty in prediction of y (Kok et al. 2014, Eq. A19)
 
@@ -55,6 +57,8 @@ elseif N>=N_min
 	sigma_b = NaN;
 	sigma_a = NaN;
     sigma2_ab = NaN;
+    da_dy = NaN;
+    db_dy = NaN;
 	yfit = a+b*x;
 	sigma_yfit = NaN*zeros(size(yfit));
 
@@ -65,6 +69,8 @@ else
     sigma_b = NaN;
     sigma_a = NaN;
     sigma2_ab = NaN;
+    da_dy = NaN;
+    db_dy = NaN;
     yfit = NaN;
     sigma_yfit = NaN;
 end

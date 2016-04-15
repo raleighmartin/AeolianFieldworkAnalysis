@@ -13,8 +13,5 @@ z_profile = zeros(N_z,1);
 for i = 1:N_z;
     z_profile(i) = -zq*log((-zq/z_trapheight_profile(i))*... %new calc matching actual and expected z
         exp(-z_bottom_profile(i)/zq)*(exp(-z_trapheight_profile(i)/zq)-1));
-%     z_profile(i) = -zq*log(0.5*(...
-%         exp(-(z_bottom_profile(i)+z_trapheight_profile(i))/zq)+...
-%         exp(-(z_bottom_profile(i)/zq)))); %old calc using midpoint height
 end
     

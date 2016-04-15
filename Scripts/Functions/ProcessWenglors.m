@@ -3,6 +3,9 @@
 function [ProcessedWenglors, FluxWenglor] = ProcessWenglors(Data, FluxBSNE, InstrumentMetadata)
 
 %% GO THROUGH BSNE PROFILES TO CALIBRATE WENGLOR COUNTS TO HEIGHT-SPECIFIC FLUXES
+%time interval for Wenglor
+dt_W = 0.04;
+
 %initialize ProcessedWenglors from raw (interpolated) Wenglor data
 ProcessedWenglors = Data.Wenglor;
 
@@ -23,11 +26,11 @@ for i=1:N_Wenglors
         N_t = length(ProcessedWenglors.(WenglorNames{i})(j).t.int);
         
         %assign 'qz' structured array to new column of master stuctured array
-        units = struct('qz','g/m^2/s','z','m','qzPerCount','g/m^2'); %create structured array with units
+        units = struct('qz','g/m^2/s','z','m','Cqn','g/m^2'); %create structured array with units
         ProcessedWenglors.(WenglorNames{i})(j).qz = ...
             struct('qz',zeros(N_t,1),'z',zeros(N_t,1),...
-            'sigma_z',zeros(N_t,1),'qzPerCount',zeros(N_t,1),...
-            'sigma_qzPerCount',zeros(N_t,1),'units',units);
+            'sigma_z',zeros(N_t,1),'Cqn',zeros(N_t,1),...
+            'sigma_Cqn',zeros(N_t,1),'units',units);
     end
     
 end
@@ -70,16 +73,8 @@ for i=1:length(FluxBSNE);
             
             %get Wenglor height and uncertainty
             z_Wenglor = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).z.z;
-            sigma_z_Wenglor = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).z.sigma_z;
-            
-%             %compute expected flux at Wenglor height
-%             qz_pred = q0_BSNE.*exp(-z_Wenglor/zq_BSNE); %(g/m^2/s)
-%             
-%             %compute uncertainty in expected flux at Wenglor height
-%             sigma_qz_pred = sqrt((sigma_q0_BSNE*qz_pred/q0_BSNE).^2 + ...
-%                 (sigma_zq_BSNE*qz_pred.*z_Wenglor/zq_BSNE^2).^2 + ...
-%                 (2*sigma2_q0zq_BSNE*qz_pred.^2.*z_Wenglor/(q0_BSNE*zq_BSNE^2)));
-            
+            sigma_z_Wenglor = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).HeightErr_m; %use only relative error in Wenglor height
+              
             %compute expected flux and uncertainty at Wenglor height
             [qz_pred, sigma_qz_pred] = qz_prediction(z_Wenglor, q0_BSNE, zq_BSNE, sigma_q0_BSNE, sigma_zq_BSNE, sigma2_q0zq_BSNE);
             
@@ -89,44 +84,15 @@ for i=1:length(FluxBSNE);
             %compute calibration flux and uncertainty
             qz_cal = qz_pred; %calibration flux equals BSNE expected flux
             sigma_qz_cal = sqrt(sigma_qz_pred.^2+sigma_qz_z.^2); %calibration flux uncertainty equals expected flux uncertainty plus Wenglor height uncertainty
-            
-%             %get contribution of uncertainty in Wenglor height to uncertainty in flux
-%             sigma_qz_z = abs((-q0_BSNE/zq_BSNE)*exp(-z_Wenglor/zq_BSNE)*sigma_z_Wenglor);
-%             
-%             %get contribution of uncertainty in BSNE q0 to uncertainty in flux
-%             sigma_qz_q0 = abs(exp(-z_Wenglor/zq_BSNE)*sigma_q0_BSNE);
-%             sigma_qz_zq = abs((-q0_BSNE*z_Wenglor)/(zq_BSNE^2)*exp(-z_Wenglor/zq_BSNE)*sigma_zq_BSNE);
-%             
-%             %add uncertainties to get total uncertainty in predicted qz
-%             sigma_qz_pred = sqrt(sigma_qz_z^2+sigma_qz_q0^2+sigma_qz_zq^2);
-%             
-% %             %get uncertainty in fitted flux based on relative uncertainty of fit for nearest BSNE in profile
-% %             ind_nearestBSNE = find(abs(FluxBSNE(i).z.z-z_Wenglor)==min(abs(FluxBSNE(i).z.z-z_Wenglor)),1);
-% %             sigma_qz_fit = FluxBSNE(i).qz.sigma_qz_pred(ind_nearestBSNE);
-% %             
-% %             %add uncertainties due to z and fit to get total uncertainty in predicted qz
-% %             sigma_qz_pred = sqrt(sigma_qz_z^2+sigma_qz_fit^2);
-            
-            %compute counts per second for Wenglor during BSNE time interval
-            T_BSNE = seconds(EndTimeBSNE_Primary - StartTimeBSNE_Primary);
-            W_CountsPerSecond = sum(PrimaryInterval_n)/T_BSNE;
-%             sigma_W_CountsPerSecond = sqrt(sum(PrimaryInterval_n))/T_BSNE; %counting error
-            
-            %get time increment for Wenglor observations
-            W_dt = seconds(mode(diff(PrimaryInterval_t)));
 
-            %compute conversion factor from Wenglor counts to flux, "qzPerCount"
-            qzPerCount = qz_cal/(W_CountsPerSecond*W_dt);
-            sigma_qzPerCount = sigma_qz_cal/(W_CountsPerSecond*W_dt); %calibration uncertainty directly from uncertainty in qz pred
+            %compute duration and Wenglor counts for BSNE time interval
+            T_BSNE = seconds(EndTimeBSNE_Primary - StartTimeBSNE_Primary);
+            N_Counts = sum(PrimaryInterval_n); %compute total particle counts during interval
             
-%             %uncertainty estimation for calibration coefficient
-%             sigma_qzPerCount_qz_pred = abs(sigma_qz_pred/(W_CountsPerSecond*W_dt)); %uncertainty due to qz_pred
-%             sigma_qzPerCount_qzPerCount = abs(sigma_W_CountsPerSecond*(qz_pred/(W_CountsPerSecond.^2*W_dt))); %uncertainty due to W_CountsPerSecond
-%             sigma_qzPerCount = sqrt(sigma_qzPerCount_qz_pred.^2+sigma_qzPerCount_qzPerCount.^2);
-            
-%             %uncertainty estimation for calibration coefficient
-%             sigma_qzPerCount = (1/W_CountsPerSecond)*sqrt(sigma_qz_pred^2+qz_pred^2/(T_BSNE*W_CountsPerSecond));
-            
+            %compute conversion factor from Wenglor counts rate to flux, "Cqn"
+            Cqn = qz_cal*T_BSNE/N_Counts;
+            sigma_Cqn = sigma_qz_cal*T_BSNE/N_Counts; %calibration uncertainty directly from uncertainty in qz pred
+          
             %get interval numbers for enlarged interval subject to this calibration (there may be more than one)
             [~, ~, EnlargedInterval_IntervalNumbers, EnlargedInterval_IntervalIndices] = ...
                 ExtractVariableTimeInterval(ProcessedWenglors.(WenglorNames{j}),StartTimeBSNE_Enlarged,EndTimeBSNE_Enlarged,'n','int','int');
@@ -136,27 +102,28 @@ for i=1:length(FluxBSNE);
 
             for k = 1:N_IntervalNumbers
 
-                %get list of counts for calibration
+                %get list of counts (per time interval) for calibration
                 n_list = ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).n.int(EnlargedInterval_IntervalIndices{k});
-
-                %convert to flux values
-                qz_list = qzPerCount*n_list;
+                
+                %convert to flux values 
+                qz_list = Cqn*n_list/dt_W; %divide by dt_W to convert to counts per second
                                 
-                %Assign fluxes, calibration factors, and heights to structured array
+                %Assign fluxes, calibration factors, count rates, and heights to structured array
                 ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.qz(EnlargedInterval_IntervalIndices{k}) = qz_list; %height-specific particle fluxes
-                ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.qzPerCount(EnlargedInterval_IntervalIndices{k}) = qzPerCount; %calibration factor
-                ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.sigma_qzPerCount(EnlargedInterval_IntervalIndices{k}) = sigma_qzPerCount; %uncertainty in calibration factor
+                ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.Cqn(EnlargedInterval_IntervalIndices{k}) = Cqn; %calibration factor
+                ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.sigma_Cqn(EnlargedInterval_IntervalIndices{k}) = sigma_Cqn; %uncertainty in calibration factor
                 ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.z(EnlargedInterval_IntervalIndices{k}) = z_Wenglor; %Wenglor height
                 ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.sigma_z(EnlargedInterval_IntervalIndices{k}) = sigma_z_Wenglor; %uncertainty in Wenglor height
+                ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.n(EnlargedInterval_IntervalIndices{k}) = n_list; %count rates
             end
             
             %ensure that values are in column vectors
             qz = ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.qz;
             ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.qz = reshape(qz,[length(qz),1]);
-            qzPerCount = ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.qzPerCount;
-            ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.qzPerCount = reshape(qzPerCount,[length(qzPerCount),1]);
-            sigma_qzPerCount = ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.sigma_qzPerCount;
-            ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.sigma_qzPerCount = reshape(sigma_qzPerCount,[length(sigma_qzPerCount),1]);
+            Cqn = ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.Cqn;
+            ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.Cqn = reshape(Cqn,[length(Cqn),1]);
+            sigma_Cqn = ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.sigma_Cqn;
+            ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.sigma_Cqn = reshape(sigma_Cqn,[length(sigma_Cqn),1]);
             z = ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.z;
             ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.z = reshape(z,[length(z),1]);
             sigma_z = ProcessedWenglors.(WenglorNames{j})(EnlargedInterval_IntervalNumbers(k)).qz.sigma_z;
@@ -212,7 +179,7 @@ FluxWenglor = struct(...
     'StartTime', num2cell(FluxWenglor_StartTimes),...
     'EndTime', num2cell(FluxWenglor_EndTimes),...
     't',struct('t',[],'dt',FluxWenglor_dt),...
-    'qz',struct('n',[],'qz',[],'qzPerCount',[],'sigma_qzPerCount',[],...
+    'qz',struct('n',[],'qz',[],'Cqn',[],'sigma_Cqn',[],...
     'z',[],'sigma_z',[],'WenglorNames',[],'WenglorID',[],'Units','g/m^2/s'),...
     'z',struct('z',[],'Units','m'));
 
@@ -256,7 +223,7 @@ for i = 1:N_FluxWenglorIntervals
 
     %initialize partial fluxes
     FluxWenglor(i).qz.qz = zeros(N_t,N_qz)*NaN;
-    FluxWenglor(i).qz.qzPerCount = zeros(N_t,N_qz)*NaN;
+    FluxWenglor(i).qz.Cqn = zeros(N_t,N_qz)*NaN;
     
     %initialize lists of qz_StartInd and qz_EndInd
     qz_StartInd = zeros(N_qz,1);
@@ -281,8 +248,8 @@ for i = 1:N_FluxWenglorIntervals
         %add values to FluxWenglor array
         FluxWenglor(i).qz.n(qz_StartInd(j):qz_EndInd(j),j) = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).n.int(qz_ind); %submit counts values into flux table       
         FluxWenglor(i).qz.qz(qz_StartInd(j):qz_EndInd(j),j) = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).qz.qz(qz_ind); %submit qz's into flux table
-        FluxWenglor(i).qz.qzPerCount(qz_StartInd(j):qz_EndInd(j),j) = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).qz.qzPerCount(qz_ind); %submit calibration values into flux table
-        FluxWenglor(i).qz.sigma_qzPerCount(qz_StartInd(j):qz_EndInd(j),j) = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).qz.sigma_qzPerCount(qz_ind); %submit uncertainty on calibration values into flux table
+        FluxWenglor(i).qz.Cqn(qz_StartInd(j):qz_EndInd(j),j) = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).qz.Cqn(qz_ind); %submit calibration values into flux table
+        FluxWenglor(i).qz.sigma_Cqn(qz_StartInd(j):qz_EndInd(j),j) = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).qz.sigma_Cqn(qz_ind); %submit uncertainty on calibration values into flux table
         FluxWenglor(i).qz.z(qz_StartInd(j):qz_EndInd(j),j) = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).qz.z(qz_ind); %submit height values into flux table
         FluxWenglor(i).qz.sigma_z(qz_StartInd(j):qz_EndInd(j),j) = ProcessedWenglors.(WenglorName)(qz_IntervalNumber).qz.sigma_z(qz_ind); %submit uncertainty on height values into flux table
                 
@@ -304,8 +271,8 @@ for i = 1:N_FluxWenglorIntervals
     FluxWenglor(i).t.t = FluxWenglor(i).t.t(row_keep_ind);
     FluxWenglor(i).qz.n = FluxWenglor(i).qz.n(row_keep_ind, z_sort_ind);
     FluxWenglor(i).qz.qz = FluxWenglor(i).qz.qz(row_keep_ind, z_sort_ind);
-    FluxWenglor(i).qz.qzPerCount = FluxWenglor(i).qz.qzPerCount(row_keep_ind, z_sort_ind);
-    FluxWenglor(i).qz.sigma_qzPerCount = FluxWenglor(i).qz.sigma_qzPerCount(row_keep_ind, z_sort_ind);
+    FluxWenglor(i).qz.Cqn = FluxWenglor(i).qz.Cqn(row_keep_ind, z_sort_ind);
+    FluxWenglor(i).qz.sigma_Cqn = FluxWenglor(i).qz.sigma_Cqn(row_keep_ind, z_sort_ind);
     FluxWenglor(i).qz.z = FluxWenglor(i).qz.z(row_keep_ind, z_sort_ind);
     FluxWenglor(i).qz.sigma_z = FluxWenglor(i).qz.sigma_z(row_keep_ind, z_sort_ind);
     FluxWenglor(i).qz.WenglorNames = FluxWenglor(i).qz.WenglorNames(z_sort_ind);

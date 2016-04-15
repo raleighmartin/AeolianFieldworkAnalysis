@@ -9,25 +9,13 @@ clearvars;
 rho_a = 1.18; %air density kg/m^3
 g = 9.8; %gravity m/s^2
 kappa = 0.4; %von Karman parameter
-z0 = [1e-4 1e-4 1e-4]; %aerodynamic roughness length (m)
+z0 = 1e-4; %aerodynamic roughness length (m)
 Q_min = 0.05; %detection limit for Q, set to zero if below this value
 zq_Q_min = 0.10; %assumed saltation height for detection limit for exponential profile for detection limit for individual Wenglor
 zW_min = 0.018; %minimum Wenglor height (m) = 1.5*height of instrument (to allow one full instrument height between bottom of instrument and bed)
 u_sigma_max = 5; %maximum standard deviation in total wind for error detection
-
-% %% information about sites for analysis - only Oceano
-% Sites = {'Oceano'};
-% AnemometerType = {'Sonic'};
-% BaseAnemometer = {'S1'};
-% dt_u_s = 0.02;
-% N_Sites = length(Sites);
-
-%% information about sites for analysis
-Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
-AnemometerType = {'Ultrasonic';'Ultrasonic';'Sonic'};
-BaseAnemometer = {'U1';'U1';'S1'};
-dt_u_s = [0.04; 0.04; 0.02]; %time interval of sonic (s)
-N_Sites = length(Sites);
+zW_limit = 4; %limit on number of unique Wenglor heights in profile
+dt_W = 0.04; %time interval for Wenglor (s)
 
 %% set time interval for computing wind/flux windows
 dt_fQ = duration(0,0,1); %time interval for window averaging to compute fQ
@@ -39,14 +27,21 @@ folder_Plots = '../../PlotOutput/WenglorFluxProfiles/'; %folder for plots
 folder_Functions = '../Functions/'; %folder with functions
 addpath(folder_Functions); %point MATLAB to location of functions
 
-% TimeWindow_Path = strcat(folder_AnalysisData,'TimeWindows_OceanoJune2'); %path for loading time windows
-% SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows_OceanoJune2'); %path for saving output data
-TimeWindow_Path = strcat(folder_AnalysisData,'TimeWindows'); %path for loading time windows
-SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows'); %path for saving output data
+%% Specific information for analysis - full analysis
+TimeWindow_Path = strcat(folder_AnalysisData,'TimeWindows_Analysis'); %path for loading time windows
+SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows_Analysis'); %path for saving output data
 
+% %% Specific information for analysis - Kenyon
+% TimeWindow_Path = strcat(folder_AnalysisData,'TimeWindows_Oceano_Kenyon'); %path for loading time windows
+% SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows_Oceano_Kenyon'); %path for saving output data
+
+% %% Specific information for analysis - Yue
+% TimeWindow_Path = strcat(folder_AnalysisData,'TimeWindows_Oceano_Yue'); %path for loading time windows
+% SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows_Oceano_Yue'); %path for saving output data
 
 %% load time windows
 load(TimeWindow_Path);
+SiteNames = {'Jericoacoara';'Rancho Guadalupe';'Oceano'};
 
 %% load processed data for each site, add to cell arrays of all sites 
 WindData = cell(N_Sites,1);
@@ -74,13 +69,15 @@ fD_all = cell(N_Sites,1); %Wenglor detection frequency list - 1 second
 fQ_all = cell(N_Sites,1); %Wenglor transport frequency matrix - 1 second
 q_all = cell(N_Sites,1); %partial flux
 sigma_q_all = cell(N_Sites,1); %partial flux uncertainty
+n_all = cell(N_Sites,1); %counts rate
+sigma_n_all = cell(N_Sites,1); %uncertainty in counts rate
 W_ID_all = cell(N_Sites,1); %get IDs of Wenglors in profiles
 zW_all = cell(N_Sites,1); %Wenglor flux height list
 sigma_zW_all = cell(N_Sites,1); %Wenglor flux height uncertainty list
 N_zW_unique_all = cell(N_Sites,1); %number of unique Wenglor heights
 zW_min_all = cell(N_Sites,1); %Wenglor min height list
 zW_max_all = cell(N_Sites,1); %Wenglor min height list
-qcal_all = cell(N_Sites,1); %calibration factor list
+Cqn_all = cell(N_Sites,1); %calibration factor list
 Qbinary_avg_all = cell(N_Sites,1); %1 second wind average flux occurrence timeseries
 Chi2_Qfit_all = cell(N_Sites,1); %calculate Chi2 value for flux profiles
 df_Qfit_all = cell(N_Sites,1); %calculate degrees of freedom for fitting flux profiles
@@ -106,9 +103,10 @@ uw_all = cell(N_Sites,1); %mean wind product from lowest anemometer
 close all;
 h = figure;
 set(h,'visible','off');
-set(gca,'FontSize',14,'XMinorTick','On','YMinorTick','On','Box','On');
-xlabel('$$z$$ (m)','Interpreter','Latex');
-ylabel('$$q$$ (g/m$$^2$$/s)','Interpreter','Latex');
+set(gca,'FontSize',16,'XMinorTick','On','YMinorTick','On','Box','On','YScale','log');
+set(gca,'LooseInset',get(gca,'TightInset'));
+xlabel('Wenglor height, $$z_i$$ (m)','Interpreter','Latex');
+ylabel('30-minute partial saltation flux, $$\tilde{q}_i$$ (g m$$^{-2}$$ s$$^{-1}$$)','Interpreter','Latex');
 set(gcf, 'PaperPosition',[0 0 8 6]);
 
 %% PERFORM ANALYSIS FOR EACH SITE
@@ -132,13 +130,15 @@ for i = 1:N_Sites
     fQ_all{i} = zeros(N_Blocks,1)*NaN; %Wenglor total transport frequency - 1 s
     q_all{i} = cell(N_Blocks,1); %partial flux
     sigma_q_all{i} = cell(N_Blocks,1); %partial flux uncertainty
+    n_all{i} = cell(N_Blocks,1); %counts rate
+    sigma_n_all{i} = cell(N_Blocks,1); %uncertainty in counts rate
     W_ID_all{i} = cell(N_Blocks,1); %get names of Wenglors in profiles
     zW_all{i} = cell(N_Blocks,1); %Wenglor height
     sigma_zW_all{i} = cell(N_Blocks,1); %Wenglor height uncertainty
     N_zW_unique_all{i} = zeros(N_Blocks,1); %number of unique Wenglor heights
     zW_min_all{i} = zeros(N_Blocks,1); %minimum Wenglor height
     zW_max_all{i} = zeros(N_Blocks,1); %maximum Wenglor height
-    qcal_all{i} = cell(N_Blocks,1); %calibration factor
+    Cqn_all{i} = cell(N_Blocks,1); %calibration factor
     Qbinary_avg_all{i} = cell(N_Blocks,1); %1 second wind average flux occurrence timeseries
     Chi2_Qfit_all{i} = zeros(N_Blocks,1); %calculate Chi2 for flux profiles
     df_Qfit_all{i} = zeros(N_Blocks,1); %calculate degrees of freedom for fitting flux profiles
@@ -172,7 +172,9 @@ for i = 1:N_Sites
         StartTime = BlockStartTimes(j);
         EndTime = BlockEndTimes(j);
 
-
+        %get duration of interval in seconds
+        T_interval = seconds(EndTime-StartTime);
+        
         %% FLUX CALCULATIONS FOR INTERVAL
 
         %extract time interval - get interval number and indices within interval for analysis
@@ -194,19 +196,21 @@ for i = 1:N_Sites
         zW_profile = mean(FluxData{i}(IntervalN).qz.z(IntervalInd,ind_zW_positive)); %compute mean Wenglor heights (but now only positive values)
         sigma_zW_profile = mean(FluxData{i}(IntervalN).qz.sigma_z(IntervalInd,ind_zW_positive)); %compute uncertainty in Wenglor heights (but now only positive values)
         
-        %get raw qz, qcal, sigma_qcal and n values
+        %get raw qz, Cqn, sigma_Cqn and n values
         qz = FluxData{i}(IntervalN).qz.qz(IntervalInd,ind_zW_positive);
-        qcal = FluxData{i}(IntervalN).qz.qzPerCount(IntervalInd,ind_zW_positive);
-        sigma_qcal = FluxData{i}(IntervalN).qz.sigma_qzPerCount(IntervalInd,ind_zW_positive);
-        n = FluxData{i}(IntervalN).qz.n(IntervalInd,ind_zW_positive); %particle arrival rates
+        Cqn = FluxData{i}(IntervalN).qz.Cqn(IntervalInd,ind_zW_positive);
+        sigma_Cqn = FluxData{i}(IntervalN).qz.sigma_Cqn(IntervalInd,ind_zW_positive);
+        n = FluxData{i}(IntervalN).qz.n(IntervalInd,ind_zW_positive); %particle counts
         N = sum(sum(n)); %total detected particles
 
         %get profile information for fitting
         q_profile = mean(qz); %compute mean qz profile
-        sigma_q_n_profile = abs(q_profile.*(1./sqrt(sum(n)))); %contribution of uncertainty in counting particles
-        sigma_q_qcal_profile = abs(q_profile.*(mean(sigma_qcal)./mean(qcal))); %contribution of uncertainty in calibration coefficient
-        sigma_q_profile = sqrt(sigma_q_n_profile.^2+sigma_q_qcal_profile.^2); %compute uncertainty in qz profile, from counts and calibration coefficient
-                
+        n_profile = mean(n)/dt_W; %compute mean particle counts per second for each qz
+        sigma_n_profile = sqrt(n_profile/T_interval); %compute uncertainty in mean particle counts
+        Cqn_profile = mean(Cqn); %compute mean calibration coefficient for each qz
+        sigma_Cqn_profile = mean(sigma_Cqn); %compute mean calibration coefficient uncertainty for each qz
+        sigma_q_profile = sqrt((sigma_Cqn_profile.*n_profile).^2+(sigma_n_profile.*Cqn_profile).^2); %compute uncertainty in qz profile, from counts and calibration coefficient
+        
         %get associated Wenglor IDs only for heights included in profile
         W_ID = FluxData{i}(IntervalN).qz.WenglorID(ind_zW_positive);
         
@@ -244,23 +248,21 @@ for i = 1:N_Sites
         zW_fit = zW_unique(ind_fit);
         sigma_q_fit = sigma_q_unique(ind_fit);
         sigma_zW_fit = zeros(1,N_fit); %neglect uncertainty in Wenglor height, which is already accounted for by calibration
-        %sigma_zW_fit = sigma_zW_unique(ind_fit);
         
         %Perform profile fit to get q0, zq, and Q if sufficient points for fitting
-        if N_fit>=3
-            [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q] = qz_profilefit(q_fit,zW_fit,sigma_q_fit,sigma_zW_fit);
-            q_pred = q0*exp(-zW_fit/zq); %predict q's based on fitting values
+        if N_fit>=zW_limit
+            [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,q_pred,sigma_q_pred] = qz_profilefit(q_fit,zW_fit,sigma_q_fit,sigma_zW_fit);
             q_residuals = q_pred - q_fit; %residuals between observed and predicted q
-            sigma_q_z = (sigma_zW_fit/zq).*q_fit; %estimate contribution of z uncertainty to q uncertainty
-            sigma_q_total = sqrt(sigma_q_z.^2+sigma_q_fit.^2); %estimate total uncertainty in q for chi2 calculation
-            Chi2_Qfit = sum((q_residuals./sigma_q_total).^2); %compute Chi2 (Bevington and Robinson, Eq. 8.4)
+            Chi2_Qfit = sum((q_residuals./sigma_q_pred).^2); %compute Chi2 (Bevington and Robinson, Eq. 8.4)
             df_Qfit = N_fit-2; %compute degrees of freedom for Qfit
 
             %plot flux profile fit
             cla; hold on;
-            errorbar(zW_fit,q_fit,sigma_q_total,'b+','MarkerSize',10);
+            errorbar(zW_fit,q_fit,sigma_q_fit,'b+','MarkerSize',10);
             plot(zW_fit,q_pred,'k');
-            legend('data',['fit, \chi^2_{\nu} = ',num2str((Chi2_Qfit/df_Qfit),'%.2f')],'Location','NorthEast');
+            legend('data','fit','Location','NorthEast');
+            %legend('data',['fit, \chi^2_{\nu} = ',num2str((Chi2_Qfit/df_Qfit),'%.2f')],'Location','NorthEast');
+            title([SiteNames{i},', ',datestr(StartTime, 'yyyy-mm-dd HH:MM'),' - ',datestr(EndTime, 'HH:MM')]);
             print([folder_Plots,'WenglorFluxProfile_',Sites{i},'_',int2str(j),'.png'],'-dpng');
         else %otherwise, set to NaN
             Q=NaN;
@@ -282,24 +284,25 @@ for i = 1:N_Sites
             sigma_zq=0;
         end
 
-        %Determine flux frequencies for different window averaging times
-        qsum = sum(qz')'; %create vector qsum, which is sum of all q's for each time increment
+        %Determine flux frequencies
+        nsum = sum(n')'; %create vector qsum, which is sum of all n's for each time increment
+        nsum_avg = window_average(nsum, t_Interval, dt_fQ); %compute window average
+        Qbinary_avg = nsum_avg~=0; %flux occurence timeseries
         if Q==0 %if no flux, set frequencies to zero
             fD_all{i}(j) = 0;
             fQ_all{i}(j) = 0;
         else %otherwise, do calculations
-            qsum_avg = window_average(qsum, t_Interval, dt_fQ); %compute window average
-            T = length(qsum_avg); %number of timesteps
+            T = length(nsum_avg); %number of timesteps
 
             %get frequency of detection
-            fD = (sum(qsum_avg>0))/T;
+            fD = (sum(nsum_avg>0))/T;
 
             %estimate fQ iteratively 
             fQ_prev = 0; %previous estimate of fQ (arbitrarily set to 0 for while loop functioning) 
             fQ = fD; %start by assuming fQ=fD
             while abs(fQ-fQ_prev)>0.001 %compare current and previous estimations of fQ for while loop
                 fQ_prev = fQ; %update fQ_prev with last fQ
-                fQ = fD/(1-exp(-N/(fQ_prev*T))); %calculate new fQ
+                fQ = fD/(1-exp(-sum(n_profile)/(fQ*dt_W))); %calculate new fQ
             end
 
             %remove points with fQ>1
@@ -312,12 +315,8 @@ for i = 1:N_Sites
             fQ_all{i}(j) = fQ;
         end
 
-        %Timesteps with flux for 1 second wind average
-        qsum_avg = window_average(qsum, t_Interval, dt_fQ);
-        Qbinary_avg = qsum_avg~=0; %flux occurence timeseries
-
         %get calibration values
-        qcal_profile = mean(qcal);
+        Cqn_profile = mean(Cqn);
 
         %add to list
         Q_all{i}(j) = Q; %total flux
@@ -326,13 +325,15 @@ for i = 1:N_Sites
         sigma_zq_all{i}(j) = sigma_zq; %uncertainty in flux height
         q_all{i}{j} = q_profile; %partial flux
         sigma_q_all{i}{j} = sigma_q_profile; %partial flux uncertainty
+        n_all{i}{j} = n_profile; %counts rate
+        sigma_n_all{i}{j} = sigma_n_profile; %counts rate uncertainty
         W_ID_all{i}{j} = W_ID; %get names of Wenglors in profiles
         zW_all{i}{j} = zW_profile; %Wenglor flux height
         sigma_zW_all{i}{j} = sigma_zW_profile; %uncertainty in Wenglor flux height
         N_zW_unique_all{i}(j) = N_zW_unique; %number of unique Wenglor heights
         zW_min_all{i}(j) = min(zW_profile); %minimum Wenglor height
         zW_max_all{i}(j) = max(zW_profile); %maximum Wenglor height
-        qcal_all{i}{j} = qcal_profile; %calibration factor
+        Cqn_all{i}{j} = Cqn_profile; %calibration factor
         Qbinary_avg_all{i}{j} = Qbinary_avg; %flux occurence timeseries
         Chi2_Qfit_all{i}(j) = Chi2_Qfit; %normalized Chi2 for flux profile fit
         df_Qfit_all{i}(j) = df_Qfit; %degrees of freedom for flux profile fit
@@ -429,7 +430,7 @@ for i = 1:N_Sites
         %% TFEM threshold calcs
         if fQ_all{i}(j)~=1 %calculation only valid if 0<fQ<1
             uth_TFEM = prctile(u_avg,100*(1-fQ_all{i}(j))); %generate uth from TFEM method based on fQ and 1 s window averaged u
-            tauth_TFEM = rho_a*kappa^2*uth_TFEM^2/log(zU/z0(i))^2; %generate tauth from TFEM method based on uth_TFEM 
+            tauth_TFEM = rho_a*kappa^2*uth_TFEM^2/log(zU/z0)^2; %generate tauth from TFEM method based on uth_TFEM 
         end
 
         %add thresholds to lists
@@ -439,4 +440,4 @@ for i = 1:N_Sites
 end
 
 % SAVE DATA
-save(SaveData_Path,'Sites','*all'); %save reduced file in GitHub folder
+save(SaveData_Path,'Sites','SiteNames','*all'); %save reduced file in GitHub folder

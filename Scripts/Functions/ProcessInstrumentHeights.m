@@ -62,7 +62,10 @@ for i = 1:N_InstrumentTypes
             
             %compute error as combination of measurement error, reference
             %height error, and difference of start / end heights
-            sigma_z_Instrument = sqrt(HeightErr_m^2 + RefHeightErr_m^2 + (StartHeight_m-EndHeight_m).^2);
+            
+            %sigma_z_Instrument = sqrt(HeightErr_m^2 + RefHeightErr_m^2 + (StartHeight_m-EndHeight_m).^2); %Previously included "RefHeightErr_m^2", but now neglecting this...
+            sigma_z_Instrument = sqrt(HeightErr_m^2 + (StartHeight_m-EndHeight_m).^2);
+
             
             %assign height to structured array
             Data.(InstrumentType).(Instrument)(k).z.z = z_Instrument;

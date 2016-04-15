@@ -7,6 +7,7 @@ folder_Plots = '../../PlotOutput/BSNE_Profile/'; %folder for plots
 
 %% information about sites
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
+SiteNames = {'Jericoacoara';'Rancho Guadalupe';'Oceano'};
 N_Sites = length(Sites);
 
 %% information for plotting
@@ -20,10 +21,12 @@ PlotFont = 14;
 close all;
 h = figure;
 set(h,'visible','off');
-set(gca,'FontSize',14,'XMinorTick','On','YMinorTick','On','Box','On');
-xlabel('$$z$$ (m)','Interpreter','Latex');
-ylabel('$$q$$ (g/m$$^2$$/s)','Interpreter','Latex');
+set(gca,'LooseInset',get(gca,'TightInset'));
+set(gca,'FontSize',14,'XMinorTick','On','YMinorTick','On','YScale','log','Box','On');
+xlabel('BSNE height $$z_{B,i}$$ (m)','Interpreter','Latex');
+ylabel('BSNE partial flux $$q_{B,i}$$ (g m$$^{-2}$$ s$$^{-1}$$)','Interpreter','Latex');
 set(gcf, 'PaperPosition',[0 0 8 6]);
+
 
 %% initialize list of Chi2
 Q_all = cell(N_Sites,1); %flux list
@@ -106,18 +109,23 @@ for i = 1:N_Sites
 
             %make plot
             cla; hold on;
-            errorbar(z_1,q_1,sigma_q_1,'b+','MarkerSize',10);
-            errorbar(z_2,q_2,sigma_q_2,'ro','MarkerSize',10);
+            errorbar(z_1,q_1,sigma_q_1,'b+','MarkerSize',3);
+            errorbar(z_2,q_2,sigma_q_2,'ro','MarkerSize',3);
             plot(z_sort_1,q_pred_sort_1,'b',z_sort_2,q_pred_sort_2,'r');
-            legend('profile 1','profile 2',...
-                ['fit 1, \chi^2_{\nu} = ',num2str((Chi2_Qfit_1/df_Qfit_1),'%.2f')],...
-                ['fit 2, \chi^2_{\nu} = ',num2str((Chi2_Qfit_2/df_Qfit_2),'%.2f')],...
-                'Location','NorthEast');
+            xlims = xlim; ylims = ylim; 
+            text(xlims(1)+0.01,ylims(2)*0.8,'(b)');
+            title([SiteNames{i},', ',datestr(FluxInterval.StartTime, 'yyyy-mm-dd HH:MM'),' - ',datestr(FluxInterval.EndTime, 'HH:MM')]);
+            
+            legend('+y data','-y data','+y fit','-y fit','Location','NorthEast');
+%             legend('profile 1','profile 2',...
+%                 ['fit 1, \chi^2_{\nu} = ',num2str((Chi2_Qfit_1/df_Qfit_1),'%.2f')],...
+%                 ['fit 2, \chi^2_{\nu} = ',num2str((Chi2_Qfit_2/df_Qfit_2),'%.2f')],...
+%                 'Location','NorthEast');
             set(gca,'FontSize',PlotFont,'yscale','log');
 
             %print plot
             set(gca,'LooseInset',get(gca,'TightInset'));
-            set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 6]);
+            set(gcf,'PaperUnits','inches','PaperPosition',[0 0 5 4]);
             print([folder_Plots,'BSNE_FluxProfile_',Sites{i},'_',int2str(j),'.png'],'-dpng');
         
         %% for other sites, one profile
@@ -139,14 +147,18 @@ for i = 1:N_Sites
 
             %make plot 
             cla; hold on;
-            errorbar(z,q,sigma_q,'b+','MarkerSize',10);
+            errorbar(z,q,sigma_q,'b+','MarkerSize',3);
             plot(z_sort,q_pred_sort,'k');
-            legend('data',['fit, \chi^2_{\nu} = ',num2str((Chi2_Qfit/df_Qfit),'%.2f')],'Location','NorthEast');
-            set(gca,'FontSize',PlotFont,'yscale','log');
+            xlims = xlim; ylims = ylim; 
+            text(xlims(1)+0.01,ylims(2)*0.8,'(a)');
+            legend('data','fit','Location','NorthEast');
+            title([SiteNames{i},', ',datestr(FluxInterval.StartTime, 'yyyy-mm-dd HH:MM'),' - ',datestr(FluxInterval.EndTime, 'HH:MM')]);
+            %legend('data',['fit, \chi^2_{\nu} = ',num2str((Chi2_Qfit/df_Qfit),'%.2f')],'Location','NorthEast');
+            set(gca,'FontSize',PlotFont);
 
             %print plot
             set(gca,'LooseInset',get(gca,'TightInset'));
-            set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 6]);
+            set(gcf,'PaperUnits','inches','PaperPosition',[0 0 5 4]);
             print([folder_Plots,'BSNE_FluxProfile_',Sites{i},'_',int2str(j),'.png'],'-dpng');
         end
     end
