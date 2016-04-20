@@ -120,20 +120,26 @@ d50_fit = cell(N_Sites,1);
 C_linearfit = cell(N_Sites,1);
 tauit_linearfit = cell(N_Sites,1);
 Chi2nu_linearfit = cell(N_Sites,1);
-C_nonlinearfit = cell(N_Sites,1);
-n_nonlinearfit = cell(N_Sites,1);
-tauit_nonlinearfit = cell(N_Sites,1);
-Chi2nu_nonlinearfit = cell(N_Sites,1);
+C_threehalvesfit = cell(N_Sites,1);
+tauit_threehalvesfit = cell(N_Sites,1);
+Chi2nu_threehalvesfit = cell(N_Sites,1);
+% C_nonlinearfit = cell(N_Sites,1);
+% n_nonlinearfit = cell(N_Sites,1);
+% tauit_nonlinearfit = cell(N_Sites,1);
+% Chi2nu_nonlinearfit = cell(N_Sites,1);
 for i = 1:N_Sites
     site_fit{i} = Sites{i};
     d50_fit{i} = num2str(d50_surface_site(i),'%.2f');
     C_linearfit{i} = [num2str(C_linearfit_all(i),'%.0f'),' +/- ',num2str(C_sigma_linearfit_all(i),'%.0f')];
     tauit_linearfit{i} = [num2str(tauit_linearfit_all(i),'%.3f'),' +/- ',num2str(tauit_sigma_linearfit_all(i),'%.3f')];
     Chi2nu_linearfit{i} = num2str(Chi2_linearfit_all(i)./df_linearfit_all(i),'%.2f');
-    C_nonlinearfit{i} = [num2str(C_nonlinearfit_all(i),'%.0f'),' [',num2str(C_range_nonlinearfit_all(i,1),'%.0f'),' ',num2str(C_range_nonlinearfit_all(i,2),'%.0f'),']'];
-    n_nonlinearfit{i} = [num2str(n_nonlinearfit_all(i),'%.2f'),' [',num2str(n_range_nonlinearfit_all(i,1),'%.2f'),' ',num2str(n_range_nonlinearfit_all(i,2),'%.2f'),']'];
-    tauit_nonlinearfit{i} = [num2str(tauit_nonlinearfit_all(i),'%.3f'),' [',num2str(tauit_range_nonlinearfit_all(i,1),'%.3f'),' ',num2str(tauit_range_nonlinearfit_all(i,2),'%.3f'),']'];
-    Chi2nu_nonlinearfit{i} = num2str(Chi2_nonlinearfit_all(i)./df_nonlinearfit_all(i),'%.2f');
+    C_threehalvesfit{i} = [num2str(C_threehalvesfit_all(i),'%.0f'),' +/- ',num2str(C_sigma_threehalvesfit_all(i),'%.0f')];
+    tauit_threehalvesfit{i} = [num2str(tauit_threehalvesfit_all(i),'%.3f'),' +/- ',num2str(tauit_sigma_threehalvesfit_all(i),'%.3f')];
+    Chi2nu_threehalvesfit{i} = num2str(Chi2_threehalvesfit_all(i)./df_threehalvesfit_all(i),'%.2f');
+%     C_nonlinearfit{i} = [num2str(C_nonlinearfit_all(i),'%.0f'),' [',num2str(C_range_nonlinearfit_all(i,1),'%.0f'),' ',num2str(C_range_nonlinearfit_all(i,2),'%.0f'),']'];
+%     n_nonlinearfit{i} = [num2str(n_nonlinearfit_all(i),'%.2f'),' [',num2str(n_range_nonlinearfit_all(i,1),'%.2f'),' ',num2str(n_range_nonlinearfit_all(i,2),'%.2f'),']'];
+%     tauit_nonlinearfit{i} = [num2str(tauit_nonlinearfit_all(i),'%.3f'),' [',num2str(tauit_range_nonlinearfit_all(i,1),'%.3f'),' ',num2str(tauit_range_nonlinearfit_all(i,2),'%.3f'),']'];
+%     Chi2nu_nonlinearfit{i} = num2str(Chi2_nonlinearfit_all(i)./df_nonlinearfit_all(i),'%.2f');
 end
     
 %create structured array
@@ -143,10 +149,13 @@ StressFluxTable = struct(...
     'C_linearfit',C_linearfit,...
     'tauit_linearfit',tauit_linearfit,...
     'Chi2nu_linearfit',Chi2nu_linearfit,...
-    'C_nonlinearfit',C_nonlinearfit,...
-    'n_nonlinearfit',n_nonlinearfit,... 
-    'tauit_nonlinearfit',tauit_nonlinearfit,...
-    'Chi2nu_nonlinearfit',Chi2nu_nonlinearfit);
+    'C_threehalvesfit',C_threehalvesfit,...
+    'tauit_threehalvesfit',tauit_threehalvesfit,...
+    'Chi2nu_threehalvesfit',Chi2nu_threehalvesfit);
+%     'C_nonlinearfit',C_nonlinearfit,...
+%     'n_nonlinearfit',n_nonlinearfit,... 
+%     'tauit_nonlinearfit',tauit_nonlinearfit,...
+%     'Chi2nu_nonlinearfit',Chi2nu_nonlinearfit);
 
 %% convert to table
 StressFluxTable = struct2table(StressFluxTable);

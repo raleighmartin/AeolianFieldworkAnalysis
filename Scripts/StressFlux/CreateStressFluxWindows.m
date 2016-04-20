@@ -14,7 +14,7 @@ Q_min = 0.05; %detection limit for Q, set to zero if below this value
 zq_Q_min = 0.10; %assumed saltation height for detection limit for exponential profile for detection limit for individual Wenglor
 zW_min = 0.018; %minimum Wenglor height (m) = 1.5*height of instrument (to allow one full instrument height between bottom of instrument and bed)
 u_sigma_max = 5; %maximum standard deviation in total wind for error detection
-zW_limit = 4; %limit on number of unique Wenglor heights in profile
+zW_limit = 3; %limit on number of unique Wenglor heights in profile
 dt_W = 0.04; %time interval for Wenglor (s)
 
 %% set time interval for computing wind/flux windows
@@ -440,4 +440,4 @@ for i = 1:N_Sites
 end
 
 % SAVE DATA
-save(SaveData_Path,'Sites','SiteNames','*all'); %save reduced file in GitHub folder
+%save(SaveData_Path,'Sites','SiteNames','*all'); %save reduced file in GitHub folder

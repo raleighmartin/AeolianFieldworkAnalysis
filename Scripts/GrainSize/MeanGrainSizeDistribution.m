@@ -384,8 +384,33 @@ for i = 1:N_Sites
     
 end
 
+%plot just surface GSD for each site
+figure(1); clf; hold on;
+for i = 1:N_Sites
+    plot(d_surface_site{i},dVdlogd_surface_site{i},'LineWidth',LineWidth_Surface);
+end
+set(gca,'xscale','log','yscale','log');
+legend(Sites,'Location','NorthWest');
+ylim([1e-2 2]);
+xlim([6e-2 2]);
+ax = gca;
+ax.XTick = [0.06:0.01:0.1, 0.2:0.1:1, 2];
+ax.XTickLabel = {'0.06','','','','0.1','0.2','0.3','','0.5','','','','','1','2'};
+ax.YTick = [0.01:0.01:0.1, 0.2:0.1:1, 2];
+ax.YTickLabel = {'0.01','0.02','0.03','','0.05','','','','','0.1','0.2','0.3','','0.5','','','','','1','2'};
+xlabel('Particle diameter, d (mm)');
+ylabel('Norm. surface size distr., dV/dln(d)');
+set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+set(gca,'FontSize',PlotFont);
+
+%print plot for draft
+set(gca, 'LooseInset', get(gca,'TightInset'));
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6.5 5]);
+print([folder_Plots,'MeanGSD_Surface.png'],'-dpng');
+
+
 %plot mean GSD for each site
-figure(1); clf;
+figure(2); clf;
 subplot(2,1,1); hold on;
 for i = 1:N_Sites
     plot(d_surface_site{i},dVdlogd_surface_site{i},'LineWidth',LineWidth_Surface);
@@ -429,7 +454,7 @@ print([folder_Plots,'MeanGSD.png'],'-dpng');
 
 
 %plot cluster gsd for Oceano
-figure(2); clf;
+figure(3); clf;
 subplot(2,1,1); hold on;
 for i = 1:N_clusters
     plot(d_surface_cluster,dVdlogd_surface_cluster(i,:),'LineWidth',LineWidth_Surface);

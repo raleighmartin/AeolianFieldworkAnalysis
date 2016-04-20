@@ -27,7 +27,7 @@ tauit_fit_N = 201;
 tauit_fit = linspace(tauit_fit_min,tauit_fit_max,tauit_fit_N);
 %scaling value
 C_fit_min = 0;
-C_fit_max = 300;
+C_fit_max = 600;
 %C_fit_N = 101;
 %C_fit_N = 201;
 C_fit_N = 301;

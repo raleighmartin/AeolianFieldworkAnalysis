@@ -151,13 +151,18 @@ for i = 1:N_Intervals
         
         %compute averaged values and their uncertainties
         if (~isnan(q0_1))&&(~isnan(q0_2))
-            q0 = mean([q0_1 q0_2]);
-            sigma_q0 = sqrt(sigma_q0_1.^2+sigma_q0_2.^2);
+            %q0 = mean([q0_1 q0_2]);
+            %sigma_q0 = sqrt(sigma_q0_1.^2+sigma_q0_2.^2);
+            q0 = sqrt(q0_1*q0_2); %geometric mean
+            sigma_q0 = (1/2)*sqrt((q0_2/q0_1)*sigma_q0_1.^2+(q0_1/q0_2)*sigma_q0_2.^2);
             zq = mean([zq_1 zq_2]);
             sigma_zq = sqrt(sigma_zq_1.^2+sigma_zq_2.^2);
-            Q = mean([Q_1 Q_2]);
-            sigma_Q = sqrt(sigma_Q_1.^2+sigma_Q_2.^2);
-            sigma2_q0zq = sigma2_q0zq_1 + sigma2_q0zq_2;
+            %Q = mean([Q_1 Q_2]);
+            %sigma_Q = sqrt(sigma_Q_1.^2+sigma_Q_2.^2);
+            Q = sqrt(Q_1*Q_2); %geometric mean
+            sigma_Q = (1/2)*sqrt((Q_2/Q_1)*sigma_Q_1.^2+(Q_1/Q_2)*sigma_Q_2.^2);
+            %sigma2_q0zq = sigma2_q0zq_1 + sigma2_q0zq_2;
+            sigma2_q0zq = sqrt(sigma2_q0zq_1*sigma2_q0zq_2);
         elseif ~isnan(q0_1)
             q0 = q0_1;
             sigma_q0 = sigma_q0_1;
