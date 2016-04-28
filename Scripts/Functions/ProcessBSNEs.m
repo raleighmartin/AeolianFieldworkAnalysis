@@ -142,11 +142,13 @@ for i = 1:N_Intervals
         sigma_z_profile_2 = FluxBSNE(i).z.sigma_bottom(ind_2);
 
         %fit profile 1
-        [z_profile_1,q0_1,zq_1,Q_1,sigma_q0_1,sigma_zq_1,sigma_Q_1,qz_pred_1,sigma_qz_pred_1,sigma_logqz_pred_1,sigma2_q0zq_1] = ...
+        [z_profile_1,q0_1,zq_1,Q_1,sigma_q0_1,sigma_zq_1,sigma_Q_1,qz_pred_1,sigma_qz_pred_1,sigma_logqz_pred_1,sigma2_q0zq_1,...
+            z_profile_geomean_1,q0_geomean_1,zq_geomean_1,Q_geomean_1] = ...
             BSNE_profilefit(qz_profile_1, z_bottom_profile_1, z_trapheight_profile_1, sigma_qz_profile_1, sigma_z_profile_1);
 
         %fit profile 2
-        [z_profile_2,q0_2,zq_2,Q_2,sigma_q0_2,sigma_zq_2,sigma_Q_2,qz_pred_2,sigma_qz_pred_2,sigma_logqz_pred_2,sigma2_q0zq_2] = ...
+        [z_profile_2,q0_2,zq_2,Q_2,sigma_q0_2,sigma_zq_2,sigma_Q_2,qz_pred_2,sigma_qz_pred_2,sigma_logqz_pred_2,sigma2_q0zq_2,...
+            z_profile_geomean_2,q0_geomean_2,zq_geomean_2,Q_geomean_2] = ...
             BSNE_profilefit(qz_profile_2, z_bottom_profile_2, z_trapheight_profile_2, sigma_qz_profile_2, sigma_z_profile_2);
         
         %compute averaged values and their uncertainties
@@ -156,7 +158,7 @@ for i = 1:N_Intervals
             q0 = sqrt(q0_1*q0_2); %geometric mean
             sigma_q0 = (1/2)*sqrt((q0_2/q0_1)*sigma_q0_1.^2+(q0_1/q0_2)*sigma_q0_2.^2);
             zq = mean([zq_1 zq_2]);
-            sigma_zq = sqrt(sigma_zq_1.^2+sigma_zq_2.^2);
+            sigma_zq = (1/2)*sqrt(sigma_zq_1.^2+sigma_zq_2.^2);
             %Q = mean([Q_1 Q_2]);
             %sigma_Q = sqrt(sigma_Q_1.^2+sigma_Q_2.^2);
             Q = sqrt(Q_1*Q_2); %geometric mean
@@ -235,6 +237,16 @@ for i = 1:N_Intervals
         FluxBSNE(i).z.z_2 = z_profile_2;
         FluxBSNE(i).z.sigma_z_1 = sigma_z_profile_1;
         FluxBSNE(i).z.sigma_z_2 = sigma_z_profile_2;
+        
+        %values for geometric mean computation
+        FluxBSNE(i).qz.q0_geomean_1 = q0_geomean_1;
+        FluxBSNE(i).qz.q0_geomean_2 = q0_geomean_2;
+        FluxBSNE(i).z.zq_geomean_1 = zq_geomean_1;
+        FluxBSNE(i).z.zq_geomean_2 = zq_geomean_2;
+        FluxBSNE(i).Q.Q_geomean_1 = Q_geomean_1;
+        FluxBSNE(i).Q.Q_geomean_2 = Q_geomean_2;
+        FluxBSNE(i).z.z_geomean_1 = z_profile_geomean_1;
+        FluxBSNE(i).z.z_geomean_2 = z_profile_geomean_2;
     else
         %get flux and height profiles for fitting    
         qz_profile = FluxBSNE(i).qz.qz;
@@ -244,7 +256,8 @@ for i = 1:N_Intervals
         sigma_z_profile = FluxBSNE(i).z.sigma_bottom;
 
         %fit profile
-        [z_profile,q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_pred,sigma_qz_pred,sigma_logqz_pred,sigma2_q0zq] = ...
+        [z_profile,q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_pred,sigma_qz_pred,sigma_logqz_pred,sigma2_q0zq,...
+            z_profile_geomean,q0_geomean,zq_geomean,Q_geomean] = ...
             BSNE_profilefit(qz_profile, z_bottom_profile, z_trapheight_profile, sigma_qz_profile, sigma_z_profile);
 
         %add to structured array
@@ -258,6 +271,12 @@ for i = 1:N_Intervals
         FluxBSNE(i).qz.sigma_logqz_pred = sigma_logqz_pred;
         FluxBSNE(i).z.z = z_profile;
         FluxBSNE(i).z.sigma_z = sigma_z_profile;
+        
+        %values for geometric mean computation
+        FluxBSNE(i).qz.q0_geomean = q0_geomean;
+        FluxBSNE(i).z.zq_geomean = zq_geomean;
+        FluxBSNE(i).Q.Q_geomean = Q_geomean;
+        FluxBSNE(i).z.z_geomean = z_profile_geomean;
     end
 end
 

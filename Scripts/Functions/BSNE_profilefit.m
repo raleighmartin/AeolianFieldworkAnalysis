@@ -1,6 +1,7 @@
 %function to iteratively fit exponential to BSNE profile and determine characteristic heights of BSNEs from this profile
 
-function [z_profile,q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_pred,sigma_qz_pred,sigma_logqz_pred,sigma2_q0zq] = ...
+function [z_profile,q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_pred,sigma_qz_pred,sigma_logqz_pred,sigma2_q0zq,...
+    z_profile_geomean,q0_geomean,zq_geomean,Q_geomean] = ...
     BSNE_profilefit(qz_profile, z_bottom_profile, z_trapheight_profile, sigma_qz_profile, sigma_z_profile)
 
 %start with guess of BSNE heights as arithmetic mean of traps
@@ -30,9 +31,12 @@ while(z_profile_difference>1e-8)
     z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
 end
 
+z_profile_geomean = sqrt(z_bottom_profile.*(z_bottom_profile+z_trapheight_profile)); %alternative z profile with BSNE geometric mean height
 %final profile fit
 if nargin == 3 %if no uncertainties provided
     [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_pred,sigma_qz_pred,sigma_logqz_pred,sigma2_q0zq] = qz_profilefit(qz_profile, z_profile); %height-integrated flux from exponential fit
+    [q0_geomean,zq_geomean,Q_geomean] = qz_profilefit(qz_profile,z_profile_geomean); %same thing, but using geometric mean height
 else %if uncertainties provided
     [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_pred,sigma_qz_pred,sigma_logqz_pred,sigma2_q0zq] = qz_profilefit(qz_profile, z_profile, sigma_qz_profile, sigma_z_profile); %height-integrated flux from exponential fit
+    [q0_geomean,zq_geomean,Q_geomean] = qz_profilefit(qz_profile,z_profile_geomean, sigma_qz_profile, sigma_z_profile); %same thing, but using geometric mean height
 end

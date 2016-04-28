@@ -1,7 +1,7 @@
 variable,Jericoacoara,RanchoGuadalupe,Oceano
-d10_surface,0.11,0.22,0.19
-d50_surface,0.55,0.53,0.40
-d90_surface,0.90,0.84,0.65
+d10_surface,0.11+/-0.01,0.22+/-0.04,0.19+/-0.03
+d50_surface,0.55+/-0.04,0.53+/-0.03,0.40+/-0.07
+d90_surface,0.90+/-0.04,0.84+/-0.03,0.65+/-0.08
 d10_airborne,0.14,0.24,0.16
 d50_airborne,0.32,0.39,0.24
 d90_airborne,0.56,0.57,0.39

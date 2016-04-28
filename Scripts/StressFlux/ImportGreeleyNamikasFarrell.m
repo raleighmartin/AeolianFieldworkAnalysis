@@ -271,8 +271,8 @@ for i = 1:N_Farrell12
     z_bottom_profile = dataArray_Farrell12{5}(ind_profile)-H_profile; %bottom height of profile traps (m)
     
     %iterative fit to profile to optimize trap heights for fitting
-    [z_profile,q0,zq,Q,~,sigma_zq] = BSNE_profilefit(q_Farrell12{i}, z_bottom_profile, H_profile);
-    
+    %[z_profile,q0,zq,Q,~,sigma_zq] = BSNE_profilefit(q_Farrell12{i}, z_bottom_profile, H_profile);
+    [z_profile,q0,zq,Q,~,sigma_zq,~,~,~,~,~,z_profile_geomean,q0_geomean,zq_geomean,Q_geomean] = BSNE_profilefit(q_Farrell12{i}, z_bottom_profile, H_profile);
 %     %start with guess of trap midpoint heights as arithmetic mean of traps
 %     z_profile = z_bottom_profile + H_profile/2;
 %     

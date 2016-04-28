@@ -21,7 +21,7 @@ for i=1:N_clusters
 end
 
 %% plotting information
-PlotFont = 12;
+PlotFont = 14;
 LineWidth_Surface = 1;
 
 %% load grain size / processed data
@@ -46,6 +46,9 @@ dVdlogd_surface_site = cell(N_Sites,1);
 d10_surface_site = zeros(N_Sites,1);
 d50_surface_site = zeros(N_Sites,1);
 d90_surface_site = zeros(N_Sites,1);
+sigma_d10_surface_site = zeros(N_Sites,1);
+sigma_d50_surface_site = zeros(N_Sites,1);
+sigma_d90_surface_site = zeros(N_Sites,1);
 dates_surface = cell(N_Sites,1);
 d10_surface_date = cell(N_Sites,1);
 d50_surface_date = cell(N_Sites,1);
@@ -108,7 +111,8 @@ for i = 1:N_Sites
     wt_below = (CV(ind_d10)-0.1)/dV_surface_bar(ind_d10);
     wt_above = 1-wt_below;
     d10_surface_site(i) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-    
+    sigma_d10_surface_site(i) = std([GrainSize_Surface.d_10_mm]);
+
     %get d50
     ind_d50 = find(CV>=0.5, 1);
     d_below = d_surface_lower(ind_d50);
@@ -116,7 +120,8 @@ for i = 1:N_Sites
     wt_below = (CV(ind_d50)-0.5)/dV_surface_bar(ind_d50);
     wt_above = 1-wt_below;
     d50_surface_site(i) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-    
+    sigma_d50_surface_site(i) = std([GrainSize_Surface.d_50_mm]);
+
     %get d90
     ind_d90 = find(CV>=0.9, 1);
     d_below = d_surface_lower(ind_d90);
@@ -124,7 +129,7 @@ for i = 1:N_Sites
     wt_below = (CV(ind_d90)-0.9)/dV_surface_bar(ind_d90);
     wt_above = 1-wt_below;
     d90_surface_site(i) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-    
+    sigma_d90_surface_site(i) = std([GrainSize_Surface.d_90_mm]);
     
     %% SURFACE - GET DAILY MEAN
     dates_samples = [GrainSize_Surface.Date];
@@ -398,15 +403,17 @@ ax.XTick = [0.06:0.01:0.1, 0.2:0.1:1, 2];
 ax.XTickLabel = {'0.06','','','','0.1','0.2','0.3','','0.5','','','','','1','2'};
 ax.YTick = [0.01:0.01:0.1, 0.2:0.1:1, 2];
 ax.YTickLabel = {'0.01','0.02','0.03','','0.05','','','','','0.1','0.2','0.3','','0.5','','','','','1','2'};
-xlabel('Particle diameter, d (mm)');
-ylabel('Norm. surface size distr., dV/dln(d)');
+xlabel('\textbf{Particle diameter, $$d$$ (mm)}','Interpreter','Latex');
+ylabel('\textbf{Norm. surface size distr., $$\frac{dV}{d\ln(d)}$$}','Interpreter','Latex');
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 set(gca,'FontSize',PlotFont);
 
 %print plot for draft
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6.5 5]);
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 6]);
 print([folder_Plots,'MeanGSD_Surface.png'],'-dpng');
+set(gcf,'PaperUnits','centimeters','PaperPosition',[0 0 18 12.7]);
+print([folder_Plots,'MeanGSD_Surface.eps'],'-depsc');
 
 
 %plot mean GSD for each site
@@ -499,4 +506,4 @@ print([folder_Plots,'DateClusterGSD.png'],'-dpng');
 
 
 %% SAVE DATA
-save(SaveData_Path,'Sites','*site','*date','*cluster','dates*','cluster*','d10*','d50*','d90*'); 
+save(SaveData_Path,'Sites','*site','*date','*cluster','dates*','cluster*','d10*','d50*','d90*','sigma*'); 

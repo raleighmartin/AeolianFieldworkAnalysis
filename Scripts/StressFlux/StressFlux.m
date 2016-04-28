@@ -39,6 +39,7 @@ addpath(folder_Functions); %point MATLAB to location of functions
 %load grain size data
 load(strcat(folder_GrainSizeData,'MeanGrainSize'));
 d50_Site = d50_surface_site;
+sigma_d50_Site = sigma_d50_surface_site;
 
 %load flux stress window data
 load(strcat(folder_AnalysisData,'StressFluxWindows_Analysis'));
@@ -62,13 +63,15 @@ zqnorm_Lit{3} = zqnorm_Lit{3}*NaN;
 %set info for plotting
 Markers_Field = {'s','d','o','<','>'};
 Colors_Field = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250],[0.2116 0.1898 0.5777],[0.6473 0.7456 0.4188]};
-MarkerSize_Field = 8;
+MarkerSize_Field = 5;
 LineWidth_Field = 1;
-Markers_Lit = {'x','+','*'};
-MarkerSize_Lit = 8;
+Markers_Lit = {'<','>','^'};
+%Markers_Lit = {'x','+','*'};
+MarkerSize_Lit = 5;
 Colors_Lit = {[0.4940 0.1840 0.5560],[0.4660 0.6740 0.1880],[0.3010 0.7450 0.9330]};
 LineWidth_Lit = 1;
 PlotFont = 14;
+%PlotFont = 10;
 
 %%
 %%%%%%%%%%%%%%%%%%%%%
@@ -102,201 +105,6 @@ for i = 1:N_Sites
 end
 
 %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-% UNBINNED DATA ANALYSIS %
-%%%%%%%%%%%%%%%%%%%%%%%%%%
-Q_sigma_systematic_percent = 0; %estimated percent systematic uncertainty in values of Q
-Q_sigma_systematic_absolute = 0; %estimated absolute uncertainty in values of Q
-
-%% FITTING Q VS TAU
-%values used in Q-tau fit
-ust_Qtaufit_raw = cell(N_Sites,1);
-ust_sigma_Qtaufit_raw = cell(N_Sites,1);
-tau_Qtaufit_raw = cell(N_Sites,1);
-tau_sigma_Qtaufit_raw = cell(N_Sites,1);
-fQ_Qtaufit_raw = cell(N_Sites,1);
-Q_Qtaufit_raw = cell(N_Sites,1);
-Q_sigma_Qtaufit_raw = cell(N_Sites,1);
-
-%values resulting from Q-tau linear fit
-C_linearfit_raw = zeros(N_Sites,1);
-C_sigma_linearfit_raw = zeros(N_Sites,1);
-tauit_linearfit_raw = zeros(N_Sites,1);
-tauit_sigma_linearfit_raw = zeros(N_Sites,1);
-ustit_linearfit_raw = zeros(N_Sites,1);
-ustit_sigma_linearfit_raw = zeros(N_Sites,1);
-Q_pred_linearfit_raw = cell(N_Sites,1); %predicted Q for linear fit
-Q_sigmatau_linearfit_raw = cell(N_Sites,1); %additional tau contribution to Q uncertainty for linear fit
-Q_sigmatotal_linearfit_raw = cell(N_Sites,1); %total uncertainty in Q from Q and tau contributions for linear fit
-Q_residuals_linearfit_raw = cell(N_Sites,1); %get residuals in Q for linear fit
-Chi2_linearfit_raw = zeros(N_Sites,1);
-Chi2_contributions_linearfit_raw = cell(N_Sites,1);
-df_linearfit_raw = zeros(N_Sites,1);
-tau_linearfit_raw_plot = cell(N_Sites,1); %values for plotting fits
-Q_linearfit_raw_plot = cell(N_Sites,1); %values for plotting fits
-
-%values resulting from Q-tau three halves fit
-tauit_threehalvesfit_raw = zeros(N_Sites,1);
-tauit_sigma_threehalvesfit_raw = zeros(N_Sites,1);
-C_threehalvesfit_raw = zeros(N_Sites,1);
-C_sigma_threehalvesfit_raw = zeros(N_Sites,1);
-Q_pred_threehalvesfit_raw = cell(N_Sites,1);
-Q_sigmatau_threehalvesfit_raw = cell(N_Sites,1); %additional tau contribution to Q uncertainty for threehalves fit
-Q_sigmatotal_threehalvesfit_raw = cell(N_Sites,1);  %total uncertainty in Q from Q and tau contributions for threehalves fit
-Q_residuals_threehalvesfit_raw = cell(N_Sites,1); %get residuals in Q for threehalves fit
-Chi2_threehalvesfit_raw = zeros(N_Sites,1);
-Chi2_contributions_threehalvesfit_raw = cell(N_Sites,1);
-df_threehalvesfit_raw = zeros(N_Sites,1);
-tau_threehalvesfit_raw_plot = cell(N_Sites,1); %values for plotting fits
-ust_threehalvesfit_raw_plot = cell(N_Sites,1); %values for plotting fits
-Q_threehalvesfit_raw_plot = cell(N_Sites,1); %values for plotting fits
-
-% %values resulting from Q-tau nonlinear fit
-% n_nonlinearfit_raw = zeros(N_Sites,1);
-% n_range_nonlinearfit_raw = zeros(N_Sites,2);
-% tauit_nonlinearfit_raw = zeros(N_Sites,1);
-% tauit_range_nonlinearfit_raw = zeros(N_Sites,2);
-% C_nonlinearfit_raw = zeros(N_Sites,1);
-% C_range_nonlinearfit_raw = zeros(N_Sites,2);
-% Q_pred_nonlinearfit_raw = cell(N_Sites,1);
-% Q_sigmatau_nonlinearfit_raw = cell(N_Sites,1); %additional tau contribution to Q uncertainty for nonlinear fit
-% Q_sigmatotal_nonlinearfit_raw = cell(N_Sites,1);  %total uncertainty in Q from Q and tau contributions for nonlinear fit
-% Q_residuals_nonlinearfit_raw = cell(N_Sites,1); %get residuals in Q for nonlinear fit
-% Chi2_nonlinearfit_raw = zeros(N_Sites,1);
-% Chi2_contributions_nonlinearfit_raw = cell(N_Sites,1);
-% df_nonlinearfit_raw = zeros(N_Sites,1);
-% tau_nonlinearfit_raw_plot = cell(N_Sites,1); %values for plotting fits
-% ust_nonlinearfit_raw_plot = cell(N_Sites,1); %values for plotting fits
-% Q_nonlinearfit_raw_plot = cell(N_Sites,1); %values for plotting fits
-
-for i = 1:N_Sites
-    %get indices of values for fit
-    tauRe_min = max(tauRe_all{i}(Q_all{i}==0));
-    if ~isempty(tauRe_min)
-        ind_fit = find(tauRe_all{i}>tauRe_min);
-    else
-        ind_fit = find(tauRe_all{i});
-    end
-        
-    %determine which values to use in fitting
-    ust_Qtaufit_raw{i} = ustRe_all{i}(ind_fit);
-    ust_sigma_Qtaufit_raw{i} = sigma_ustRe_all{i}(ind_fit);
-    tau_Qtaufit_raw{i} = tauRe_all{i}(ind_fit);
-    tau_sigma_Qtaufit_raw{i} = sigma_tauRe_all{i}(ind_fit);
-    Q_Qtaufit_raw{i} = Q_all{i}(ind_fit);
-    %Q_sigma_Qtaufit_raw{i} = sigma_Q_all{i}(ind_fit);
-    Q_sigma_Qtaufit_raw{i} = sqrt((sigma_Q_all{i}(ind_fit)).^2+...
-        (Q_Qtaufit_raw{i}*Q_sigma_systematic_percent/100+Q_sigma_systematic_absolute).^2); %include additional systematic uncertainty in Q uncertainty
-    
-    %perform linear fit for each Site
-    [intercept, slope, sigma_intercept, sigma_slope, Q_pred, ~] = ...
-        linearfit(tau_Qtaufit_raw{i}, Q_Qtaufit_raw{i}, Q_sigma_Qtaufit_raw{i});
-    C_linearfit_raw(i) = slope;
-    C_sigma_linearfit_raw(i) = sigma_slope;
-    tauit_linearfit_raw(i) = -intercept/slope;
-    tauit_sigma_linearfit_raw(i) = sigma_intercept/slope;
-    ustit_linearfit_raw(i) = sqrt(tauit_linearfit_raw(i)/rho_a);
-    ustit_sigma_linearfit_raw(i) = tauit_sigma_linearfit_raw(i)*(1/(2*rho_a))*(1/ustit_linearfit_raw(i));
-    Q_pred_linearfit_raw{i} = Q_pred;
-    Q_sigmatau_linearfit_raw{i} = slope*tau_sigma_Qtaufit_raw{i}; %uncertainty in Q due to tau
-    Q_sigmatotal_linearfit_raw{i} = sqrt(Q_sigma_Qtaufit_raw{i}.^2+Q_sigmatau_linearfit_raw{i}.^2); %total uncertainty in Q for linear fit
-    Q_residuals_linearfit_raw{i} = Q_Qtaufit_raw{i}-Q_pred; %get residuals in Q for linear fit
-    Chi2_contributions_linearfit_raw{i} = (Q_residuals_linearfit_raw{i}./Q_sigmatotal_linearfit_raw{i}).^2; %compute individual contributions to Chi2 (Bevington and Robinson, Eq. 8.4)
-    Chi2_linearfit_raw(i) = sum(Chi2_contributions_linearfit_raw{i}); %compute total Chi2
-    df_linearfit_raw(i) = length(ind_fit)-2;
-
-    %perform three-halves fit for each Site
-    [tauit, tauit_sigma, C, C_sigma, Chi2, Chi2_contributions, Q_pred] = ...
-        ThreeHalvesFluxFit(ust_Qtaufit_raw{i}, ust_sigma_Qtaufit_raw{i},...
-        tau_Qtaufit_raw{i}, tau_sigma_Qtaufit_raw{i},...
-        Q_Qtaufit_raw{i}, Q_sigma_Qtaufit_raw{i});
-    tauit_threehalvesfit_raw(i) = tauit;
-    tauit_sigma_threehalvesfit_raw(i,:) = tauit_sigma;
-    C_threehalvesfit_raw(i) = C;
-    C_sigma_threehalvesfit_raw(i,:) = C_sigma;
-    Q_pred_threehalvesfit_raw{i} = Q_pred;
-    Q_sigmatau_threehalvesfit_raw{i} = ust_sigma_Qtaufit_raw{i}.*...
-        C.*abs(3*tau_Qtaufit_raw{i}-tauit); %uncertainty in Q due to tau
-    Q_sigmatotal_threehalvesfit_raw{i} = sqrt(Q_sigma_Qtaufit_raw{i}.^2+Q_sigmatau_threehalvesfit_raw{i}.^2); %total uncertainty in Q for linear fit
-    Q_residuals_threehalvesfit_raw{i} = Q_Qtaufit_raw{i}-Q_pred; %get residuals in Q for threehalves fit
-    Chi2_threehalvesfit_raw(i) = Chi2;
-    Chi2_contributions_threehalvesfit_raw{i} = Chi2_contributions;
-    df_threehalvesfit_raw(i) = length(ind_fit)-2;
-    
-%     %perform nonlinear fit for each Site
-%     [n, n_range, tauit, tauit_range, C, C_range, Chi2, Chi2_contributions, Q_pred] = ...
-%         NonlinearFluxFit(ust_Qtaufit_raw{i}, ust_sigma_Qtaufit_raw{i},...
-%         tau_Qtaufit_raw{i}, tau_sigma_Qtaufit_raw{i},...
-%         Q_Qtaufit_raw{i}, Q_sigma_Qtaufit_raw{i});
-%     n_nonlinearfit_raw(i) = n;
-%     n_range_nonlinearfit_raw(i,:) = n_range;
-%     tauit_nonlinearfit_raw(i) = tauit;
-%     tauit_range_nonlinearfit_raw(i,:) = tauit_range;
-%     C_nonlinearfit_raw(i) = C;
-%     C_range_nonlinearfit_raw(i,:) = C_range;
-%     Q_pred_nonlinearfit_raw{i} = Q_pred;
-%     Q_sigmatau_nonlinearfit_raw{i} = ust_sigma_Qtaufit_raw{i}.*...
-%         abs(C*(rho_a*(n+2)*ust_Qtaufit_raw{i}.^(n+1)-...
-%         n*ust_Qtaufit_raw{i}.^(n-1)*tauit)); %uncertainty in Q due to tau
-%     Q_sigmatotal_nonlinearfit_raw{i} = sqrt(Q_sigma_Qtaufit_raw{i}.^2+Q_sigmatau_nonlinearfit_raw{i}.^2); %total uncertainty in Q for linear fit
-%     Q_residuals_nonlinearfit_raw{i} = Q_Qtaufit_raw{i}-Q_pred; %get residuals in Q for nonlinear fit
-%     Chi2_nonlinearfit_raw(i) = Chi2;
-%     Chi2_contributions_nonlinearfit_raw{i} = Chi2_contributions;
-%     df_nonlinearfit_raw(i) = length(ind_fit)-3;
-    
-    %get values for plotting fits
-    tau_linearfit_raw_plot{i} = linspace(tauit_linearfit_raw(i),max(tau_Qtaufit_raw{i}),50);
-    Q_linearfit_raw_plot{i} = C_linearfit_raw(i)*(tau_linearfit_raw_plot{i}-tauit_linearfit_raw(i));
-    tau_threehalvesfit_raw_plot{i} = linspace(tauit_threehalvesfit_raw(i),max(tau_Qtaufit_raw{i}),50);
-    ust_threehalvesfit_raw_plot{i} = sqrt(tau_threehalvesfit_raw_plot{i}/rho_a);
-    Q_threehalvesfit_raw_plot{i} = C_threehalvesfit_raw(i)*...
-        ust_threehalvesfit_raw_plot{i}.*...
-        (tau_threehalvesfit_raw_plot{i}-tauit_threehalvesfit_raw(i));
-%     tau_nonlinearfit_raw_plot{i} = linspace(tauit_nonlinearfit_raw(i),max(tau_Qtaufit_raw{i}),50);
-%     ust_nonlinearfit_raw_plot{i} = sqrt(tau_nonlinearfit_raw_plot{i}/rho_a);
-%     Q_nonlinearfit_raw_plot{i} = C_nonlinearfit_raw(i)*...
-%         ust_nonlinearfit_raw_plot{i}.^n_nonlinearfit_raw(i).*...
-%         (tau_nonlinearfit_raw_plot{i}-tauit_nonlinearfit_raw(i));
-end
-
-%% PLOT Q VERSUS TAU
-figure;
-for i = 1:N_Sites
-    subplot(1,N_Sites,i); hold on;
-    errorbar(tau_Qtaufit_raw{i},Q_Qtaufit_raw{i},Q_sigmatotal_linearfit_raw{i},Markers_Field{i},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{i}); % include uncertainties from tau
-    plot(tau_linearfit_raw_plot{i},Q_linearfit_raw_plot{i},'Color',Colors_Field{i}); %plot fit for these values
-    plot(tau_threehalvesfit_raw_plot{i},Q_threehalvesfit_raw_plot{i},'--','Color',Colors_Field{i}); %plot 3/2 fit
-%    plot(tau_nonlinearfit_raw_plot{i},Q_nonlinearfit_raw_plot{i},'--','Color',Colors_Field{i}); %plot nonlinear fit
-    xlim([0.05 0.4]);
-    ylim([0 50]);
-    
-    %print out fit values in legend
-    linear_output = ['linear, \chi^2_{\nu} = ',...
-        num2str(Chi2_linearfit_raw(i)/df_linearfit_raw(i),'%.2f')];
-    threehalves_output = ['3/2, \chi^2_{\nu} = ',...
-        num2str(Chi2_threehalvesfit_raw(i)/df_threehalvesfit_raw(i),'%.2f')];
-%     nonlinear_output = ['nonlinear, n=[',...
-%         num2str(n_range_nonlinearfit_raw(i,1),'%.2f'),', ',...
-%         num2str(n_range_nonlinearfit_raw(i,2),'%.2f'),'], \chi^2_{\nu} = ',...
-%         num2str(Chi2_nonlinearfit_raw(i)/df_nonlinearfit_raw(i),'%.2f')];
-%     legend(SiteNames{i},linear_output,nonlinear_output,'Location','NorthOutside');
-    legend(SiteNames{i},linear_output,threehalves_output,'Location','NorthOutside');
-
-    
-    set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-    xlabel('\textbf{Shear stress, $$\tau$$ (Pa)}','Interpreter','Latex');
-    if i == 1
-        ylabel('\textbf{Saltation mass flux, $$Q$$ (g m$$^{-1}$$ s$$^{-1}$$)}','Interpreter','Latex');
-    end
-    set(gca,'FontSize',12);
-end
-
-%print plot
-set(gca, 'LooseInset', get(gca,'TightInset'))
-set(gcf, 'PaperPosition',[0 0 11 7]);
-print([folder_Plots,'Q_tau_raw_fit_',int2str(Q_sigma_systematic_percent),'pct_',int2str(Q_sigma_systematic_absolute),'abs.png'],'-dpng');
-
-%%
 %%%%%%%%%%%%%%%%%%%
 % PRIMARY BINNING %
 %%%%%%%%%%%%%%%%%%%
@@ -324,16 +132,12 @@ ust_bin_std_all = cell(N_Sites,1); %std dev ust in bin
 ust_bin_SE_all = cell(N_Sites,1); %SE ust in bin
 ust_bin_sigma_all = cell(N_Sites,1); %total estimated ust uncertainty for bin
 
-%initialize lists of tauex values for tau bins
-tauex_bin_avg_all = cell(N_Sites,1); %avg tauex in bin
-tauex_bin_sigma_all = cell(N_Sites,1); %total estimated tauex uncertainty for bin (combination of tau and tauit uncertainty)
-tauex_bin_min_all = cell(N_Sites,1); %minimum tauex in bin
-
 %separate fQs into tau bins
 fQ_bin_values_all = cell(N_Sites,1); %fQs into tau bins
 fQ_bin_avg_all = cell(N_Sites,1); %get average fQ for tau bins
 fQ_bin_std_all = cell(N_Sites,1); %get std fQ for tau bins
 fQ_bin_stdmin_all = zeros(N_Sites,1); %get mininum std dev for fQ in tau bins
+fQ_bin_stdmed_all = zeros(N_Sites,1); %get median std dev for fQ in tau bins
 fQ_bin_SE_all = cell(N_Sites,1); %get SE fQ for tau bins
 fQ_bin_SEalt_all = cell(N_Sites,1); %get alternate SE fQ for sparse tau bins
 fQ_bin_sigma_all = cell(N_Sites,1); %get total uncertainty for fQ in tau bins
@@ -346,6 +150,7 @@ Q_bin_avg_all = cell(N_Sites,1); %get average Q for tau bins
 Q_bin_sigmaavg_all = cell(N_Sites,1); %get uncertainty in average Q for tau bins
 Q_bin_std_all = cell(N_Sites,1); %get std Q for tau bins
 Q_bin_stdmin_all = zeros(N_Sites,1); %get mininum std dev for Q in tau bins
+Q_bin_stdmed_all = zeros(N_Sites,1); %get median std dev for Q in tau bins
 Q_bin_SE_all = cell(N_Sites,1); %get SE Q for tau bins
 Q_bin_SEalt_all = cell(N_Sites,1); %get alternate SE Q for sparse tau bins
 Q_bin_sigma_all = cell(N_Sites,1); %total estimated Q uncertainty for bin
@@ -358,6 +163,7 @@ zq_bin_avg_all = cell(N_Sites,1); %get average zq for tau bins
 zq_bin_sigmaavg_all = cell(N_Sites,1); %get uncertainty in average zq for tau bins
 zq_bin_std_all = cell(N_Sites,1); %get std zq for tau bins
 zq_bin_stdmin_all = zeros(N_Sites,1); %compute minimum std dev for zq in tau bins
+zq_bin_stdmed_all = zeros(N_Sites,1); %compute median std dev for zq in tau bins
 zq_bin_SE_all = cell(N_Sites,1); %get SE zq for tau bins
 zq_bin_SEalt_all = cell(N_Sites,1); %get alternate SE zq for sparse tau bins
 zq_bin_sigma_all = cell(N_Sites,1); %total estimated zq uncertainty for bin
@@ -436,33 +242,45 @@ for i = 1:N_Sites
     %get indices for computing mininum standard deviation
     ind_full = find(bin_N>=3); %indices for full bins
     ind_transport = find(fQ_bin_max_all{i}>=fQ_Qtau_fit_min); %indices for bins with transport
-    ind_stdmin_Q = intersect(ind_full,ind_transport); %indices for computing minimum standard deviation
-    ind_stdmin_zq = find(bin_N_zq>=3); %indices for computing minimum standard deviation for zq
+    ind_stdmed_Q = intersect(ind_full,ind_transport); %indices for computing median standard deviation
+    ind_stdmed_zq = find(bin_N_zq>=3); %indices for computing median standard deviation for zq
 
-    %get fQ avg, std, SE, stdmin, and SEalt
+    %get fQ avg, std, SE, stdmin, stdmed, and SEalt
     fQ_bin_avg_all{i} = cellfun(@mean,fQ_bin_values_all{i});
     fQ_bin_std_all{i} = cellfun(@std,fQ_bin_values_all{i});
     fQ_bin_SE_all{i} = fQ_bin_std_all{i}./sqrt(bin_N);
-    fQ_bin_stdmin_all(i) = min(fQ_bin_std_all{i}(ind_stdmin_Q));
+    fQ_bin_stdmin_all(i) = min(fQ_bin_std_all{i}(ind_stdmed_Q));
+    fQ_bin_stdmed_all(i) = median(fQ_bin_std_all{i}(ind_stdmed_Q));
     fQ_bin_SEalt_all{i} = zeros(N_bins,1);
-    fQ_bin_SEalt_all{i}(ind_transport) = fQ_bin_stdmin_all(i)./sqrt(bin_N(ind_transport));
-
-    %get Q avg, std, and SE, stdmin, and SEalt
+%    fQ_bin_SEalt_all{i}(ind_transport) = fQ_bin_stdmin_all(i)./sqrt(bin_N(ind_transport));
+    fQ_bin_SEalt_all{i}(ind_transport) = fQ_bin_stdmed_all(i)./sqrt(bin_N(ind_transport));
+    
+    %get Q avg, std, and SE, stdmin, stdmed and SEalt
     Q_bin_avg_all{i} = cellfun(@mean,Q_bin_values_all{i});
     Q_bin_std_all{i} = cellfun(@std,Q_bin_values_all{i});
     Q_bin_SE_all{i} = Q_bin_std_all{i}./sqrt(bin_N);
-    Q_bin_stdmin_all(i) = min(Q_bin_std_all{i}(ind_stdmin_Q));
+    Q_bin_stdmin_all(i) = min(Q_bin_std_all{i}(ind_stdmed_Q));
+    Q_bin_stdmed_all(i) = median(Q_bin_std_all{i}(ind_stdmed_Q));
     Q_bin_SEalt_all{i} = zeros(N_bins,1);
-    Q_bin_SEalt_all{i}(ind_transport) = Q_bin_stdmin_all(i)./sqrt(bin_N(ind_transport));
-   
-    %get zQ avg, std, and SE, stdmin, and SEalt
+%     Q_bin_SEalt_all{i}(ind_transport) = Q_bin_stdmin_all(i)./sqrt(bin_N(ind_transport));
+    Q_bin_SEalt_all{i}(ind_transport) = Q_bin_stdmed_all(i)./sqrt(bin_N(ind_transport));
+
+    %revise SEalt to make sure it does not exceed value of Q_bin_avg
+    for j = 1:length(ind_transport)
+        Q_bin_SEalt_all{i}(ind_transport(j)) = ...
+            min([Q_bin_avg_all{i}(ind_transport(j)),Q_bin_SEalt_all{i}(ind_transport(j))]);
+    end
+    
+    %get zQ avg, std, and SE, stdmin, stdmed and SEalt
     zq_bin_avg_all{i} = cellfun(@mean,zq_bin_values_all{i});
     zq_bin_std_all{i} = cellfun(@std,zq_bin_values_all{i});
     zq_bin_SE_all{i} = zq_bin_std_all{i}./sqrt(bin_N);
-    zq_bin_stdmin_all(i) = min(zq_bin_std_all{i}(ind_stdmin_zq));
+    zq_bin_stdmin_all(i) = min(zq_bin_std_all{i}(ind_stdmed_zq));
+    zq_bin_stdmed_all(i) = median(zq_bin_std_all{i}(ind_stdmed_zq));
     zq_bin_SEalt_all{i} = zeros(N_bins,1);
-    zq_bin_SEalt_all{i}(ind_transport) = zq_bin_stdmin_all(i)./sqrt(bin_N_zq(ind_transport));
-    
+%     zq_bin_SEalt_all{i}(ind_transport) = zq_bin_stdmin_all(i)./sqrt(bin_N_zq(ind_transport));
+    zq_bin_SEalt_all{i}(ind_transport) = zq_bin_stdmed_all(i)./sqrt(bin_N_zq(ind_transport));
+
     %compute sigmaavg (uncertainy on mean of random errors)
     tau_bin_sigmaavg_all{i} = zeros(N_bins,1); %initialize list of uncertainties for mean tau in bin
     ust_bin_sigmaavg_all{i} = zeros(N_bins,1); %initialize list of uncertainties for mean ust in bin
@@ -496,81 +314,13 @@ for i = 1:N_Sites
 %     fQ_bin_sigma_all{i} = fQ_bin_SE_all{i}; %for fQ, take total uncertainty simply as SE
 end
 
-
-% %% RECOMPUTE SIGMA FOR BINS WITH FEW VALUES
-% 
-% %plot typical standard deviations for Q's in bins
-% figure; hold on;
-% Q_std_bar = zeros(N_Sites,1);
-% Q_std_min = zeros(N_Sites,1);
-% Q_CV_bar = zeros(N_Sites,1);
-% for i = 1:N_Sites
-%     ind_N_min = intersect(find(bin_N_all{i}>=bin_N_min),find(Q_bin_avg_all{i}>0));
-%     plot(Q_bin_avg_all{i}(ind_N_min),Q_bin_std_all{i}(ind_N_min),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
-%     Q_std_bar(i) = mean(Q_bin_std_all{i}(ind_N_min));
-%     Q_std_min(i) = min(Q_bin_std_all{i}(ind_N_min));
-%     Q_CV_bar(i) = mean(Q_bin_std_all{i}(ind_N_min)./Q_bin_avg_all{i}(ind_N_min));
-%     plot(xlim,[Q_std_bar(i) Q_std_bar(i)],'Color',Colors_Field{i})
-% end
-% 
-% %record original sigma values for comparison to later changed values
-% tau_bin_sigma_original_all = tau_bin_sigma_all;
-% ust_bin_sigma_original_all = ust_bin_sigma_all;
-% fQ_bin_sigma_original_all = fQ_bin_sigma_all;
-% Q_bin_sigma_original_all = Q_bin_sigma_all;
-% zq_bin_sigma_original_all = zq_bin_sigma_all;
-% 
-% %initialize lists minimum standard 
-% 
-% i_Oceano = find(strncmp(Sites,'Oceano',6),1); %get index among Site list for Oceano
-% ind_Oceano = find(bin_N_all{i_Oceano}>=bin_N_min); %indices of Oceano bins with bin_N >= bin_N_min
-% tau_avg_Oceano = tau_bin_avg_all{i_Oceano}(ind_Oceano); %avg tau values for these bins
-% tau_std_Oceano = max([tau_bin_std_all{i_Oceano}(ind_Oceano)'; tau_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev tau values from these bins (from max of std and stdalt)
-% tau_CV_Oceano = tau_std_Oceano./tau_avg_Oceano; %std/mean of tau values for these bins
-% ust_avg_Oceano = ust_bin_avg_all{i_Oceano}(ind_Oceano); %avg ust values for these bins
-% ust_std_Oceano = max([ust_bin_std_all{i_Oceano}(ind_Oceano)'; ust_bin_stdalt_all{i_Oceano}(ind_Oceano)'])'; %std dev ust values from these bins (from max of std and stdalt)
-% ust_CV_Oceano = ust_std_Oceano./ust_avg_Oceano; %std/mean of ust values for these bins
-% fQ_avg_Oceano = fQ_bin_avg_all{i_Oceano}(ind_Oceano); %avg fQ values for these bins
-% fQ_std_Oceano = fQ_bin_std_all{i_Oceano}(ind_Oceano); %std dev fQ values for these bins
-% fQ_CV_Oceano = fQ_std_Oceano./fQ_avg_Oceano; %std/mean of fQ values for these bins
-% Q_avg_Oceano = Q_bin_avg_all{i_Oceano}(ind_Oceano); %avg Q values for these bins
-% Q_std_Oceano = max([Q_bin_std_all{i_Oceano}(ind_Oceano)'; Q_bin_stdmin_all{i_Oceano}(ind_Oceano)'])'; %std dev Q values from these bins (from max of std and stdalt)
-% Q_CV_Oceano = Q_std_Oceano./Q_avg_Oceano; %std/mean of Q values for these bins
-% zq_avg_Oceano = zq_bin_avg_all{i_Oceano}(ind_Oceano); %avg zq values for these bins
-% zq_std_Oceano = max([zq_bin_std_all{i_Oceano}(ind_Oceano)'; zq_bin_stdmin_all{i_Oceano}(ind_Oceano)'])'; %std dev zq values from these bins (from max of std and stdalt)
-% zq_CV_Oceano = zq_std_Oceano./zq_avg_Oceano; %std/mean of zq values for these bins
-% for i = 1:N_Sites
-%     ind_recompute_sigma = find(bin_N_all{i}<bin_N_min);
-%     N_ind = length(ind_recompute_sigma);
-%     for j = 1:N_ind
-%         k = ind_recompute_sigma(j);
-%         tau_bin = tau_bin_avg_all{i}(k); %get avg tau for bin
-%         tau_diff_Oceano = abs(tau_bin-tau_avg_Oceano); %get distance of this tau from Oceano taus
-%         ind_Oceano = find(tau_diff_Oceano==min(tau_diff_Oceano),1); %get closest Oceano tau
-%         %compute sigma based on this nearest std dev and N values in bin
-%         tau_bin_sigma_pred = tau_CV_Oceano(ind_Oceano)*tau_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         ust_bin_sigma_pred = ust_CV_Oceano(ind_Oceano)*ust_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         fQ_bin_sigma_pred = fQ_CV_Oceano(ind_Oceano)*fQ_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         %Q_bin_sigma_pred = Q_CV_Oceano(ind_Oceano)*Q_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         %Q_bin_sigma_pred = Q_std_bar(i)/sqrt(bin_N_all{i}(k)); %use average std dev of bins with sufficient values
-%         Q_bin_sigma_pred = Q_std_min(i)/sqrt(bin_N_all{i}(k)); %use min std dev of bins with sufficient values
-%         %Q_bin_sigma_pred = Q_CV_bar(i)*Q_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         zq_bin_sigma_pred = zq_CV_Oceano(ind_Oceano)*zq_bin_avg_all{i}(k)/sqrt(bin_N_all{i}(k));
-%         %final sigma is max of current value in bin and this new predicted value
-%         tau_bin_sigma_all{i}(k) = max([tau_bin_sigma_all{i}(k) tau_bin_sigma_pred]);
-%         ust_bin_sigma_all{i}(k) = max([ust_bin_sigma_all{i}(k) ust_bin_sigma_pred]);
-%         fQ_bin_sigma_all{i}(k) = max([fQ_bin_sigma_all{i}(k) fQ_bin_sigma_pred]);
-%         Q_bin_sigma_all{i}(k) = max([Q_bin_sigma_all{i}(k) Q_bin_sigma_pred]);
-%         zq_bin_sigma_all{i}(k) = max([zq_bin_sigma_all{i}(k) zq_bin_sigma_pred]);
-%     end
-% end
-
 %% COMPUTE ZQNORM
 zqnorm_bin_avg_all = cell(N_Sites,1); %initialize average zqnorm for tau bins
 zqnorm_bin_sigma_all = cell(N_Sites,1); %intialize uncertainty in zqnorm for tau bins
 for i=1:N_Sites
     zqnorm_bin_avg_all{i} = 1000*zq_bin_avg_all{i}./d50_Site(i); % determine zqnorm based on grain size by Site
-    zqnorm_bin_sigma_all{i} = 1000*zq_bin_sigma_all{i}./d50_Site(i); %determine zqnorm based on grain size by Site
+    zqnorm_bin_sigma_all{i} = (1000./d50_Site(i))*sqrt(zq_bin_sigma_all{i}.^2+(sigma_d50_Site(i)/1000).^2.*zqnorm_bin_avg_all{i}.^2); %calculate uncertainty based on d50 and zq
+    %zqnorm_bin_sigma_all{i} = 1000*zq_bin_sigma_all{i}./d50_Site(i); %determine zqnorm based on grain size by Site
 end
 
 %%
@@ -672,16 +422,16 @@ for i = 1:N_Lit
     sigma_slope_zqust_Lit_all(i) = sigma_slope; %uncertainty in slope of fit
    
     %get mean zq and zqnorm
-    [zq_bar, sigma_zq_bar] = MeanUncertainty(zq_Lit{i}, sigma_zq_Lit{i});
-    zq_sigmaavg_Lit_all(i) = sigma_zq_bar; %uncertainty of zq bar
     zq_bar_Lit_all(i) = mean(zq_Lit{i});
+    [~, sigma_zq_bar] = MeanUncertainty(zq_Lit{i}, sigma_zq_Lit{i});
+    zq_sigmaavg_Lit_all(i) = sigma_zq_bar; %uncertainty of zq bar
     zq_std_Lit_all(i) = std(zq_Lit{i});
     zq_SE_Lit_all(i) = zq_std_Lit_all(i)/sqrt(length(zq_Lit{i}));
     
     %get mean zqnorm
-    [zqnorm_bar, sigma_zqnorm_bar] = MeanUncertainty(zqnorm_Lit{i}, sigma_zqnorm_Lit{i});
-    zqnorm_sigmaavg_Lit_all(i) = sigma_zqnorm_bar;
     zqnorm_bar_Lit_all(i) = mean(zqnorm_Lit{i});
+    [~, sigma_zqnorm_bar] = MeanUncertainty(zqnorm_Lit{i}, sigma_zqnorm_Lit{i});
+    zqnorm_sigmaavg_Lit_all(i) = sigma_zqnorm_bar;
     zqnorm_std_Lit_all(i) = std(zqnorm_Lit{i});
     zqnorm_SE_Lit_all(i) = zqnorm_std_Lit_all(i)/sqrt(length(zqnorm_Lit{i}));
 end
@@ -904,6 +654,16 @@ end
 %%%%%%%%%%%%%%%%%%
 
 %% COMPUTE DERIVED VARIABLES
+%initialize lists of tauex values for tau bins
+tauex_bin_avg_all = cell(N_Sites,1); %avg tauex in bin
+tauex_bin_sigma_all = cell(N_Sites,1); %total estimated tauex uncertainty for bin (combination of tau and tauit uncertainty)
+tauex_bin_min_all = cell(N_Sites,1); %minimum tauex in bin
+
+%initialize tauratio
+tauratio_bin_avg_all = cell(N_Sites,1); %avg tau/tauit in bin
+tauratio_bin_sigma_all = cell(N_Sites,1); %uncertainty in tau/tauit for bin
+tauratio_bin_min_all = cell(N_Sites,1); %determine minimum tau/tauit in bin based on threshold by Site
+
 %initialize Qhats 
 Qhat_bin_avg_all = cell(N_Sites,1); %get average Qhat for tau bins
 Qhat_bin_sigma_all = cell(N_Sites,1); %total estimated Qhat uncertainty for bin
@@ -916,6 +676,10 @@ for i=1:N_Sites
     tauex_bin_avg_all{i} = tau_bin_avg_all{i} - tauit_linearfit_all(i); %determine tauex based on threshold by Site
     tauex_bin_sigma_all{i} = sqrt(tau_bin_sigma_all{i}.^2 + tauit_sigma_linearfit_all(i).^2); %uncertainty in tauex combines tau uncertainty and threshold uncertainty
     tauex_bin_min_all{i} = tau_bin_min_all{i} - tauit_linearfit_all(i); %determine minimum tauex in bin based on threshold by Site
+
+    tauratio_bin_avg_all{i} = tau_bin_avg_all{i}/tauit_linearfit_all(i); %determine tauratio based on threshold by Site
+    tauratio_bin_sigma_all{i} = sqrt(tau_bin_sigma_all{i}.^2 + (tauit_sigma_linearfit_all(i).*tauratio_bin_avg_all{i}).^2)/tauit_linearfit_all(i); %uncertainty in tauratio combines tau uncertainty and threshold uncertainty
+    tauratio_bin_min_all{i} = tau_bin_min_all{i}/tauit_linearfit_all(i); %determine minimum tauratio in bin based on threshold by Site
     
     Qhat_bin_avg_all{i} = (Q_bin_avg_all{i}*1e-3)./((1/g)*ustit_linearfit_all(i).*tauex_bin_avg_all{i}); %compute Qhat
     Qhat_Q_sigma = Q_bin_sigma_all{i}.*(Qhat_bin_avg_all{i}./Q_bin_avg_all{i}); %contribution of Q to Qhat uncertainty
@@ -931,56 +695,62 @@ for i=1:N_Sites
 end
 
 %% COMPUTE PARAMETERS ASSOCIATED WITH DERIVED VALUES
-%compute fit values for Q versus tauex
-tauex_Qtauexfit_all = cell(N_Sites,1); %tauex's for fit
-sigma_tauex_Qtauexfit_all = cell(N_Sites,1); %sigma tauex's for fit
-Q_Qtauexfit_all = cell(N_Sites,1); %Q's for fit
-sigma_Q_Qtauexfit_all = cell(N_Sites,1); %sigma_Q's for fit
-Qtauratio_bar_all = zeros(N_Sites,1); %scaling coefficient for Q/tauex versus tauex 
 
-Qhat_Qtauexfit_all = cell(N_Sites,1); %Qhat's for fit
-sigma_Qhat_Qtauexfit_all = cell(N_Sites,1); %sigma_Qhat's for fit
-Qhat_bar_all = zeros(N_Sites,1); %scaling coefficient for Qhat versus tauex
-Qhat_sigmaavg_all = zeros(N_Sites,1); %scaling coefficient for Qhat versus tauex
+%initialize fit values for tauex and tauratio
+tauex_fit_all = cell(N_Sites,1); %tauex's for fit
+sigma_tauex_fit_all = cell(N_Sites,1); %sigma tauex's for fit
+tauratio_fit_all = cell(N_Sites,1); %tauratio's for fit
+sigma_tauratio_fit_all = cell(N_Sites,1); %sigma tauratio's for fit
+
+%initialize values for Q, Qhat, and Qhatalt
+Q_fit_all = cell(N_Sites,1); %Q's for fit
+sigma_Q_fit_all = cell(N_Sites,1); %sigma_Q's for fit
+Qhat_fit_all = cell(N_Sites,1); %Qhat's for fit
+sigma_Qhat_fit_all = cell(N_Sites,1); %sigma_Qhat's for fit
+Qhatalt_fit_all = cell(N_Sites,1); %alternative Qhat's for fit
+sigma_Qhatalt_fit_all = cell(N_Sites,1); %alternative Qhat's for fit
+
+%initialize Q/tauex ratio, Qhat, and Qhatalt calculations
+Qtauexratio_bar_all = zeros(N_Sites,1); %mean Q/tauex ratio
+Qhat_bar_all = zeros(N_Sites,1); %mean Qhat
+Qhat_sigmaavg_all = zeros(N_Sites,1); %uncertainty for avg Qhat
 Qhat_std_all = zeros(N_Sites,1); %standard deviation of Qhats
 Qhat_SE_all = zeros(N_Sites,1); %standard error of Qhats
-
-Qhatalt_Qtauexfit_all = cell(N_Sites,1); %alternative Qhat's for fit
-sigma_Qhatalt_Qtauexfit_all = cell(N_Sites,1); %alternative Qhat's for fit
-Qhatalt_bar_all = zeros(N_Sites,1); %scaling coefficient for alternative Qhat versus tauex
-Qhatalt_sigmaavg_all = zeros(N_Sites,1); %scaling coefficient for alternative Qhat versus tauex
-Qhatalt_std_all = zeros(N_Sites,1); %standard deviation of Qhats
-Qhatalt_SE_all = zeros(N_Sites,1); %standard error of Qhats
+Qhatalt_bar_all = zeros(N_Sites,1); %mean Qhatalt
+Qhatalt_sigmaavg_all = zeros(N_Sites,1); %uncertainty for avg Qhatalt
+Qhatalt_std_all = zeros(N_Sites,1); %standard deviation of Qhatalts
+Qhatalt_SE_all = zeros(N_Sites,1); %standard error of Qhatalts
 
 %go through Sites
 for i = 1:N_Sites
-    %get values for fitting
-    ind_fit = find(tauex_bin_min_all{i}>=N_sigma_tauit*tauit_sigma_linearfit_all(i)); %must exceed threshold by at least 2 sigma
-    tauex_Qtauexfit_all{i} = tauex_bin_avg_all{i}(ind_fit);
-    sigma_tauex_Qtauexfit_all{i} = tauex_bin_sigma_all{i}(ind_fit);
-    Q_Qtauexfit_all{i} = Q_bin_avg_all{i}(ind_fit);
-    sigma_Q_Qtauexfit_all{i} = Q_bin_sigma_all{i}(ind_fit);
-    Qtauratio_fit = Q_Qtauexfit_all{i}./tauex_Qtauexfit_all{i};
-    sigma_Qtauratio_fit = sigma_Q_Qtauexfit_all{i}./tauex_Qtauexfit_all{i};
-    Qhat_Qtauexfit_all{i} = Qhat_bin_avg_all{i}(ind_fit);
-    sigma_Qhat_Qtauexfit_all{i} = Qhat_bin_sigma_all{i}(ind_fit);
-    Qhatalt_Qtauexfit_all{i} = Qhatalt_bin_avg_all{i}(ind_fit);
-    sigma_Qhatalt_Qtauexfit_all{i} = Qhatalt_bin_sigma_all{i}(ind_fit);
+    %get values for fitting - stress
+    %ind_fit = find(tauex_bin_avg_all{i}>=N_sigma_tauit*tauit_sigma_linearfit_all(i)); %tau must exceed threshold by at least 2 sigma
+    ind_fit = find(tauex_bin_min_all{i}>=N_sigma_tauit*tauit_sigma_linearfit_all(i)); %min tau must exceed threshold by at least 2 sigma
+    tauex_fit_all{i} = tauex_bin_avg_all{i}(ind_fit);
+    sigma_tauex_fit_all{i} = tauex_bin_sigma_all{i}(ind_fit);
+    tauratio_fit_all{i} = tauratio_bin_avg_all{i}(ind_fit);
+    sigma_tauratio_fit_all{i} = tauratio_bin_sigma_all{i}(ind_fit);
     
-    %get mean values and uncertainties - Qhat
-    Qtauratio_bar_all(i) = mean(Qtauratio_fit);
-    Qhat_bar_all(i) = mean(Qhat_Qtauexfit_all{i});
-    [~, sigma_Qhat_bar] = MeanUncertainty(Qhat_Qtauexfit_all{i}, sigma_Qhat_Qtauexfit_all{i});
-    Qhat_sigmaavg_all(i) = sigma_Qhat_bar;
-    Qhat_std_all(i) = std(Qhat_Qtauexfit_all{i}); %standard deviation of Qhats
-    Qhat_SE_all(i) = Qhat_std_all(i)/sqrt(length(Qhat_Qtauexfit_all{i})); %standard error of Qhats
+    %get values for fitting - flux
+    Q_fit_all{i} = Q_bin_avg_all{i}(ind_fit);
+    sigma_Q_fit_all{i} = Q_bin_sigma_all{i}(ind_fit);
+    Qhat_fit_all{i} = Qhat_bin_avg_all{i}(ind_fit);
+    sigma_Qhat_fit_all{i} = Qhat_bin_sigma_all{i}(ind_fit);
+    Qhatalt_fit_all{i} = Qhatalt_bin_avg_all{i}(ind_fit);
+    sigma_Qhatalt_fit_all{i} = Qhatalt_bin_sigma_all{i}(ind_fit);
     
-    %get mean values and uncertainties - Qhatalt
-    Qhatalt_bar_all(i) = mean(Qhatalt_Qtauexfit_all{i});
-    [~, sigma_Qhatalt_bar] = MeanUncertainty(Qhatalt_Qtauexfit_all{i}, sigma_Qhatalt_Qtauexfit_all{i});
-    Qhatalt_sigmaavg_all(i) = sigma_Qhatalt_bar;
-    Qhatalt_std_all(i) = std(Qhatalt_Qtauexfit_all{i}); %standard deviation of Qhats
-    Qhatalt_SE_all(i) = Qhatalt_std_all(i)/sqrt(length(Qhatalt_Qtauexfit_all{i})); %standard error of Qhats
+    %computations for flux
+    Qtauexratio_bar_all(i) = mean(Q_fit_all{i}./tauex_fit_all{i}); %mean Q/tauex ratio
+    Qhat_bar_all(i) = mean(Qhat_fit_all{i}); %mean Qhat
+    [~, sigma_Qhat_bar] = MeanUncertainty(Qhat_fit_all{i}, sigma_Qhat_fit_all{i}); %uncertainty in mean Qhat
+    Qhat_sigmaavg_all(i) = sigma_Qhat_bar; %uncertainty in mean Qhat
+    Qhat_std_all(i) = std(Qhat_fit_all{i}); %standard deviation of Qhats
+    Qhat_SE_all(i) = Qhat_std_all(i)/sqrt(length(Qhat_fit_all{i})); %standard error of Qhats
+    Qhatalt_bar_all(i) = mean(Qhatalt_fit_all{i}); %mean Qhatalt
+    [~, sigma_Qhatalt_bar] = MeanUncertainty(Qhatalt_fit_all{i}, sigma_Qhatalt_fit_all{i}); %uncertainty in mean Qhatalt
+    Qhatalt_sigmaavg_all(i) = sigma_Qhatalt_bar; %uncertainty in mean Qhatalt
+    Qhatalt_std_all(i) = std(Qhatalt_fit_all{i}); %standard deviation of Qhatalts
+    Qhatalt_SE_all(i) = Qhatalt_std_all(i)/sqrt(length(Qhatalt_fit_all{i})); %standard error of Qhatalts
 end
 
 %%
@@ -995,11 +765,24 @@ legend_items = [SiteNames;LitNames];
 figure; subplot(2,7,1:7); hold on;
 %plot binned Field data
 for i = 1:N_Sites
-    errorbar(ust_zqustfit_all{i},zq_zqustfit_all{i},zq_sigma_zqustfit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+    plot(ust_zqustfit_all{i},zq_zqustfit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field);
 end
 %plot Literature data
 for i = 1:N_Lit
-    errorbar(ust_Lit{i},zq_Lit{i},sigma_zq_Lit{i},Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Lit,'LineWidth',LineWidth_Lit);
+    plot(ust_Lit{i},zq_Lit{i},Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Lit);
+end
+
+%plot error bars separately
+for i = 1:N_Sites %plot binned Field data
+    for j = 1:length(ust_zqustfit_all{i});
+        plot(ones(2,1)*ust_zqustfit_all{i}(j), zq_zqustfit_all{i}(j)+[-1 1]*zq_sigma_zqustfit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %y error-bars
+        %plot(ust_zqustfit_all{i}(j)+[-1 1]*ust_sigma_zqustfit_all{i}(j), ones(2,1)*zq_zqustfit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %x error-bars
+    end
+end
+for i = 1:N_Sites %plot Literature data
+    for j = 1:length(ust_Lit{i});
+        plot(ones(2,1)*ust_Lit{i}(j), zq_Lit{i}(j)+[-1 1]*sigma_zq_Lit{i}(j),'Color',Colors_Lit{i},'LineWidth',LineWidth_Field); %y error-bars
+    end
 end
 
 %organize plot
@@ -1008,7 +791,7 @@ ylim([0 0.15]);
 legend(legend_items,'Location','EastOutside');
 text(0.255, 0.14,'(a)','FontSize',PlotFont);
 set(gca,'XMinorTick','On','XScale','log','YMinorTick','On','Box','On');
-xlabel('\textbf{Shear velocity, $$u_{*}$$ (m s$$^{-1}$$)}','Interpreter','Latex');
+xlabel('\textbf{Shear velocity, $$u_{*}$$ (ms$$^{-1}$$)}','Interpreter','Latex');
 ylabel('\textbf{Saltation height, $$z_q$$ (m)}','Interpreter','Latex');
 set(gca,'FontSize',PlotFont);
 
@@ -1017,11 +800,13 @@ subplot(2,7,8:9); hold on;
 
 %plot Field data
 for i = 1:N_Sites
-    errorbar(d50_Site(i),slope_zqustfit_all(i),sigma_slope_zqustfit_all(i),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field*1.5,'LineWidth',LineWidth_Field);
+    plot(d50_Site(i),slope_zqustfit_all(i),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field*1.5); %values
+    plot(ones(2,1)*d50_Site(i),slope_zqustfit_all(i)+[-1 1]*sigma_slope_zqustfit_all(i),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %error bars
 end
 %plot Literature data
 for i = 1:2; %neglect Farrell (2012) data
-    errorbar(d50_Lit(i),slope_zqust_Lit_all(i),sigma_slope_zqust_Lit_all(i),Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Lit*1.5,'LineWidth',LineWidth_Lit);
+    plot(d50_Lit(i),slope_zqust_Lit_all(i),Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Lit*1.5); %values
+    plot(ones(2,1)*d50_Lit(i),slope_zqust_Lit_all(i)+[-1 1]*sigma_slope_zqust_Lit_all(i),'Color',Colors_Lit{i},'LineWidth',LineWidth_Lit); %error bars
 end
 
 %plot 0 line
@@ -1040,7 +825,9 @@ set(gca,'FontSize',PlotFont);
 subplot(2,7,10); hold on;
 
 %plot best fit values
-errorbar(0,slope_zqust_Lit_all(3),sigma_slope_zqust_Lit_all(3),Markers_Lit{3},'Color',Colors_Lit{3},'MarkerSize',MarkerSize_Lit*1.5,'LineWidth',LineWidth_Lit);
+plot(d50_Lit(3),slope_zqust_Lit_all(3),Markers_Lit{3},'Color',Colors_Lit{3},'MarkerSize',MarkerSize_Lit*1.5); %values
+plot(ones(2,1)*d50_Lit(3),slope_zqust_Lit_all(3)+[-1 1]*sigma_slope_zqust_Lit_all(3),'Color',Colors_Lit{3},'LineWidth',LineWidth_Lit); %error bars
+
 %plot 0 line
 plot([-1 1],[0 0],'k--','LineWidth',1);
 
@@ -1055,11 +842,13 @@ subplot(2,7,12:14); hold on;
 
 %plot dimensionless heights versus d50 for Field data
 for i = 1:N_Sites
-    errorbar(d50_Site(i), zqnorm_bar_all(i), zqnorm_std_all(i),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field*1.5,'LineWidth',LineWidth_Field);
+    plot(d50_Site(i), zqnorm_bar_all(i), Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field*1.5); %values
+    plot(ones(2,1)*d50_Site(i), zqnorm_bar_all(i)+[-1 1]*zqnorm_std_all(i),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %error bars
 end
 %plot dimensionless heights versus d50 for lit data
 for i = 1:2; %only plot first two entries, ignorning Farrell (2012) with no d50
-    errorbar(d50_Lit(i), zqnorm_bar_Lit_all(i), zqnorm_std_Lit_all(i),Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Lit*1.5,'LineWidth',LineWidth_Lit);
+    plot(d50_Lit(i), zqnorm_bar_Lit_all(i), Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Lit*1.5); %values
+    plot(ones(2,1)*d50_Lit(i), zqnorm_bar_Lit_all(i)+[-1 1]*zqnorm_std_Lit_all(i),'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Lit*1.5); %error bars
 end
 %organize plot
 xlim([0.2 0.6]);
@@ -1074,27 +863,36 @@ set(gca,'FontSize',PlotFont);
 set(gca,'LooseInset',get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8.5 8]);
 print([folder_Plots,'zq_ust.png'],'-dpng');
-
+set(gcf,'PaperUnits','centimeters','PaperPosition',[0 0 18 12.7]);
+print([folder_Plots,'zq_ust.eps'],'-depsc');
 
 %% PLOT Q VERSUS TAUEX BINNED DATA
 figure; clf; hold on;
 
 %plot binned values
 for i = 1:N_Sites
-    errorbar(tauex_Qtauexfit_all{i},Q_Qtauexfit_all{i},sigma_Q_Qtauexfit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+    plot(tauex_fit_all{i},Q_fit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field);
+end
+
+%plot error bars
+for i = 1:N_Sites
+    for j = 1:length(tauex_fit_all{i})
+        plot(ones(2,1)*tauex_fit_all{i}(j),Q_fit_all{i}(j)+[-1 1]*sigma_Q_fit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %y error
+        plot(tauex_fit_all{i}(j)+[1 -1]*sigma_tauex_fit_all{i}(j),ones(2,1)*Q_fit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %x error
+    end
 end
 
 %plot fit values
 tauex_fit = [0 0.32];
 for i = 1:N_Sites
-    plot(tauex_fit, Qtauratio_bar_all(i)*tauex_fit,'Color',Colors_Field{i});
+    plot(tauex_fit, Qtauexratio_bar_all(i)*tauex_fit,'Color',Colors_Field{i});
 end
 
 xlim([0 0.32]);
 ylim([0 65]);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 xlabel('\textbf{Excess shear stress, $$\tau_{ex}$$ (Pa)}','Interpreter','Latex');
-ylabel('\textbf{Saltation mass flux, $$Q$$ (g m$$^{-1}$$ s$$^{-1}$$)}','Interpreter','Latex');
+ylabel('\textbf{Saltation mass flux, $$Q$$ (gm$$^{-1}$$s$$^{-1}$$)}','Interpreter','Latex');
 legend(SiteNames,'Location','NorthWest');
 set(gca,'FontSize',PlotFont);
 
@@ -1102,6 +900,8 @@ set(gca,'FontSize',PlotFont);
 set(gca,'LooseInset',get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 6]);
 print([folder_Plots,'Q_tauex.png'],'-dpng');
+set(gcf,'PaperUnits','centimeters','PaperPosition',[0 0 8.7 7]);
+print([folder_Plots,'Q_tauex.eps'],'-depsc');
 
 
 %% PLOT QHAT VERSUS TAUEX
@@ -1109,18 +909,33 @@ figure; clf; hold on;
 
 %plot binned values
 for i = 1:N_Sites
-    errorbar(tauex_Qtauexfit_all{i},Qhat_Qtauexfit_all{i},sigma_Qhat_Qtauexfit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+    plot(tauratio_fit_all{i},Qhat_fit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field);
+    %errorbar(tauex_fit_all{i},Qhat_fit_all{i},sigma_Qhat_fit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
 end
 
-%plot fit values
-tauex_fit = [0 0.32];
+%plot error bars
 for i = 1:N_Sites
-    plot(tauex_fit,Qhat_bar_all(i)*ones(2,1),'Color',Colors_Field{i});
+    for j = 1:length(tauratio_fit_all{i})
+        plot(ones(2,1)*tauratio_fit_all{i}(j),Qhat_fit_all{i}(j)+[-1, 1]*sigma_Qhat_fit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field);
+    end
 end
-xlim([0 0.32]);
+
+% %plot fit values
+% tauex_fit = [0 0.32];
+% for i = 1:N_Sites
+%     plot(tauex_fit,Qhat_bar_all(i)*ones(2,1),'Color',Colors_Field{i});
+% end
+
+%plot fit values
+tauratio_fit = [1 4];
+for i = 1:N_Sites
+    plot(tauratio_fit, ones(2,1)*Qhat_bar_all(i),'Color',Colors_Field{i});
+end
+
+xlim([1 4]);
 ylim([0 10]);
-set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-xlabel('\textbf{Excess shear stress, $$\tau_{ex}$$ (Pa)}','Interpreter','Latex');
+set(gca,'XMinorTick','On','YMinorTick','On','XScale','Log','Box','On');
+xlabel('\textbf{Dimensionless shear stress, $$\tau/\tau_{it}$$}','Interpreter','Latex');
 ylabel('\textbf{Dimensionless saltation flux, $$\hat{Q}$$}','Interpreter','Latex');
 legend(SiteNames,'Location','SouthEast');
 set(gca,'FontSize',PlotFont);
@@ -1128,69 +943,77 @@ set(gca,'FontSize',PlotFont);
 %print plot
 set(gca,'LooseInset',get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6.5 5]);
-print([folder_Plots,'Qhat_tauex.png'],'-dpng');
+print([folder_Plots,'Qhat_tauratio.png'],'-dpng');
+set(gcf,'PaperUnits','centimeters','PaperPosition',[0 0 8.7 6.4]);
+print([folder_Plots,'Qhat_tauratio.eps'],'-depsc');
 
-% %%
-% %%%%%%%%%%%%%%%%%%%%%%%
-% % SUPPLEMENTARY PLOTS %
-% %%%%%%%%%%%%%%%%%%%%%%%
-% 
-% %% PLOT THETA MINUS MEAN THETA VERSUS TAU
-% figure;
-% for i = 1:N_Sites
-%     subplot(1,N_Sites,i); hold on;
-%     plot(tauRe_all{i}(Q_all{i}>0),theta_all{i}(Q_all{i}>0)-mean(theta_all{i}(Q_all{i}>0)),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field/2,'LineWidth',LineWidth_Field);
-%     plot(tauRe_all{i}(Q_all{i}==0),theta_all{i}(Q_all{i}==0)-mean(theta_all{i}(Q_all{i}>0)),Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Field/2,'LineWidth',LineWidth_Field);
-%     legend('transport','no transport');
-%     xlim([0 0.4]);
-%     ylim([-90 90]);
-%     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-%     xlabel('\textbf{30 min. shear stress, $$\tilde{\tau}$$ (Pa)}','Interpreter','Latex');
-%     if i==1
-%         ylabel('\textbf{Wind angle, $$\tilde{\theta} (^{\circ})$$}','Interpreter','Latex');
-%         text(0.01, 83,'(a)','FontSize',PlotFont);
-%     elseif i==2
-%         text(0.01, 83,'(b)','FontSize',PlotFont);
-%     elseif i==3
-%         text(0.01, 83,'(c)','FontSize',PlotFont);
-%     end
-%     title(SiteNames{i});
-%     set(gca,'FontSize',13);
-% end
-% 
-% %print plot for draft
-% set(gca, 'LooseInset', get(gca,'TightInset'));
-% set(gcf,'PaperUnits','inches','PaperPosition',[0 0 11 5]);
-% print([folder_Plots,'theta_tau.png'],'-dpng');
-% 
-% 
-% %% PLOT z/L VERSUS TAU
-% figure;
-% for i = 1:N_Sites
-%     subplot(1,N_Sites,i); hold on;
-%     plot(tauRe_all{i}(Q_all{i}>0),zL_all{i}(Q_all{i}>0),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field/2,'LineWidth',LineWidth_Field);
-%     plot(tauRe_all{i}(Q_all{i}==0),zL_all{i}(Q_all{i}==0),Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Field/2,'LineWidth',LineWidth_Field);
-%     legend('transport','no transport','Location','SouthEast');
-%     xlim([0 0.4]);
-%     ylim([-0.5 0]);
-%     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-%     xlabel('\textbf{30 min. shear stress, $$\tilde{\tau}$$ (Pa)}','Interpreter','Latex');
-%     if i==1
-%         ylabel('\textbf{Stability parameter, $$z/L$$}','Interpreter','Latex');
-%         text(0.01, -0.015,'(a)','FontSize',PlotFont);
-%     elseif i==2
-%         text(0.01, -0.015,'(b)','FontSize',PlotFont);
-%     elseif i==3
-%         text(0.01, -0.015,'(c)','FontSize',PlotFont);
-%     end
-%     title(SiteNames{i});
-%     set(gca,'FontSize',13);
-% end
-% 
-% %print plot for draft
-% set(gca, 'LooseInset', get(gca,'TightInset'));
-% set(gcf,'PaperUnits','inches','PaperPosition',[0 0 11 5]);
-% print([folder_Plots,'zL_tau.png'],'-dpng');
+%%
+%%%%%%%%%%%%%%%%%%%%%%%
+% SUPPLEMENTARY PLOTS %
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%% PLOT THETA MINUS MEAN THETA VERSUS TAU
+figure;
+for i = 1:N_Sites
+    subplot(1,N_Sites,i); hold on;
+    plot(tauRe_all{i}(Q_all{i}>0),theta_all{i}(Q_all{i}>0)-mean(theta_all{i}(Q_all{i}>0)),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+    plot(tauRe_all{i}(Q_all{i}==0),theta_all{i}(Q_all{i}==0)-mean(theta_all{i}(Q_all{i}>0)),Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+    legend('transport','no transport');
+    xlim([0 0.4]);
+    ylim([-90 90]);
+    set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+    xlabel('\textbf{30 min. shear stress, $$\tilde{\tau}$$ (Pa)}','Interpreter','Latex');
+    if i==1
+        ylabel('\textbf{Wind angle, $$\tilde{\theta} (^{\circ})$$}','Interpreter','Latex');
+        text(0.01, 83,'(a)','FontSize',PlotFont);
+    elseif i==2
+        text(0.01, 83,'(b)','FontSize',PlotFont);
+    elseif i==3
+        text(0.01, 83,'(c)','FontSize',PlotFont);
+    end
+    title(SiteNames{i});
+    set(gca,'FontSize',13);
+end
+
+%calculate adjusted theta
+theta_adjusted_all = cell(N_Sites,1);
+for i = 1:N_Sites
+    theta_adjusted_all{i}=theta_all{i}-mean(theta_all{i}(Q_all{i}>0));
+end
+
+%print plot for draft
+set(gca, 'LooseInset', get(gca,'TightInset'));
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 11 5]);
+print([folder_Plots,'theta_tau.png'],'-dpng');
+
+
+%% PLOT z/L VERSUS TAU
+figure;
+for i = 1:N_Sites
+    subplot(1,N_Sites,i); hold on;
+    plot(tauRe_all{i}(Q_all{i}>0),zL_all{i}(Q_all{i}>0),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+    plot(tauRe_all{i}(Q_all{i}==0),zL_all{i}(Q_all{i}==0),Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+    legend('transport','no transport','Location','SouthEast');
+    xlim([0 0.4]);
+    ylim([-0.5 0]);
+    set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+    xlabel('\textbf{30 min. shear stress, $$\tilde{\tau}$$ (Pa)}','Interpreter','Latex');
+    if i==1
+        ylabel('\textbf{Stability parameter, $$z/L$$}','Interpreter','Latex');
+        text(0.01, -0.015,'(a)','FontSize',PlotFont);
+    elseif i==2
+        text(0.01, -0.015,'(b)','FontSize',PlotFont);
+    elseif i==3
+        text(0.01, -0.015,'(c)','FontSize',PlotFont);
+    end
+    title(SiteNames{i});
+    set(gca,'FontSize',13);
+end
+
+%print plot for draft
+set(gca, 'LooseInset', get(gca,'TightInset'));
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 11 5]);
+print([folder_Plots,'zL_tau.png'],'-dpng');
 
 
 %% PLOT TYPICAL STANDARD DEVIATIONS FOR Q's IN BINS
@@ -1200,34 +1023,37 @@ figure; hold on;
 for i = 1:N_Sites
     ind_full = find(bin_N_all{i}>=3); %indices for full bins
     ind_transport = find(fQ_bin_max_all{i}>=fQ_Qtau_fit_min); %indices for bins with transport
-    ind_stdmin_Q = intersect(ind_full,ind_transport); %indices for computing minimum standard deviation
-    plot(Q_bin_avg_all{i}(ind_stdmin_Q),Q_bin_std_all{i}(ind_stdmin_Q),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+    ind_stdmed_Q = intersect(ind_full,ind_transport); %indices for computing minimum standard deviation
+    plot(Q_bin_avg_all{i}(ind_stdmed_Q),Q_bin_std_all{i}(ind_stdmed_Q),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+%     plot(Q_bin_avg_all{i}(ind_stdmed_Q),Q_bin_std_all{i}(ind_stdmed_Q)./Q_bin_avg_all{i}(ind_stdmed_Q),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field); %plot relative change
 end
 
-%plot mininum standard deviations
+%plot median standard deviations
 for i = 1:N_Sites
-    plot(xlim,[Q_bin_stdmin_all(i) Q_bin_stdmin_all(i)],'Color',Colors_Field{i},'LineWidth',LineWidth_Field);
+%     plot(xlim,[Q_bin_stdmin_all(i) Q_bin_stdmin_all(i)],'Color',Colors_Field{i},'LineWidth',LineWidth_Field);
+    plot(xlim,[Q_bin_stdmed_all(i) Q_bin_stdmed_all(i)],'Color',Colors_Field{i},'LineWidth',LineWidth_Field);
 end
 
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-xlabel('\textbf{Shear stress, $$\tau$$ (Pa)}','Interpreter','Latex');
-xlabel('\textbf{Saltation mass flux, $$Q_i$$ (g m$$^{-1}$$ s$$^{-1}$$)}','Interpreter','Latex');
-ylabel('\textbf{Saltation mass flux std. dev., $$SD_{Q_i}$$ (g m$$^{-1}$$ s$$^{-1}$$)}','Interpreter','Latex');
+xlabel('\textbf{Saltation mass flux, $$Q_i$$ (gm$$^{-1}$$s$$^{-1}$$)}','Interpreter','Latex');
+ylabel('\textbf{Salt. mass flux std. dev., $$SD_{Q_i}$$ (gm$$^{-1}$$s$$^{-1}$$)}','Interpreter','Latex');
 legend(SiteNames,'Location','NorthEast');
 set(gca,'FontSize',PlotFont);
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'))
-set(gcf, 'PaperPosition',[0 0 8 6]);
+set(gcf, 'PaperPosition',[0 0 8 5]);
 print([folder_Plots,'Q_std.png'],'-dpng');
 
 
 %% PLOT Q VERSUS TAU
 figure; hold on;
 legend_items = cell(N_Sites*3,1);
+
+%plot binned values
 for i = 1:N_Sites
-    errorbar(tau_Qtaufit_all{i},Q_Qtaufit_all{i},Q_sigmatotal_linearfit_all{i},Markers_Field{i},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{i}); % include uncertainties from tau
-    plot(tau_linearfit_plot{i},Q_linearfit_plot{i},'Color',Colors_Field{i}); %plot fit for these values
+    plot(tau_Qtaufit_all{i},Q_Qtaufit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field);
+    plot(tau_linearfit_plot{i},Q_linearfit_plot{i},'Color',Colors_Field{i}); %plot linear fit
     plot(tau_threehalvesfit_plot{i},Q_threehalvesfit_plot{i},'--','Color',Colors_Field{i}); %plot 3/2 fit
 %    plot(tau_nonlinearfit_plot{i},Q_nonlinearfit_plot{i},'--','Color',Colors_Field{i}); %plot nonlinear fit
     legend_items{3*i-2} = SiteNames{i}; %add to list of legend items
@@ -1246,11 +1072,40 @@ for i = 1:N_Sites
 %         num2str(Chi2_nonlinearfit_all(i)/df_nonlinearfit_all(i),'%.2f')]
 end
 
-xlim([0.05 0.45]);
+%plot error bars
+for i = 1:N_Sites
+    for j = 1:length(tau_Qtaufit_all{i})
+        plot(ones(2,1)*tau_Qtaufit_all{i}(j),Q_Qtaufit_all{i}(j)+[-1 1]*Q_sigma_Qtaufit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %y error
+        plot(tau_Qtaufit_all{i}(j)+[1 -1]*tau_sigma_Qtaufit_all{i}(j),ones(2,1)*Q_Qtaufit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %x error
+    end
+end
+
+% for i = 1:N_Sites
+%     errorbar(tau_Qtaufit_all{i},Q_Qtaufit_all{i},Q_sigmatotal_linearfit_all{i},Markers_Field{i},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{i}); % include uncertainties from tau
+%     plot(tau_linearfit_plot{i},Q_linearfit_plot{i},'Color',Colors_Field{i}); %plot fit for these values
+%     plot(tau_threehalvesfit_plot{i},Q_threehalvesfit_plot{i},'--','Color',Colors_Field{i}); %plot 3/2 fit
+% %    plot(tau_nonlinearfit_plot{i},Q_nonlinearfit_plot{i},'--','Color',Colors_Field{i}); %plot nonlinear fit
+%     legend_items{3*i-2} = SiteNames{i}; %add to list of legend items
+%     legend_items{3*i-1} = 'linear fit';
+%     legend_items{3*i} = 'nonlinear 3/2 fit';
+% %    legend_items{3*i} = 'nonlinear fit';
+% 
+%     %print out fit values
+%     linear_output = ['linear, \chi^2_{\nu} = ',...
+%         num2str(Chi2_linearfit_all(i)/df_linearfit_all(i),'%.2f')]
+%     threehalves_output = ['3/2, \chi^2_{\nu} = ',...
+%         num2str(Chi2_threehalvesfit_all(i)/df_threehalvesfit_all(i),'%.2f')]
+% %     nonlinear_output = ['nonlinear, n=[',...
+% %         num2str(n_range_nonlinearfit_all(i,1),'%.2f'),', ',...
+% %         num2str(n_range_nonlinearfit_all(i,2),'%.2f'),'], \chi^2_{\nu} = ',...
+% %         num2str(Chi2_nonlinearfit_all(i)/df_nonlinearfit_all(i),'%.2f')]
+% end
+
+xlim([0 0.42]);
 ylim([0 65]);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 xlabel('\textbf{Shear stress, $$\tau$$ (Pa)}','Interpreter','Latex');
-ylabel('\textbf{Saltation mass flux, $$Q$$ (g m$$^{-1}$$ s$$^{-1}$$)}','Interpreter','Latex');
+ylabel('\textbf{Saltation mass flux, $$Q$$ (gm$$^{-1}$$s$$^{-1}$$)}','Interpreter','Latex');
 legend(legend_items,'Location','NorthWest');
 set(gca,'FontSize',PlotFont);
 
@@ -1264,12 +1119,22 @@ print([folder_Plots,'Q_tau.png'],'-dpng');
 figure;
 for i = 1:N_Sites
     %zq plot
-    subplot(1,N_Sites,i);
-    errorbar(ustRe_all{i},zq_all{i},sigma_zq_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field/2,'LineWidth',LineWidth_Field);
+    subplot(1,N_Sites,i); hold on;
+    
+    %plot data
+    plot(ustRe_all{i},zq_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field);
+    %errorbar(ustRe_all{i},zq_all{i},sigma_zq_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+
+    %plot error bars
+    for j = 1:length(ustRe_all{i})
+        plot(ones(2,1)*ustRe_all{i}(j),zq_all{i}(j)+[-1 1]*sigma_zq_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %y-error
+        plot(ustRe_all{i}(j)+[-1 1]*sigma_ustRe_all{i}(j),ones(2,1)*zq_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %x-error
+    end
+    
     xlim([0.25 0.6]);
     ylim([0 0.14]);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On','XScale','log');
-    xlabel('\textbf{30 min. shear vel., $$\tilde{u}_{*}$$ (m s$$^{-1}$$)}','Interpreter','Latex');
+    xlabel('\textbf{30 min. shear vel., $$\tilde{u}_{*}$$ (ms$$^{-1}$$)}','Interpreter','Latex');
     if i==1
         ylabel('\textbf{30 min. saltation height, $$\tilde{z}_q$$ (m)}','Interpreter','Latex');
         text(0.26, 0.135,'(a)','FontSize',PlotFont);
@@ -1290,14 +1155,23 @@ print([folder_Plots,'zq_ust_raw.png'],'-dpng');
 %% PLOT ALL Q VERSUS ALL TAU
 figure;
 for i = 1:N_Sites
-    subplot(1,N_Sites,i);
-    errorbar(tauRe_all{i},Q_all{i},sigma_Q_all{i},Markers_Field{i},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{i});
+    subplot(1,N_Sites,i); hold on;
+
+    %plot data
+    plot(tauRe_all{i},Q_all{i},Markers_Field{i},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{i});
+    %errorbar(tauRe_all{i},Q_all{i},sigma_Q_all{i},Markers_Field{i},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{i});
+
+    %plot error bars
+    for j = 1:length(tauRe_all{i})
+        plot(ones(2,1)*tauRe_all{i}(j),Q_all{i}(j)+[-1 1]*sigma_Q_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %y error
+        plot(tauRe_all{i}(j)+[1 -1]*sigma_tauRe_all{i}(j),ones(2,1)*Q_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_Field); %x error
+    end
     xlim([0 0.45]);
     ylim([0 65]);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
     xlabel('\textbf{30 min. wind stress, $$\tilde{\tau}$$ (Pa)}','Interpreter','Latex');
     if i==1
-        ylabel('\textbf{30 min. saltation flux, $$\tilde{Q}$$ (g m$$^{-1}$$ s$$^{-1}$$)}','Interpreter','Latex');
+        ylabel('\textbf{30 min. saltation flux, $$\tilde{Q}$$ (gm$$^{-1}$$s$$^{-1}$$)}','Interpreter','Latex');
         text(0.01, 62,'(a)','FontSize',PlotFont);
     elseif i==2
         text(0.01, 62,'(b)','FontSize',PlotFont);
@@ -1316,7 +1190,7 @@ print([folder_Plots,'Q_tau_raw.png'],'-dpng');
 % %% PLOT Q VERSUS TRANSPORT FREQUENCY (RAW)
 % figure; hold on;
 % for i = 1:N_Sites
-%     errorbar(fQ_all{i},Q_all{i},sigma_Q_all{i},Markers_Field{i},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{i});
+%     errorbar(fQ_all{i},Q_all{i},sigma_Q_all{i},Markers_Field{i},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{i});
 % 
 % end
 % set(gca,'yscale','log');
@@ -1337,7 +1211,7 @@ print([folder_Plots,'Q_tau_raw.png'],'-dpng');
 % %% PLOT Q VERSUS TRANSPORT FREQUENCY (BINNED)
 % figure; hold on;
 % for i = 1:N_Sites
-%     errorbar(fQ_bin_avg_all{i},Q_bin_avg_all{i},Q_bin_sigma_all{i},Markers_Field{i},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{i});
+%     errorbar(fQ_bin_avg_all{i},Q_bin_avg_all{i},Q_bin_sigma_all{i},Markers_Field{i},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{i});
 % end
 % set(gca,'yscale','log');
 % xlim([0 1]);
@@ -1490,8 +1364,8 @@ print([folder_Plots,'Q_tau_raw.png'],'-dpng');
 %     %full plot
 %     subplot(2,3,i); hold on;
 %     plot(tau_bin_avg_all{i},tau_bin_sigma_all{i}./tau_bin_avg_all{i},Markers_Field{1},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{1});
-%     plot(tau_bin_avg_all{i},tau_bin_sigmaavg_all{i}./tau_bin_avg_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{2});
-%     plot(tau_bin_avg_all{i},tau_bin_SE_all{i}./tau_bin_avg_all{i},Markers_Field{3},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{3});
+%     plot(tau_bin_avg_all{i},tau_bin_sigmaavg_all{i}./tau_bin_avg_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{2});
+%     plot(tau_bin_avg_all{i},tau_bin_SE_all{i}./tau_bin_avg_all{i},Markers_Field{3},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{3});
 %     legend('total uncertainty','random error','standard error','Location','NorthEast');
 %     title(Sites{i});
 %     xlim([0 0.4]);
@@ -1504,8 +1378,8 @@ print([folder_Plots,'Q_tau_raw.png'],'-dpng');
 %     %replot with zoomed in range
 %     subplot(2,3,i+3); hold on;
 %     plot(tau_bin_avg_all{i},tau_bin_sigma_all{i}./tau_bin_avg_all{i},Markers_Field{1},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{1});
-%     plot(tau_bin_avg_all{i},tau_bin_sigmaavg_all{i}./tau_bin_avg_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{2});
-%     plot(tau_bin_avg_all{i},tau_bin_SE_all{i}./tau_bin_avg_all{i},Markers_Field{3},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{3});
+%     plot(tau_bin_avg_all{i},tau_bin_sigmaavg_all{i}./tau_bin_avg_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{2});
+%     plot(tau_bin_avg_all{i},tau_bin_SE_all{i}./tau_bin_avg_all{i},Markers_Field{3},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{3});
 %     xlim([0 0.4]);
 %     ylim([0 0.05]);
 %     xlabel('\textbf{$$\tau$$ (Pa)}','Interpreter','Latex');
@@ -1525,8 +1399,8 @@ print([folder_Plots,'Q_tau_raw.png'],'-dpng');
 %     %full plot
 %     subplot(2,3,i); hold on;
 %     plot(Q_bin_avg_all{i},Q_bin_sigma_all{i}./Q_bin_avg_all{i},Markers_Field{1},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{1});
-%     plot(Q_bin_avg_all{i},Q_bin_sigmaavg_all{i}./Q_bin_avg_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{2});
-%     plot(Q_bin_avg_all{i},Q_bin_SE_all{i}./Q_bin_avg_all{i},Markers_Field{3},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{3});
+%     plot(Q_bin_avg_all{i},Q_bin_sigmaavg_all{i}./Q_bin_avg_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{2});
+%     plot(Q_bin_avg_all{i},Q_bin_SE_all{i}./Q_bin_avg_all{i},Markers_Field{3},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{3});
 %     legend('total uncertainty','random error','standard error','Location','NorthEast');
 %     title(Sites{i});
 %     xlim([0 50]);
@@ -1539,8 +1413,8 @@ print([folder_Plots,'Q_tau_raw.png'],'-dpng');
 %     %replot with zoomed in range
 %     subplot(2,3,i+3); hold on;
 %     plot(Q_bin_avg_all{i},Q_bin_sigma_all{i}./Q_bin_avg_all{i},Markers_Field{1},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{1});
-%     plot(Q_bin_avg_all{i},Q_bin_sigmaavg_all{i}./Q_bin_avg_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{2});
-%     plot(Q_bin_avg_all{i},Q_bin_SE_all{i}./Q_bin_avg_all{i},Markers_Field{3},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{3});
+%     plot(Q_bin_avg_all{i},Q_bin_sigmaavg_all{i}./Q_bin_avg_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{2});
+%     plot(Q_bin_avg_all{i},Q_bin_SE_all{i}./Q_bin_avg_all{i},Markers_Field{3},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{3});
 %     xlim([0 50]);
 %     ylim([0 0.3]);
 %     xlabel('\textbf{$$Q$$ (Pa)}','Interpreter','Latex');
@@ -1560,8 +1434,8 @@ print([folder_Plots,'Q_tau_raw.png'],'-dpng');
 %     %for linear fit
 %     subplot(2,3,i); hold on;
 %     plot(Q_Qtaufit_all{i},Q_sigmatotal_linearfit_all{i}./Q_Qtaufit_all{i},Markers_Field{1},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{1});
-%     plot(Q_Qtaufit_all{i},Q_sigma_Qtaufit_all{i}./Q_Qtaufit_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{2});
-%     plot(Q_Qtaufit_all{i},Q_sigmatau_linearfit_all{i}./Q_Qtaufit_all{i},Markers_Lit{1},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{3});
+%     plot(Q_Qtaufit_all{i},Q_sigma_Qtaufit_all{i}./Q_Qtaufit_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{2});
+%     plot(Q_Qtaufit_all{i},Q_sigmatau_linearfit_all{i}./Q_Qtaufit_all{i},Markers_Lit{1},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{3});
 %     legend('total uncertainty','Q contribution','\tau contribution','Location','NorthEast');
 %     title([Sites{i}, ' - ','Linear Fit']);
 %     xlim([0 50]);
@@ -1573,8 +1447,8 @@ print([folder_Plots,'Q_tau_raw.png'],'-dpng');
 %     %for nonlinear fit
 %     subplot(2,3,i+3); hold on;
 %     plot(Q_Qtaufit_all{i},Q_sigmatotal_nonlinearfit_all{i}./Q_Qtaufit_all{i},Markers_Field{1},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{1});
-%     plot(Q_Qtaufit_all{i},Q_sigma_Qtaufit_all{i}./Q_Qtaufit_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{2});
-%     plot(Q_Qtaufit_all{i},Q_sigmatau_nonlinearfit_all{i}./Q_Qtaufit_all{i},Markers_Lit{1},'MarkerSize',MarkerSize_Field/2,'Color',Colors_Field{3});
+%     plot(Q_Qtaufit_all{i},Q_sigma_Qtaufit_all{i}./Q_Qtaufit_all{i},Markers_Field{2},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{2});
+%     plot(Q_Qtaufit_all{i},Q_sigmatau_nonlinearfit_all{i}./Q_Qtaufit_all{i},Markers_Lit{1},'MarkerSize',MarkerSize_Field,'Color',Colors_Field{3});
 %     legend('total uncertainty','Q contribution','\tau contribution','\tau contr. (alt calc)','Location','NorthEast');
 %     title([Sites{i}, ' - ','Nonlinear Fit']);
 %     xlim([0 50]);
@@ -1615,7 +1489,7 @@ print([folder_Plots,'Q_tau_raw.png'],'-dpng');
 figure;
 for i = 1:N_Sites
     subplot(1,N_Sites,i); hold on;
-    plot(Q_all{i},Chi2_Qfit_all{i}./df_Qfit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field/2,'LineWidth',LineWidth_Field);
+    plot(Q_all{i},Chi2_Qfit_all{i}./df_Qfit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
     xlim([0 50]);
     ylim([1e-3 1e2]);
     set(gca,'yscale','log','XMinorTick','On','YMinorTick','On','Box','On');
