@@ -1,39 +1,39 @@
-%% SCRIPT TO GENERATE WINDOWS OF FLUX ACTIVITY, SALTATION FLUX, AND STRESS VALUES FOR ANALYSIS
-
-%% initialize
-clearvars;
-
-%% parameter values
-zW_min = 0.018; %minimum Wenglor height (m) = 1.5*height of instrument (to allow one full instrument height between bottom of instrument and bed)
-u_sigma_max = 5; %maximum standard deviation in total wind for error detection
-
-%% information about where to load/save data, plots, and functions
-folder_LoadData = '../../AnalysisData/Windowing/'; %folder for outputs of this analysis
-folder_SaveData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_Functions = '../Functions/'; %folder with functions
-addpath(folder_Functions); %point MATLAB to location of functions
-
-%% Specific information for windowing data
-LoadData_Path = strcat(folder_LoadData,'TimeWindows_30min'); %path for loading time windows
-SaveData_Path = strcat(folder_SaveData,'DataWindows_30min'); %path for saving output data
-
-%% load time windows
-load(LoadData_Path);
-SiteNames = {'Jericoacoara';'Rancho Guadalupe';'Oceano'};
-
-%% load processed data for each site, add to cell arrays of all sites 
-WindData = cell(N_Sites,1);
-FluxData = cell(N_Sites,1);
-WeatherData = cell(N_Sites,1);
-for i = 1:N_Sites
-    ProcessedData_Path = strcat(folder_SaveData,'ProcessedData_',Sites{i});
-    load(ProcessedData_Path); %load processed data
-    WindData{i} = ProcessedData.(AnemometerType{i}).(BaseAnemometer{i}); %data only for base anemometer
-    FluxData{i} = ProcessedData.FluxWenglor; %Wenglor flux data
-    WeatherData{i} = ProcessedData.Weather.WS; %all weather station data
-    clear ProcessedData; %remove 'ProcessedData' to clear up memory
-end
-
+% %% SCRIPT TO GENERATE WINDOWS OF FLUX ACTIVITY, SALTATION FLUX, AND STRESS VALUES FOR ANALYSIS
+% 
+% %% initialize
+% clearvars;
+% 
+% %% parameter values
+% zW_min = 0.018; %minimum Wenglor height (m) = 1.5*height of instrument (to allow one full instrument height between bottom of instrument and bed)
+% u_sigma_max = 5; %maximum standard deviation in total wind for error detection
+% 
+% %% information about where to load/save data, plots, and functions
+% folder_LoadData = '../../AnalysisData/Windowing/'; %folder for outputs of this analysis
+% folder_SaveData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
+% folder_Functions = '../Functions/'; %folder with functions
+% addpath(folder_Functions); %point MATLAB to location of functions
+% 
+% %% Specific information for windowing data
+% LoadData_Path = strcat(folder_LoadData,'TimeWindows_30min'); %path for loading time windows
+% SaveData_Path = strcat(folder_SaveData,'DataWindows_30min'); %path for saving output data
+% 
+% %% load time windows
+% load(LoadData_Path);
+% SiteNames = {'Jericoacoara';'Rancho Guadalupe';'Oceano'};
+% 
+% %% load processed data for each site, add to cell arrays of all sites 
+% WindData = cell(N_Sites,1);
+% FluxData = cell(N_Sites,1);
+% WeatherData = cell(N_Sites,1);
+% for i = 1:N_Sites
+%     ProcessedData_Path = strcat(folder_SaveData,'ProcessedData_',Sites{i});
+%     load(ProcessedData_Path); %load processed data
+%     WindData{i} = ProcessedData.(AnemometerType{i}).(BaseAnemometer{i}); %data only for base anemometer
+%     FluxData{i} = ProcessedData.FluxWenglor; %Wenglor flux data
+%     WeatherData{i} = ProcessedData.Weather.WS; %all weather station data
+%     clear ProcessedData; %remove 'ProcessedData' to clear up memory
+% end
+% 
 %% initialize variable lists
 
 %initialize lists of flux values (excluding error points)
@@ -202,7 +202,7 @@ for i = 1:N_Sites
         ind_longest = find(cellfun(@length,IntervalInd)==max(cellfun(@length,IntervalInd)));
         IntervalN = IntervalN(ind_longest); %number of interval
         IntervalInd = IntervalInd{ind_longest}; %indices for interval
-        t_wind = WindData{i}(IntervalN).t.int(IntervalInd_noerr); %times for longest interval excluding error times
+        t_wind = WindData{i}(IntervalN).t.int(IntervalInd); %times for longest interval
         
         %further reduce IntervalInd based on eliminating error times
         [~, ErrInd, ~] = intersect(WindData{i}(IntervalN).t.int,WindData{i}(IntervalN).t.err);

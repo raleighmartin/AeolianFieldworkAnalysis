@@ -115,4 +115,4 @@ for i = 1:N_Sites
 end
 
 % SAVE DATA
-save(SaveData_Path,'Sites','SiteNames','N_Sites','AnemometerType','BaseAnemometer','*window'); %save file
+save(SaveData_Path,'Sites','SiteNames','N_Sites','WindowTimeInterval','AnemometerType','BaseAnemometer','*window'); %save file

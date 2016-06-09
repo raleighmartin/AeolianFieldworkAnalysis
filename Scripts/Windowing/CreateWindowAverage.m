@@ -8,7 +8,7 @@ delta_t_avg_window = ... %time intervals for window averaging
     [duration(0,0,0.2),...
     duration(0,0,1)...
     duration(0,0,5)];
-N_avg_window = length(delta_t_avg_window); %number of time intervals for window averaging
+N_delta_t_avg = length(delta_t_avg_window); %number of time intervals for window averaging
 
 %% information about where to load/save data, plots, and functions
 folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
@@ -36,11 +36,11 @@ for i = 1:N_Sites
     N_Windows = length(StartTime_window{i}); %get number of windows
         
     %% initialize lists of values
-    t_avg_window{i} = cell(N_Windows,N_avg_window); %times for window average
-    n_avg_window{i} = cell(N_Windows,N_avg_window); %window-averaged count rates values
-    u_avg_window{i} = cell(N_Windows,N_avg_window); %window-averaged u values
-    ind_flux_err_avg_window{i} = cell(N_Windows,N_avg_window); %indices of error points in flux window-average
-    ind_wind_err_avg_window{i} = cell(N_Windows,N_avg_window); %indices of error points in window-average
+    t_avg_window{i} = cell(N_Windows,N_delta_t_avg); %times for window average
+    n_avg_window{i} = cell(N_Windows,N_delta_t_avg); %window-averaged count rates values
+    u_avg_window{i} = cell(N_Windows,N_delta_t_avg); %window-averaged u values
+    ind_flux_err_avg_window{i} = cell(N_Windows,N_delta_t_avg); %indices of error points in flux window-average
+    ind_wind_err_avg_window{i} = cell(N_Windows,N_delta_t_avg); %indices of error points in window-average
     
     %% go through time windows
     for j = 1:N_Windows
@@ -58,7 +58,7 @@ for i = 1:N_Sites
         ind_wind_err = ind_wind_err_window{i}{j}; %list of error time indices for wind
         
         %% go through window-average durations
-        for k = 1:N_avg_window
+        for k = 1:N_delta_t_avg
         
             %% compute window-averaged flux
             n_avg_1 = window_average(n(:,1), t_flux, delta_t_avg_window(k)); %compute sample window average counts timeseries to get number of values
