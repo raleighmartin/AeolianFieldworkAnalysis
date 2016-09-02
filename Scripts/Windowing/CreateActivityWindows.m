@@ -4,9 +4,8 @@
 clearvars;
 
 %% subwindow times
-delta_t_subwindow_all = [duration(0,0,25),duration(0,1,0),duration(0,3,0),duration(0,5,0),duration(0,10,0),duration(0,30,0)];
-delta_t_subwindow_all = [duration(0,0,25),duration(0,1,0),duration(0,3,0),duration(0,5,0),duration(0,10,0)];
-delta_t_subwindow_all = fliplr(delta_t_subwindow_all);
+%delta_t_subwindow_all = [duration(0,1,0)];
+delta_t_subwindow_all = [duration(0,0,25),duration(0,1,0),duration(0,2,0),duration(0,3,0),duration(0,5,0),duration(0,10,0),duration(0,30,0)];
 N_delta_t_subwindow = length(delta_t_subwindow_all);
 
 %% parameter values
@@ -16,7 +15,7 @@ delta_t_lowpass_analysis = duration(0,0,25); %time increment to use for primary 
 % u_it = [7.2, 6.3, 5.8]; %estimated impact threshold wind for each site
 tau_ft = [0.188, 0.147, 0.129]; %estimated fluid threshold stress for each site (Pa)
 tau_it = [0.128, 0.095, 0.084]; %estimated impact threshold stress for each site (Pa)
-rho_a = 1.18; %air density kg/m^3
+rho_a = [1.16, 1.22, 1.22]; %air density kg/m^3 (assumes T~30 C at Jeri and ~15 C at Rancho and Oceano)
 g = 9.8; %gravity m/s^2
 kappa = 0.4; %von Karman parameter
 z0 = 1e-4; %aerodynamic roughness length (m)
@@ -34,13 +33,13 @@ addpath(folder_Functions); %point MATLAB to location of functions
 LoadData_1_Path = strcat(folder_LoadData_1,'TimeWindows_30min.mat'); %path for loading time window data
 LoadData_2_Path = strcat(folder_LoadData_2,'WindowAverageWindows_30min.mat'); %path for loading window-averaged window data
 LoadData_3_Path = strcat(folder_LoadData_2,'LowPassWindows_30min.mat'); %path for loading low-pass window data
-%LoadData_4_Path = strcat(folder_LoadData_2,'DataWindows_30min.mat'); %path for loading full data windows
+LoadData_4_Path = strcat(folder_LoadData_2,'DataWindows_30min.mat'); %path for loading full data windows
 
 %% load window data
 load(LoadData_1_Path);
 load(LoadData_2_Path);
 load(LoadData_3_Path);
-%load(LoadData_4_Path);
+load(LoadData_4_Path);
 
 %% record values so they don't get deleted in loop
 save_t_avg_window_save = t_avg_window;
@@ -55,15 +54,16 @@ save_n_lowpass_window_save = n_lowpass_window;
 for m = 1:N_delta_t_subwindow
     
     % determine specific subwindow time
-    delta_t_subwindow = delta_t_subwindow_all(m)
+    delta_t_subwindow = delta_t_subwindow_all(m);
 
     % path for saving output data
     SaveData_Path = strcat(folder_SaveData,'ActivityWindows_30min_',int2str(seconds(delta_t_subwindow)),'s.mat'); 
 
     % %info for demo plots
+    t_plot_s = 5*seconds(delta_t_subwindow); %duration of plot
     % t_plot_s = 150; %duration of plot
-    % N_subwindow_plot = t_plot_s/seconds(delta_t_subwindow); %number of subwindows for plotting
-    % t_subwindow_plot = ((1:N_subwindow_plot)-0.5).*seconds(delta_t_subwindow); %times for subwindow plotting
+    N_subwindow_plot = t_plot_s/seconds(delta_t_subwindow); %number of subwindows for plotting
+    t_subwindow_plot = ((1:N_subwindow_plot)-0.5).*seconds(delta_t_subwindow); %times for subwindow plotting
 
     %% get time information for analysis
     ind_delta_t_avg_analysis = find(delta_t_avg_window==delta_t_avg_analysis); %index of window avg delta_t for primary analysis
@@ -79,6 +79,7 @@ for m = 1:N_delta_t_subwindow
     lambda_avg_window = cell(N_Sites,1); %estimated particle arrival rate per averaging window
 
     %values based on window-averaged wind
+    zs_avg_window = cell(N_Sites,1); %roughness height 
     uth_fQ_avg_window = cell(N_Sites,1); %threshold wind estimated from histogram of winds and fQ
     ustth_fQ_avg_window = cell(N_Sites,1); %threshold shear velocity estimated uth and law-of-the-wall 
     tauth_fQ_avg_window = cell(N_Sites,1); %threshold wind stress estimated uth and law-of-the-wall 
@@ -103,10 +104,13 @@ for m = 1:N_delta_t_subwindow
     %transport detection / activity - subwindows
     fD_avg_subwindow = cell(N_Sites,1); %Wenglor detection frequency list for each window
     fQ_avg_subwindow = cell(N_Sites,1); %Wenglor transport frequency matrix for each window
+    sigma_fQ_avg_subwindow = cell(N_Sites,1); %Wenglor transport frequency uncertainty for each window
     timeofday_subwindow = cell(N_Sites,1); %time associated with subwindow, in hour of day
 
     %values based on window-averaged wind - subwindows
+    zs_avg_subwindow = cell(N_Sites,1); %roughness height 
     uth_fQ_avg_subwindow = cell(N_Sites,1); %threshold wind estimated from histogram of winds and fQ
+    sigma_uth_fQ_avg_subwindow = cell(N_Sites,1); %threshold wind uncertainty estimated from histogram of winds and fQ
     ustth_fQ_avg_subwindow = cell(N_Sites,1); %threshold shear velocity estimated uth and law-of-the-wall 
     tauth_fQ_avg_subwindow = cell(N_Sites,1); %threshold wind stress estimated uth and law-of-the-wall 
     fplus_avg_subwindow = cell(N_Sites,1); %fraction of time with u_avg above fluid threshold
@@ -125,35 +129,15 @@ for m = 1:N_delta_t_subwindow
     fint_down_lowpass_subwindow = cell(N_Sites,1); %fraction of time with u_lowpass in intermediate zone from above
     fint_up_lowpass_subwindow = cell(N_Sites,1); %fraction of time with u_lowpass in intermediate zone from below
 
-    % %% INITIALIZE SAMPLE TIMESERIES PLOT
-    % %Create sample timeseries plot
-    % figure(1); clf;
-    % subplot(2,3,1);
-    % xlabel('t (s)');
-    % ylabel('N (/s)');
-    % title('raw');
-    % 
-    % subplot(2,3,2);
-    % xlabel('t (s)');
-    % ylabel('N (/s)');
-    % title('{\delta}t window avg');
-    % 
-    % subplot(2,3,3);
-    % xlabel('t (s)');
-    % ylabel('f_Q');
-    % title('{\Delta}t stats');
-    % 
-    % subplot(2,3,4);
-    % xlabel('t (s)');
-    % ylabel('u (m/s)');
-    % 
-    % subplot(2,3,5); hold on;
-    % xlabel('t (s)');
-    % ylabel('u (m/s)');
-    % 
-    % subplot(2,3,6);
-    % xlabel('t (s)');
-    % ylabel('u_{th} (m/s)');
+    %% INITIALIZE SAMPLE TIMESERIES PLOT
+    plotfont = 14;
+    figure(1); clf;
+    subplot(2,3,1);
+    subplot(2,3,2);
+    subplot(2,3,3);    
+    subplot(2,3,4);
+    subplot(2,3,5);
+    subplot(2,3,6);
 
     %% PERFORM ANALYSIS FOR EACH SITE
     for i = 1:N_Sites
@@ -163,7 +147,7 @@ for m = 1:N_delta_t_subwindow
         fD_avg_window{i} = zeros(N_windows,N_delta_t_avg); %Wenglor detection frequency list for each window
         fQ_avg_window{i} = zeros(N_windows,N_delta_t_avg); %Wenglor transport frequency matrix for each window
         lambda_avg_window{i} = zeros(N_windows,N_delta_t_avg); %estimated particle arrival rate per averaging interval
-
+        
         %threshold values based on window-averaged wind
         uth_fQ_avg_window{i} = zeros(N_windows,N_delta_t_avg); %threshold wind estimated from histogram of winds and fQ
         ustth_fQ_avg_window{i} = zeros(N_windows,N_delta_t_avg); %threshold shear velocity estimated uth and law-of-the-wall 
@@ -193,10 +177,12 @@ for m = 1:N_delta_t_subwindow
         %% initialize lists of values - subwindows
         fD_avg_subwindow{i} = zeros(N_windows,N_subwindows); %Wenglor detection frequency list for each window
         fQ_avg_subwindow{i} = zeros(N_windows,N_subwindows); %Wenglor transport frequency matrix for each window
+        sigma_fQ_avg_subwindow{i} = zeros(N_windows,N_subwindows); %Wenglor transport frequency uncertainty for each window
         timeofday_subwindow{i} = zeros(N_windows,N_subwindows); %time associated with subwindow, in hour of day
 
         %threshold values based on window-averaged wind - subwindows
         uth_fQ_avg_subwindow{i} = zeros(N_windows,N_subwindows); %threshold wind estimated from histogram of winds and fQ
+        sigma_uth_fQ_avg_subwindow{i} = zeros(N_windows,N_subwindows); %threshold wind uncertainty estimated from histogram of winds and fQ
         ustth_fQ_avg_subwindow{i} = zeros(N_windows,N_subwindows); %threshold shear velocity estimated uth and law-of-the-wall 
         tauth_fQ_avg_subwindow{i} = zeros(N_windows,N_subwindows); %threshold wind stress estimated uth and law-of-the-wall 
 
@@ -226,8 +212,8 @@ for m = 1:N_delta_t_subwindow
             processing_status = [SiteNames{i},', ',int2str(j),' of ',int2str(N_windows),', ',datestr(now)]
 
             %estimate thresholds for window
-            u_ft = (sqrt(tau_ft(i)/rho_a)/kappa)*log(zU_window{i}(j)/z0);
-            u_it = (sqrt(tau_it(i)/rho_a)/kappa)*log(zU_window{i}(j)/z0);
+            u_ft = (sqrt(tau_ft(i)/rho_a(i))/kappa)*log(zU_window{i}(j)/z0);
+            u_it = (sqrt(tau_it(i)/rho_a(i))/kappa)*log(zU_window{i}(j)/z0);
 
             %get lowpass wind for analysis - single lowpass time scale
             u_lowpass = u_lowpass_window{i}{j,ind_delta_t_lowpass_analysis}; %lowpass u's
@@ -283,19 +269,19 @@ for m = 1:N_delta_t_subwindow
                 u_avg_sort = sort(u_avg); %sort u's
                 ind_uth_fQ = round((1-fQ)*T_avg); %get index in list of u's corresponding to threshold
                 if ind_uth_fQ==0||isnan(ind_uth_fQ)
-                    uth_avg_fQ = NaN;
-                    ustth_avg_fQ = NaN;
-                    tauth_avg_fQ = NaN;
+                    uth_fQ_avg = NaN;
+                    ustth_fQ_avg = NaN;
+                    tauth_fQ_avg = NaN;
                 else
-                    uth_avg_fQ = u_avg_sort(ind_uth_fQ); %threshold wind speed
-                    ustth_avg_fQ = (kappa*uth_avg_fQ)/log(zU_window{i}(j)/z0); %threshold shear velocity
-                    tauth_avg_fQ = rho_a*ustth_avg_fQ^2; %threshold shear stress
+                    uth_fQ_avg = u_avg_sort(ind_uth_fQ); %threshold wind speed
+                    ustth_fQ_avg = (kappa*uth_fQ_avg)/log(zU_window{i}(j)/z0); %threshold shear velocity
+                    tauth_fQ_avg = rho_a(i)*ustth_fQ_avg^2; %threshold shear stress
                 end
 
                 %add to list of values from window-averaged winds
-                uth_fQ_avg_window{i}(j,k) = uth_avg_fQ; %threshold wind from flux frequency
-                tauth_fQ_avg_window{i}(j,k) = tauth_avg_fQ; %threshold wind from flux frequency
-                ustth_fQ_avg_window{i}(j,k) = ustth_avg_fQ; %threshold wind from flux frequency
+                uth_fQ_avg_window{i}(j,k) = uth_fQ_avg; %threshold wind from flux frequency
+                tauth_fQ_avg_window{i}(j,k) = tauth_fQ_avg; %threshold wind from flux frequency
+                ustth_fQ_avg_window{i}(j,k) = ustth_fQ_avg; %threshold wind from flux frequency
 
                 %determine fractions of u in different regions - window-averaged u
                 [fplus_avg,fminus_avg,fint_avg,fint_up_avg,fint_down_avg] = CalculateWindHysteresis(u_avg,u_ft,u_it);
@@ -320,7 +306,7 @@ for m = 1:N_delta_t_subwindow
                 else
                     uth_lowpass_fQ = u_lowpass_sort(ind_uth_lowpass_fQ); %threshold wind speed
                     ustth_lowpass_fQ = (kappa*uth_lowpass_fQ)/log(zU_window{i}(j)/z0); %threshold shear velocity
-                    tauth_lowpass_fQ = rho_a*ustth_lowpass_fQ^2; %threshold shear stress
+                    tauth_lowpass_fQ = rho_a(i)*ustth_lowpass_fQ^2; %threshold shear stress
                 end
 
                 %add to list of values from low-pass winds
@@ -397,28 +383,44 @@ for m = 1:N_delta_t_subwindow
                 else %otherwise, estimate fQ based on other parameters
                     fQ = fD/(1-exp(-lambda)); %calculate fQ
                 end
-
+                
+                %estimate uncertainty in flux activity
+                lambda_subwindow = N_s*seconds(delta_t_avg_analysis); %arrival rate during subwindow
+                %estimate subwindow arrival uncertainty based on sqrt(counts per window)
+                %sigma_lambda_subwindow = sqrt(N_s*seconds(delta_t_subwindow))*...
+                %    seconds(delta_t_avg_analysis)/seconds(delta_t_subwindow);
+                %estimate subwindow arrival uncertainty based on sqrt(counts per small interval)
+                sigma_lambda_subwindow = sqrt(N_s*seconds(delta_t_avg_analysis));
+                sigma_fQ = 0.5*exp(-lambda_subwindow)*...
+                    (exp(sigma_lambda_subwindow)-exp(-sigma_lambda_subwindow));
+                
                 %add to lists of all values - subwindows
                 fD_avg_subwindow{i}(j,k) = fD; %detection frequency
                 fQ_avg_subwindow{i}(j,k) = fQ; %flux frequency
-
+                sigma_fQ_avg_subwindow{i}(j,k) = sigma_fQ; %flux frequency
+                
                 %determine window-averaged wind corresponding to fQ - subwindows
                 u_avg_sort = sort(u_avg_subwindow); %sort u's
                 ind_uth_fQ = round((1-fQ)*T_avg_subwindow); %get index in list of u's corresponding to threshold
-                if ind_uth_fQ==0||isnan(ind_uth_fQ)
-                    uth_avg_fQ = NaN;
-                    ustth_avg_fQ = NaN;
-                    tauth_avg_fQ = NaN;
+                if (ind_uth_fQ==0||ind_uth_fQ==T_avg_subwindow)||isnan(ind_uth_fQ)
+                    uth_fQ_avg = NaN;
+                    sigma_uth_fQ_avg = NaN;
+                    ustth_fQ_avg = NaN;
+                    tauth_fQ_avg = NaN;
                 else
-                    uth_avg_fQ = u_avg_sort(ind_uth_fQ); %threshold wind speed
-                    ustth_avg_fQ = (kappa*uth_avg_fQ)/log(zU_window{i}(j)/z0); %threshold shear velocity
-                    tauth_avg_fQ = rho_a*ustth_avg_fQ^2; %threshold shear stress
+                    uth_fQ_avg = u_avg_sort(ind_uth_fQ); %threshold wind speed
+                    ind_uth_fQ_plus = min([round((1-fQ+sigma_fQ)*T_avg_subwindow),T_avg_subwindow]); %get index in list of u's corresponding to +sigma_threshold
+                    ind_uth_fQ_minus = max([round((1-fQ-sigma_fQ)*T_avg_subwindow),1]); %get index in list of u's corresponding to -sigma_threshold
+                    sigma_uth_fQ_avg = 0.5*(u_avg_sort(ind_uth_fQ_plus)-u_avg_sort(ind_uth_fQ_minus));
+                    ustth_fQ_avg = (kappa*uth_fQ_avg)/log(zU_window{i}(j)/z0); %threshold shear velocity
+                    tauth_fQ_avg = rho_a(i)*ustth_fQ_avg^2; %threshold shear stress
                 end
 
                 %add to list of values from window-averaged winds - subwindows
-                uth_fQ_avg_subwindow{i}(j,k) = uth_avg_fQ; %threshold wind from flux frequency
-                tauth_fQ_avg_subwindow{i}(j,k) = tauth_avg_fQ; %threshold wind from flux frequency
-                ustth_fQ_avg_subwindow{i}(j,k) = ustth_avg_fQ; %threshold wind from flux frequency
+                uth_fQ_avg_subwindow{i}(j,k) = uth_fQ_avg; %threshold wind from flux frequency
+                sigma_uth_fQ_avg_subwindow{i}(j,k) = sigma_uth_fQ_avg; %threshold wind uncertainty from flux frequency uncertainty
+                tauth_fQ_avg_subwindow{i}(j,k) = tauth_fQ_avg; %threshold wind from flux frequency
+                ustth_fQ_avg_subwindow{i}(j,k) = ustth_fQ_avg; %threshold wind from flux frequency
 
                 %get state of last threshold crossing
                 t_subwindow_start = t_avg(ind_avg_subwindow(1)); %time for start of subwindow
@@ -469,7 +471,7 @@ for m = 1:N_delta_t_subwindow
                 else
                     uth_lowpass_fQ = u_lowpass_sort(ind_uth_lowpass_fQ); %threshold wind speed
                     ustth_lowpass_fQ = (kappa*uth_lowpass_fQ)/log(zU_window{i}(j)/z0); %threshold shear velocity
-                    tauth_lowpass_fQ = rho_a*ustth_lowpass_fQ^2; %threshold shear stress
+                    tauth_lowpass_fQ = rho_a(i)*ustth_lowpass_fQ^2; %threshold shear stress
                 end
 
                 %add to list of values from low-pass winds - subwindows
@@ -488,75 +490,101 @@ for m = 1:N_delta_t_subwindow
                 fint_up_lowpass_subwindow{i}(j,k) = fint_up_lowpass; %fraction of time with u_lowpass in intermediate zone with upward crossing
             end
 
-    %         %% Create sample timeseries plot
-    %         figure(1);
-    %                 
-    %         subplot(2,3,1); cla;
-    %         ind_t_flux = find(seconds(t_flux_window{i}{j}-min(t_flux_window{i}{j}))<=t_plot_s);
-    %         t_flux_plot = linspace(0,t_plot_s,length(ind_t_flux));
-    %         N_flux_plot = sum(n_window{i}{j}(ind_t_flux,:),2)/dt_flux_window(i);
-    %         plot(t_flux_plot,N_flux_plot);
-    %         xlim([0 t_plot_s]);
-    %         ylim_n = ylim;
-    %         set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-    %         xlabel('t (s)');
-    %         ylabel('N (s^{-1})');
-    %         title('raw');
-    %                 
-    %         subplot(2,3,2); cla; hold on;
-    %         plot(seconds(t_avg-min(t_avg)),sum(n_avg')');
-    %         for k = 1:N_subwindow_plot-1
-    %             plot((seconds(delta_t_subwindow)*k)*[1,1],ylim_n,'k--');
-    %         end
-    %         xlim([0 t_plot_s]);
-    %         ylim(ylim_n);
-    %         set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-    %         xlabel('t (s)');
-    %         ylabel('N (s^{-1})');
-    %         title('{\delta}t window avg');
-    %         
-    %         subplot(2,3,3); cla;
-    %         bar(t_subwindow_plot,fQ_avg_subwindow{i}(j,1:N_subwindow_plot));
-    %         xlim([0 t_plot_s]);
-    %         ylim([0 1]);
-    %         xlabel('t (s)');
-    %         ylabel('f_Q');
-    %         title('{\Delta}t stats');
-    %         
-    %         subplot(2,3,4); cla;
-    %         ind_t_wind = find(seconds(t_wind_window{i}{j}-min(t_wind_window{i}{j}))<=t_plot_s);
-    %         t_wind_plot = linspace(0,t_plot_s,length(ind_t_wind));
-    %         u_plot = u_window{i}{j}(ind_t_wind);
-    %         plot(t_wind_plot,u_plot);
-    %         xlim([0 t_plot_s]);
-    %         ylim_u = ylim;
-    %         set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-    %         xlabel('t (s)');
-    %         ylabel('u (m/s)'); 
-    %                 
-    %         subplot(2,3,5); cla; hold on;
-    %         plot(seconds(t_avg-min(t_avg)),u_avg);
-    %         for k = 1:N_subwindow_plot-1
-    %             plot((seconds(delta_t_subwindow)*k)*[1,1],ylim_u,'k--');
-    %         end
-    %         xlim([0 t_plot_s]);
-    %         ylim(ylim_u);
-    %         set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-    %         xlabel('t (s)');
-    %         ylabel('u (m/s)');
-    %         
-    %         subplot(2,3,6); cla;
-    %         bar(t_subwindow_plot,uth_fQ_avg_subwindow{i}(j,1:N_subwindow_plot));
-    %         xlim([0 t_plot_s]);
-    %         ylim(ylim_u);
-    %         xlabel('t (s)');
-    %         ylabel('u_{th} (m/s)');
-    %         
-    %         %print plot
-    %         set(gca, 'LooseInset', get(gca,'TightInset'));
-    %         set(gcf,'PaperUnits','inches','PaperPosition',[0 0 12 8]);
-    %         print([folder_Plots,'TFEM_demo_',Sites{i},'_',int2str(j),'.png'],'-dpng');
-
+            %% Create sample timeseries plot
+            figure(1);
+                    
+            subplot(2,3,1); cla;
+            ind_t_flux = find(seconds(t_flux_window{i}{j}-min(t_flux_window{i}{j}))<=t_plot_s);
+            t_flux_plot = linspace(0,t_plot_s,length(ind_t_flux));
+            N_flux_plot = sum(n_window{i}{j}(ind_t_flux,:),2)/dt_flux_window(i);
+            plot(t_flux_plot,N_flux_plot);
+            xlim([0 t_plot_s]);
+            ylim_n = ylim;
+            set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+            xlabel('time, $$t$$ (s)','Interpreter','Latex');
+            ylabel('counts, $$N$$ (s$$^{-1}$$)','Interpreter','Latex');
+            text(t_plot_s/30,0.95*ylim_n(2),'(a)','FontSize',plotfont)
+            %title('raw');
+            set(gca, 'FontSize', plotfont);
+                    
+            subplot(2,3,2); cla; hold on;
+            plot(seconds(t_avg-min(t_avg)),sum(n_avg')');
+            for k = 1:N_subwindow_plot-1
+                plot((seconds(delta_t_subwindow)*k)*[1,1],ylim_n,'k--');
+            end
+            xlim([0 t_plot_s]);
+            ylim(ylim_n);
+            set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+            xlabel('time, $$t$$ (s)','Interpreter','Latex');
+            ylabel('counts, $$N$$ (s$$^{-1}$$)','Interpreter','Latex');
+            text(t_plot_s/30,0.95*ylim_n(2),'(c)','FontSize',plotfont)
+            %title('{\delta}t window avg');
+            set(gca, 'FontSize', plotfont);
+           
+            subplot(2,3,3); cla; hold on;
+            bar(t_subwindow_plot,fQ_avg_subwindow{i}(j,1:N_subwindow_plot),'FaceColor','c','EdgeColor','b');
+%             for k = 1:N_subwindow_plot %plot error bars
+%                 plot(t_subwindow_plot(k)*[1 1],...
+%                     sigma_fQ_avg_subwindow{i}(j,k)*[-1 1]+...
+%                     fQ_avg_subwindow{i}(j,k)*[1 1],'b','LineWidth',3)
+%             end
+            xlim([0 t_plot_s]);
+            ylim([0 1]);
+            set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+            xlabel('time, $$t$$ (s)','Interpreter','Latex');
+            ylabel('transport activity, $$f_Q$$', 'Interpreter','Latex');
+            text(t_plot_s/30,0.95,'(e)','FontSize',plotfont)
+            %title('{\Delta}t stats');
+            set(gca, 'FontSize', plotfont);
+            
+            subplot(2,3,4); cla;
+            ind_t_wind = find(seconds(t_wind_window{i}{j}-min(t_wind_window{i}{j}))<=t_plot_s);
+            t_wind_plot = linspace(0,t_plot_s,length(ind_t_wind));
+            u_plot = u_window{i}{j}(ind_t_wind);
+            plot(t_wind_plot,u_plot);
+            xlim([0 t_plot_s]);
+            ylim_u = ylim;
+            set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+            xlabel('time, $$t$$ (s)','Interpreter','Latex');
+            ylabel('wind speed, $$u$$ (m/s)','Interpreter','Latex');
+            text(t_plot_s/30,0.95*ylim_u(2),'(b)','FontSize',plotfont)
+            set(gca, 'FontSize', plotfont);
+                    
+            subplot(2,3,5); cla; hold on;
+            plot(seconds(t_avg-min(t_avg)),u_avg);
+            for k = 1:N_subwindow_plot-1
+                plot((seconds(delta_t_subwindow)*k)*[1,1],ylim_u,'k--');
+            end
+            xlim([0 t_plot_s]);
+            ylim(ylim_u);
+            set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+            xlabel('time, $$t$$ (s)','Interpreter','Latex');
+            ylabel('wind speed, $$u$$ (m/s)','Interpreter','Latex');
+            text(t_plot_s/30,0.95*ylim_u(2),'(d)','FontSize',plotfont)
+            set(gca, 'FontSize', plotfont);
+            
+            subplot(2,3,6); cla; hold on;
+            bar(t_subwindow_plot,uth_fQ_avg_subwindow{i}(j,1:N_subwindow_plot),'FaceColor','c','EdgeColor','b');
+%             for k = 1:N_subwindow_plot %plot error bars
+%                 plot(t_subwindow_plot(k)*[1 1],...
+%                     sigma_uth_fQ_avg_subwindow{i}(j,k)*[-1 1]+...
+%                     uth_fQ_avg_subwindow{i}(j,k)*[1 1],'b','LineWidth',3)
+%             end
+            xlim([0 t_plot_s]);
+            ylim(ylim_u);
+            set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+            xlabel('time, $$t$$ (s)','Interpreter','Latex');
+            ylabel('threshold wind, $$u_{th}$$ (m/s)','Interpreter','Latex');
+            text(t_plot_s/30,0.95*ylim_u(2),'(f)','FontSize',plotfont)
+            set(gca, 'FontSize', plotfont);
+            
+            %fix screwy scale on u-raw subplot
+            subplot(2,3,4);
+            ylim(ylim_u);
+            
+            %print plot
+            set(gcf,'PaperUnits','inches','PaperPosition',[0 0 10 6]);
+            print([folder_Plots,'TFEM_demo_',Sites{i},'_',int2str(j),'_',int2str(seconds(delta_t_subwindow)),'s.png'],'-dpng');
         end
     end
 

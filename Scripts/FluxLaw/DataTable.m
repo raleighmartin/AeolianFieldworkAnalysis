@@ -28,7 +28,7 @@ load(strcat(folder_AnalysisData,'FluxLawData_Binned'));
 %% load grain size data
 load(strcat(folder_GrainSizeData,'MeanGrainSize'));
 
-%% load grain size data
+%% load BSNE data
 load(strcat(folder_BSNE,'FluxBSNE'));
 
 %% SITE TABLE
@@ -60,31 +60,25 @@ SiteTable = cell2table(SiteTable,'VariableNames',SiteTableVars);
 %% FIT VALUE TABLE
 site_fit = cell(N_Sites+N_Lit,1);
 d50_fit = cell(N_Sites+N_Lit,1);
-% zq_a_fit = cell(N_Sites+N_Lit,1);
-% zq_b_fit = cell(N_Sites+N_Lit,1);
 zq_bar_fit = cell(N_Sites+N_Lit,1);
 zqnorm_bar_fit = cell(N_Sites+N_Lit,1);
 tauit_linearfit = cell(N_Sites+N_Lit,1);
 ustit_linearfit = cell(N_Sites+N_Lit,1);
-Qhatalt_bar_fit = cell(N_Sites+N_Lit,1);
-Qhat_bar_fit = cell(N_Sites+N_Lit,1);
+CQalt_bar_fit = cell(N_Sites+N_Lit,1);
+CQ_bar_fit = cell(N_Sites+N_Lit,1);
 for i = 1:N_Sites
     site_fit{i} = Sites{i};
     d50_fit{i} = [num2str(d50_surface_site(i),'%.2f'), '+/-',num2str(sigma_d50_surface_site(i),'%.2f')];
-%     zq_a_fit{i} = [num2str(slope_zqustfit_all(i),'%.3f'),' +/- ',num2str(sigma_slope_zqustfit_all(i),'%.3f')];
-%     zq_b_fit{i} = [num2str(intercept_zqustfit_all(i),'%.3f'),' +/- ',num2str(sigma_intercept_zqustfit_all(i),'%.3f')];
     zq_bar_fit{i} = [num2str(zq_bar_all(i),'%.3f'),' +/- ',num2str(zq_std_all(i),'%.3f')];
     zqnorm_bar_fit{i} = [int2str(zqnorm_bar_all(i)),' +/- ',int2str(zqnorm_std_all(i))];
     tauit_linearfit{i} = [num2str(tauit_linearfit_all(i),'%.3f'),' +/- ',num2str(tauit_sigma_linearfit_all(i),'%.3f')];
     ustit_linearfit{i} = [num2str(ustit_linearfit_all(i),'%.3f'),' +/- ',num2str(ustit_sigma_linearfit_all(i),'%.3f')];
-    Qhatalt_bar_fit{i} = [num2str(Qhatalt_bar_all(i),'%.1f'),' +/- ',num2str(Qhatalt_std_all(i),'%.1f')];
-    Qhat_bar_fit{i} = [num2str(Qhat_bar_all(i),'%.1f'),' +/- ',num2str(Qhat_std_all(i),'%.1f')];
+    CQalt_bar_fit{i} = [num2str(CQalt_bar_all(i),'%.1f'),' +/- ',num2str(CQalt_std_all(i),'%.1f')];
+    CQ_bar_fit{i} = [num2str(CQ_bar_all(i),'%.1f'),' +/- ',num2str(CQ_std_all(i),'%.1f')];
 end
 for i = 1:N_Lit
     site_fit{i+N_Sites} = LitNames{i};
     d50_fit{i+N_Sites} = d50_Lit{i};
-%     zq_a_fit{i+N_Sites} = [num2str(slope_zqust_Lit_all(i),'%.3f'),' +/- ',num2str(sigma_slope_zqust_Lit_all(i),'%.3f')];
-%     zq_b_fit{i+N_Sites} = [num2str(intercept_zqust_Lit_all(i),'%.3f'),' +/- ',num2str(sigma_intercept_zqust_Lit_all(i),'%.3f')];
     zq_bar_fit{i+N_Sites} = [num2str(zq_bar_Lit_all(i),'%.3f'),' +/- ',num2str(zq_std_Lit_all(i),'%.3f')];
     if i ~= 3
         zqnorm_bar_fit{i+N_Sites} = [int2str(zqnorm_bar_Lit_all(i)),' +/- ',int2str(zqnorm_std_Lit_all(i))];
@@ -93,7 +87,7 @@ for i = 1:N_Lit
     end
     tauit_linearfit{i+N_Sites} = 'NaN';
     ustit_linearfit{i+N_Sites} = 'NaN';
-    Qhat_bar_fit{i+N_Sites} = 'NaN';
+    CQ_bar_fit{i+N_Sites} = 'NaN';
 end
 
 %create structured array
@@ -103,8 +97,8 @@ FitTable = struct(...
     'zq',zq_bar_fit,...
     'tauit',tauit_linearfit,...
     'ustit',ustit_linearfit,...
-    'Qhatalt',Qhatalt_bar_fit,...
-    'Qhat',Qhat_bar_fit);
+    'CQalt',CQalt_bar_fit,...
+    'CQ',CQ_bar_fit);
 
 %% convert to table
 FitTable = struct2table(FitTable);
@@ -119,10 +113,6 @@ Chi2nu_linearfit = cell(N_Sites,1);
 C_threehalvesfit = cell(N_Sites,1);
 tauit_threehalvesfit = cell(N_Sites,1);
 Chi2nu_threehalvesfit = cell(N_Sites,1);
-% C_nonlinearfit = cell(N_Sites,1);
-% n_nonlinearfit = cell(N_Sites,1);
-% tauit_nonlinearfit = cell(N_Sites,1);
-% Chi2nu_nonlinearfit = cell(N_Sites,1);
 for i = 1:N_Sites
     site_fit{i} = Sites{i};
     d50_fit{i} = [num2str(d50_surface_site(i),'%.2f'), '+/-',num2str(sigma_d50_surface_site(i),'%.2f')];
@@ -132,10 +122,6 @@ for i = 1:N_Sites
     C_threehalvesfit{i} = [num2str(C_threehalvesfit_all(i),'%.0f'),' +/- ',num2str(C_sigma_threehalvesfit_all(i),'%.0f')];
     tauit_threehalvesfit{i} = [num2str(tauit_threehalvesfit_all(i),'%.3f'),' +/- ',num2str(tauit_sigma_threehalvesfit_all(i),'%.3f')];
     Chi2nu_threehalvesfit{i} = num2str(Chi2_threehalvesfit_all(i)./df_threehalvesfit_all(i),'%.2f');
-%     C_nonlinearfit{i} = [num2str(C_nonlinearfit_all(i),'%.0f'),' [',num2str(C_range_nonlinearfit_all(i,1),'%.0f'),' ',num2str(C_range_nonlinearfit_all(i,2),'%.0f'),']'];
-%     n_nonlinearfit{i} = [num2str(n_nonlinearfit_all(i),'%.2f'),' [',num2str(n_range_nonlinearfit_all(i,1),'%.2f'),' ',num2str(n_range_nonlinearfit_all(i,2),'%.2f'),']'];
-%     tauit_nonlinearfit{i} = [num2str(tauit_nonlinearfit_all(i),'%.3f'),' [',num2str(tauit_range_nonlinearfit_all(i,1),'%.3f'),' ',num2str(tauit_range_nonlinearfit_all(i,2),'%.3f'),']'];
-%     Chi2nu_nonlinearfit{i} = num2str(Chi2_nonlinearfit_all(i)./df_nonlinearfit_all(i),'%.2f');
 end
     
 %create structured array
@@ -148,10 +134,6 @@ StressFluxTable = struct(...
     'C_threehalvesfit',C_threehalvesfit,...
     'tauit_threehalvesfit',tauit_threehalvesfit,...
     'Chi2nu_threehalvesfit',Chi2nu_threehalvesfit);
-%     'C_nonlinearfit',C_nonlinearfit,...
-%     'n_nonlinearfit',n_nonlinearfit,... 
-%     'tauit_nonlinearfit',tauit_nonlinearfit,...
-%     'Chi2nu_nonlinearfit',Chi2nu_nonlinearfit);
 
 %% convert to table
 StressFluxTable = struct2table(StressFluxTable);
