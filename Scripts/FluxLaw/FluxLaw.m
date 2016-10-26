@@ -15,14 +15,6 @@ rho_a = [1.16, 1.22, 1.22]; %air density kg/m^3 (assumes T~30 C at Jeri and ~15 
 fQ_Qtau_fit_min = 0.1; %minimum mean fQ for Q versus tau comparison (and determination of threshold)
 N_sigma_tauit = 2; %std deviations from impact threshold for minimum tauex
 
-%load data
-folder_LoadData = '../../AnalysisData/FluxLaw/'; %folder for outputs of this analysis
-LoadData_Path = strcat(folder_LoadData,'FluxLawWindows_30min'); %path for 30 minute data
-load(LoadData_Path);
-folder_Functions = '../Functions/'; %folder with functions
-addpath(folder_Functions); %point MATLAB to location of functions
-N_Sites = length(Sites);
-
 %binning information
 bin_N_min = 3; %minimum number of entries for bin
 tau_bin_minrange = 0.01; %minimum difference between upper and lower value in bin
@@ -30,15 +22,34 @@ tau_bin_maxrange = 0.025; %maximum difference between upper and lower value in b
 fQ_bin_minrange = 0.1; %mininum range of fQ for binning
 fQ_bin_maxrange = 0.2; %maximum range of fQ for binning
 
-%load grain size data
+%% folders for loading and saving data
+folder_LoadData = '../../AnalysisData/Windowing/'; %folder for retrieving data for this analysis
+folder_SaveData = '../../AnalysisData/FluxLaw/'; %folder for outputs of this analysis
+folder_Functions = '../Functions/'; %folder with functions
 folder_GrainSizeData = '../../AnalysisData/GrainSize/'; %folder for grain size data
+folder_LitData = '../../AnalysisData/Literature/'; %folder for loading lit data
+folder_Plots = '../../PlotOutput/FluxLaw/'; %folder for plots
+
+%% paths for loading and saving data - restricted
+LoadData_Path = strcat(folder_LoadData,'DataWindowCalcs_30min_Restricted'); %path for 30 minute data
+SaveData_Path = strcat(folder_SaveData,'FluxLawCalcs_30min_Restricted'); %path for 30 minute data
+
+% %% paths for loading and saving data - unrestricted
+% LoadData_Path = strcat(folder_LoadData,'DataWindowCalcs_30min_Unrestricted'); %path for 30 minute data
+% SaveData_Path = strcat(folder_SaveData,'FluxLawCalcs_30min_Unrestricted'); %path for 30 minute data
+
+%load data
+load(LoadData_Path);
+addpath(folder_Functions); %point MATLAB to location of functions
+
+%load grain size data
 load(strcat(folder_GrainSizeData,'MeanGrainSize'));
 d50_Site = d50_surface_site;
 sigma_d50_Site = sigma_d50_surface_site;
 
-%load external data
-folder_LitData = '../../AnalysisData/Literature/'; %folder for loading lit data
+%load external data and aggregate it together
 load(strcat(folder_LitData,'LitData')); %Literature data
+N_Lit = 3; %number of literature sites
 LitNames = {'Greeley et al. (1996)'; 'Namikas (2003)';'Farrell et al. (2012)'};
 ust_Lit = {ust_Greeley96, ust_Namikas03, ust_Farrell12};
 sigma_ust_Lit = {sigma_ust_Greeley96, sigma_ust_Namikas03, sigma_ust_Farrell12};
@@ -47,17 +58,17 @@ sigma_zq_Lit = {sigma_zq_Greeley96, sigma_zq_Namikas03, sigma_zq_Farrell12};
 zqnorm_Lit = {1e3*zq_Greeley96/d50_Greeley96, 1e3*zq_Namikas03/d50_Namikas03, 1e3*zq_Farrell12/d50_Farrell12};
 sigma_zqnorm_Lit = {1e3*sigma_zq_Greeley96/d50_Greeley96, 1e3*sigma_zq_Namikas03/d50_Namikas03, 1e3*sigma_zq_Farrell12/d50_Farrell12};
 d50_Lit = [d50_Greeley96 d50_Namikas03 d50_Farrell12];
-N_Lit = 3;
 zqnorm_Lit{3} = zqnorm_Lit{3}*NaN; %change zqnorm_Lit so that Farrell doesn't show up
 
-%information about where to save data and plots
-folder_SaveData = '../../AnalysisData/FluxLaw/'; %folder for storing data output
-path_SaveData = strcat(folder_SaveData,'FluxLawData_Binned');
-folder_Plots = '../../PlotOutput/FluxLaw/'; %folder for plots
+%specify wind tunnel data for comparison
+WindTunnelNames = {'Creyssels et al. (2009)';'Ho et al. (2011)';'Ho et al. (2014)'};
+d50_WindTunnel = {[0.242];[0.230];[0.230,0.630]};
+zqnorm_WindTunnel = {[40];[50];[22,12.5]};
+sigma_zqnorm_WindTunnel = {[2];[];[]};
 
 %set info for plotting
-Markers_Field = {'s','d','o','<','>'};
-Colors_Field = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250],[0.2116 0.1898 0.5777],[0.6473 0.7456 0.4188]};
+Markers_Field = {'s','d','o'};
+Colors_Field = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250]};
 MarkerSize_Field = 5;
 LineWidth_Field = 1;
 Markers_Lit = {'<','>','^'};
@@ -65,6 +76,8 @@ MarkerSize_Lit = 5;
 Colors_Lit = {[0.4940 0.1840 0.5560],[0.4660 0.6740 0.1880],[0.3010 0.7450 0.9330]};
 LineWidth_Lit = 1;
 PlotFont = 14;
+Markers_WindTunnel = {'+','x','*'};
+Colors_WindTunnel = {[0.48, 0.429, 0.372], [0.3835, 0.7095, 0.5605],[0.3975, 0.4656, 0.7445]};
 
 %%
 %%%%%%%%%%%%%%%%%%%%%
@@ -628,7 +641,7 @@ end
 legend_items = [SiteNames;LitNames];
 
 %PANEL A - dimensional
-figure(1); subplot(2,7,1:7); hold on;
+figure(1); clf; subplot(2,7,1:7); hold on;
 %plot binned Field data
 for i = 1:N_Sites
     plot(ust_zqustfit_all{i},zq_zqustfit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field);
@@ -706,6 +719,10 @@ set(gca,'FontSize',PlotFont);
 %PANEL C - dimensionless saltation heights
 subplot(2,7,12:14); hold on;
 
+%plot dimensionless heights versus d50 for wind tunnel data
+for i = 1:length(WindTunnelNames)
+    plot(d50_WindTunnel{i}, zqnorm_WindTunnel{i}, Markers_WindTunnel{i},'Color',Colors_WindTunnel{i},'MarkerSize',MarkerSize_Field*1.5); %values
+end
 %plot dimensionless heights versus d50 for Field data
 for i = 1:N_Sites
     plot(d50_Site(i), zqnorm_bar_all(i), Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field*1.5); %values
@@ -716,8 +733,11 @@ for i = 1:2 %only plot first two entries, ignorning Farrell (2012) with no d50
     plot(d50_Lit(i), zqnorm_bar_Lit_all(i), Markers_Lit{i},'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Lit*1.5); %values
     plot(ones(2,1)*d50_Lit(i), zqnorm_bar_Lit_all(i)+[-1 1]*zqnorm_std_Lit_all(i),'Color',Colors_Lit{i},'MarkerSize',MarkerSize_Lit*1.5); %error bars
 end
+
+legend(WindTunnelNames,'Location','NorthOutside');
+
 %organize plot
-xlim([0.2 0.6]);
+xlim([0.2 0.7]);
 ylim([0 250]);
 text(0.203, 235,'(c)','FontSize',PlotFont);
 set(gca,'XMinorTick','On','XScale','log','YMinorTick','On','Box','On');
@@ -824,8 +844,10 @@ for i = 1:N_Sites
     ylim([-90 90]);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
     xlabel('\textbf{30 min. shear stress, $$\tilde{\tau}$$ (Pa)}','Interpreter','Latex');
+    %xlabel('\textbf{30 min. shear stress, $$\tau$$ (Pa)}','Interpreter','Latex');
     if i==1
         ylabel('\textbf{Wind angle, $$\tilde{\theta} (^{\circ})$$}','Interpreter','Latex');
+        %ylabel('\textbf{Wind angle, $$\theta (^{\circ})$$}','Interpreter','Latex');
         text(0.01, 83,'(a)','FontSize',PlotFont);
     elseif i==2
         text(0.01, 83,'(b)','FontSize',PlotFont);
@@ -859,6 +881,7 @@ for i = 1:N_Sites
     ylim([-0.5 0]);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
     xlabel('\textbf{30 min. shear stress, $$\tilde{\tau}$$ (Pa)}','Interpreter','Latex');
+    %xlabel('\textbf{30 min. shear stress, $$\tau$$ (Pa)}','Interpreter','Latex');
     if i==1
         ylabel('\textbf{Stability parameter, $$z/L$$}','Interpreter','Latex');
         text(0.01, -0.015,'(a)','FontSize',PlotFont);
@@ -895,8 +918,10 @@ for i = 1:N_Sites
     ylim([0 0.14]);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On','XScale','log');
     xlabel('\textbf{30 min. shear vel., $$\tilde{u}_{*}$$ (ms$$^{-1}$$)}','Interpreter','Latex');
+    %xlabel('\textbf{30 min. shear vel., $$u_{*}$$ (ms$$^{-1}$$)}','Interpreter','Latex');
     if i==1
         ylabel('\textbf{30 min. saltation height, $$\tilde{z}_q$$ (m)}','Interpreter','Latex');
+        %ylabel('\textbf{30 min. saltation height, $$z_q$$ (m)}','Interpreter','Latex');
         text(0.26, 0.135,'(a)','FontSize',PlotFont);
     elseif i==2
         text(0.26, 0.135,'(b)','FontSize',PlotFont);
@@ -929,8 +954,10 @@ for i = 1:N_Sites
     ylim([0 65]);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
     xlabel('\textbf{30 min. wind stress, $$\tilde{\tau}$$ (Pa)}','Interpreter','Latex');
+    %xlabel('\textbf{30 min. wind stress, $$\tau$$ (Pa)}','Interpreter','Latex');
     if i==1
         ylabel('\textbf{30 min. saltation flux, $$\tilde{Q}$$ (gm$$^{-1}$$s$$^{-1}$$)}','Interpreter','Latex');
+        %ylabel('\textbf{30 min. saltation flux, $$Q$$ (gm$$^{-1}$$s$$^{-1}$$)}','Interpreter','Latex');
         text(0.01, 62,'(a)','FontSize',PlotFont);
     elseif i==2
         text(0.01, 62,'(b)','FontSize',PlotFont);
@@ -1018,7 +1045,7 @@ print([folder_Plots,'Q_tau.png'],'-dpng');
 % SAVE DATA %
 %%%%%%%%%%%%%
 
-save(path_SaveData,'*all');
+save(SaveData_Path,'*all');
 
 %%%%%%%%%%%%%%%%%%%%
 % DIAGNOSTIC PLOTS %

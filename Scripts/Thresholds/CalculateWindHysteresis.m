@@ -15,9 +15,11 @@
 % fint = fraction of time between thresholds
 % fint_up = fraction of time between thresholds from above
 % fint_down = fraction of time between thresholds from below
+% final_state = final state of wind for increment (-1 if fminus or fint_up, +1 if fplus or fint_down)
 
 %% function script
-function [fplus,fminus,fint,fint_up,fint_down] = CalculateWindHysteresis(u,u_ft,u_it,init_state)
+function [fplus,fminus,fint,fint_up,fint_down,...
+    ind_fplus,ind_fminus,ind_fint,ind_fint_up,ind_fint_down,final_state] = CalculateWindHysteresis(u,u_ft,u_it,init_state)
 
 if nargin==3
     init_state = 0;
@@ -41,38 +43,51 @@ fint = N_fint/T; %fraction of time with u in intermediate zone
 N_fint_up = 0; %initialize N_fint_up (number of upcrossings to hysteresis zone)
 N_fint_down = 0; %initialize N_fint_down (number of downcrossings to hysteresis zone)
 N_fint_unknown = 0; %initialize N_fint_isempty (number of events in hysteresis zone with no known history)
-for l = 1:N_fint;
-    ind_last_fplus = find(ind_fplus<ind_fint(l), 1, 'last' );
-    ind_last_fminus = find(ind_fminus<ind_fint(l), 1, 'last' );
+ind_fint_up = []; %initialize indices of int values from above
+ind_fint_down = []; %initialize indices of int values from below
+ind_fint_unknown = []; %initialize indices of int values from unknown state
+for l = 1:N_fint
+    ind_last_fplus = ind_fplus(find(ind_fplus<ind_fint(l), 1, 'last' ));
+    ind_last_fminus = ind_fminus(find(ind_fminus<ind_fint(l), 1, 'last' ));
     if(isempty(ind_last_fplus))
         if(isempty(ind_last_fminus))
             if init_state == -1
                 N_fint_up = N_fint_up+1;
+                ind_fint_up = [ind_fint_up; ind_fint(l)];
             elseif init_state == 1
                 N_fint_down = N_fint_down+1;
+                ind_fint_down = [ind_fint_down; ind_fint(l)];
             else
                 N_fint_unknown = N_fint_unknown+1;
+                ind_fint_unknown = [ind_fint_unknown; ind_fint(l)];
             end
         else
             N_fint_up = N_fint_up+1;
+            ind_fint_up = [ind_fint_up; ind_fint(l)];
         end
     elseif(isempty(ind_last_fminus))
         if(isempty(ind_last_fplus))
             if init_state == -1
                 N_fint_up = N_fint_up+1;
+                ind_fint_up = [ind_fint_up; ind_fint(l)];
             elseif init_state == 1
                 N_fint_down = N_fint_down+1;
+                ind_fint_down = [ind_fint_down; ind_fint(l)];
             else
                 N_fint_unknown = N_fint_unknown+1;
+                ind_fint_unknown = [ind_fint_unknown; ind_fint(l)];
             end
         else
             N_fint_down = N_fint_down+1;
+            ind_fint_down = [ind_fint_down; ind_fint(l)];
         end
     else
         if(ind_last_fminus>ind_last_fplus)
             N_fint_up = N_fint_up+1;
+            ind_fint_up = [ind_fint_up; ind_fint(l)];
         elseif(ind_last_fplus>ind_last_fminus)
             N_fint_down = N_fint_down+1;
+            ind_fint_down = [ind_fint_down; ind_fint(l)];
         end
     end
 end
@@ -85,4 +100,14 @@ if N_fint_known == 0
 else
     fint_up = (N_fint_up/N_fint_known)*fint;
     fint_down = (N_fint_down/N_fint_known)*fint;
+end
+
+%set final state
+ind_transport_max = max([max(ind_fplus),max(ind_fint_down),0]); %maximum index of transport state
+ind_nontransport_max = max([max(ind_fminus),max(ind_fint_up),0]); %maximum index of non-transport state
+
+if ind_transport_max > ind_nontransport_max
+    final_state = 1;
+elseif ind_nontransport_max > ind_transport_max
+    final_state = -1;
 end

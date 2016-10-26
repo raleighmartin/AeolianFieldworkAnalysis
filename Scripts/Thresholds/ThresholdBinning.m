@@ -1,7 +1,6 @@
 %% FUNCTION TO ANALYZE THRESHOLD USING TFEM METHOD
 
 function [fQ_bin_avg,fQ_bin_SE,...
-    zs_log10_bin_avg,zs_log10_bin_SE,...
     uth_bin_avg,uth_bin_SE,...
     ustth_bin_avg,ustth_bin_SE,...
     tauth_bin_avg,tauth_bin_SE,...
@@ -9,23 +8,24 @@ function [fQ_bin_avg,fQ_bin_SE,...
     tauit, sigma_tauit,...
     ustitftratio, sigma_ustitftratio,...
     Chi2nu] = ...
-ThresholdBinning(rho,z0,...
+ThresholdBinning(rho,z0,sigma_z0,...
     Deltat_all,deltat_all,...
     Deltat_analysis, deltat_analysis,...
     Sites,Site_analysis,...
-    fQ_all, uth_all, zU_all, zs_all,...
+    fQ_all, uth_all, zU_all,...
+    theta_all,theta_max,zL_all,zL_max,...
     starttime_all,timeofday_all,...
     starthour_analysis,endhour_analysis,...
     startdate_analysis,enddate_analysis)
 
 %set time range if none given 
-if nargin<=14
+if nargin<=18
     starthour_analysis = 0;
     endhour_analysis = 24;
 end
 
 %set date range if none given
-if nargin<=16
+if nargin<=20
     startdate_analysis = datetime(0,0,0);
     enddate_analysis = datetime(10000,0,0);
 end
@@ -53,19 +53,23 @@ timeofday = timeofday_all{ind_Site}{ind_Deltat,ind_deltat};
 fQ = fQ_all{ind_Site}{ind_Deltat,ind_deltat};
 uth = uth_all{ind_Site}{ind_Deltat,ind_deltat};
 zU = zU_all{ind_Site}{ind_Deltat,ind_deltat};
-zs = zs_all{ind_Site}{ind_Deltat,ind_deltat};
+theta = theta_all{ind_Site}{ind_Deltat};
+zL = zL_all{ind_Site}{ind_Deltat,ind_Deltat};
 
 %get indices for binning
 ind_fQ = intersect(find(fQ>=fQ_min),find(fQ<=fQ_max)); %get indices for fQ range
 ind_time = intersect(find(timeofday>=starthour_analysis),find(timeofday<=endhour_analysis)); %get indices of time of day range
 ind_date = intersect(find(days(starttime-startdate_analysis)>0),find(days(starttime-enddate_analysis)<0)); %get indices of date range if necessary
-ind_binning = intersect(ind_fQ,intersect(ind_time,ind_date));
+ind_datetime = intersect(ind_time,ind_date);
+ind_theta = find(abs(theta)<=theta_max);
+ind_zL = find(abs(zL)<=zL_max);
+ind_wind = intersect(ind_theta,ind_zL);
+ind_binning = intersect(ind_fQ,intersect(ind_datetime,ind_wind));
 
 %keep only values for binning
 fQ_binning = fQ(ind_binning);
 uth_binning = uth(ind_binning);
 zU_binning = zU(ind_binning);
-zs_binning = zs(ind_binning);
 
 %% PERFORM BINNING - TOTAL
 if ~isempty(fQ_binning)
@@ -90,24 +94,13 @@ if ~isempty(fQ_binning)
         fQ_bin_ind = find(fQ_binning>=fQ_bin_min(k)&fQ_binning<=fQ_bin_max(k));
         zU_bin_avg(k) = mean(zU_binning(fQ_bin_ind));
         zU_bin_SE(k) = std(zU_binning(fQ_bin_ind))/sqrt(length(fQ_bin_ind));
-    end    
-    
-    %get binned values for zs
-    zs_log10_bin_avg = zeros(N_fQ_bins,1);
-    zs_log10_bin_SE = zeros(N_fQ_bins,1);
-    for k=1:N_fQ_bins   
-        fQ_bin_ind = find(fQ_binning>=fQ_bin_min(k)&fQ_binning<=fQ_bin_max(k));
-%         zs_bin_avg(k) = mean(zs_binning(fQ_bin_ind));
-%         zs_bin_SE(k) = std(zs_binning(fQ_bin_ind))/sqrt(length(fQ_bin_ind));
-        %compute in log space
-        zs_log10_bin_avg(k) = mean(log10(zs_binning(fQ_bin_ind)));
-        zs_log10_bin_SE(k) = std(log10(zs_binning(fQ_bin_ind)))/sqrt(length(fQ_bin_ind));
-    end        
+    end
 end
 
 %% CONVERT TO SHEAR VELOCITY AND STRESS
 ustth_bin_avg = (kappa*uth_bin_avg)./log(zU_bin_avg./z0); %threshold shear velocity
-ustth_bin_SE = (uth_bin_SE./uth_bin_avg).*ustth_bin_avg; %threshold shear velocity - uncertainty
+%ustth_bin_SE = (uth_bin_SE./uth_bin_avg).*ustth_bin_avg; %threshold shear velocity - uncertainty
+ustth_bin_SE = (kappa./log(zU_bin_avg./z0)).*sqrt(uth_bin_SE.^2 + (log(sigma_z0).^2).*(ustth_bin_avg./log(zU_bin_avg./z0).^2)); %threshold shear velocity - uncertainty - including z0 uncertainty
 tauth_bin_avg = rho*ustth_bin_avg.^2; %threshold shear stress
 tauth_bin_SE = 2*rho*ustth_bin_avg.*ustth_bin_SE; %threshold shear stress - uncertainty
 

@@ -2,15 +2,19 @@
 
 %% initialize
 clearvars;
+close all;
 
 %% Site-specific parameter values
 rho_Site = [1.16, 1.22, 1.22]; %air density kg/m^3 (assumes T~30 C at Jeri and ~15 C at Rancho and Oceano)
-z0_Site = [1e-4, 1e-4, 1e-4]; %aerodynamic roughness length (m)
 kappa = 0.4; %von Karman parameter
 
 %% info about time scales for core analysis
 Deltat_analysis = duration(0,1,0); %measurement interval for analysis
 deltat_analysis = duration(0,0,1); %sampling interval for analysis
+
+%% info for sample plot
+Site_sampleplot = 'Oceano';
+fQ_sampleplot = [0.2, 0.5, 0.8]; %fQ for timeseries sample plot
 
 %% plotting info
 PlotFont = 14;
@@ -24,31 +28,44 @@ fQ_bin_minrange = 0.1;
 fQ_bin_maxrange = 0.2;
 fQ_bin_N_min = 3;
 
-%% load data 
-folder_LoadData_1 = '../../AnalysisData/Thresholds/'; %folder for retrieving thresholds data
-LoadData_1_Path = strcat(folder_LoadData_1,'ThresholdAnalysisData.mat'); %path for loading flux law windows
-load(LoadData_1_Path);
-folder_LoadData_2 = '../../AnalysisData/Thresholds/'; %folder for retrieving activity and wind data
-LoadData_2_Path = strcat(folder_LoadData_2,'ThresholdAnalysisWindows'); %path for loading activity and wind data
-load(LoadData_2_Path);
-
-%% load functions
+%% folders for loading and saving data
+folder_LoadSubwindowData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
+folder_LoadSubwindowCalcs = '../../AnalysisData/Windowing/'; %folder for retrieving subwindow calcs
+folder_LoadThresholdData = '../../AnalysisData/Thresholds/'; %folder for loading threshold values
+folder_LoadRoughnessData = '../../AnalysisData/Roughness/'; %folder for loading roughness data
 folder_Functions = '../Functions/'; %folder with functions
-addpath(folder_Functions); %point MATLAB to location of functions
-
-%% specify where to save data and plots
 folder_SaveData = '../../AnalysisData/Thresholds/'; %folder for outputs of this analysis
-SaveData_Path = strcat(folder_SaveData,'ActivityPredictionData'); %path for saving output data
 folder_Plots = '../../PlotOutput/Thresholds/'; %folder for plots
+
+%% paths for loading and saving data
+LoadSubwindowData_Path = strcat(folder_LoadSubwindowData,'DataSubwindows_30min_Unrestricted'); %path for loading time window data
+LoadSubwindowCalcs_Path = strcat(folder_LoadSubwindowCalcs,'DataSubwindowCalcs_30min_Unrestricted'); %path for loading time window data
+LoadThresholdData_Path = strcat(folder_LoadThresholdData,'ThresholdAnalysisData'); %path for threshold data
+LoadRoughnessData_Path = strcat(folder_LoadRoughnessData,'RoughnessCalcs_30min_Restricted'); %path for 30 minute data
+SaveData_Path = strcat(folder_SaveData,'ActivityPredictionData'); %path for saving output data
+
+%% load data and rename variables as necessary
+load(LoadSubwindowData_Path); %load primary data
+load(LoadSubwindowCalcs_Path); %load 30-minute values
+load(LoadThresholdData_Path); %load 30-minute values
+load(LoadRoughnessData_Path); %load Roughness values
+addpath(folder_Functions); %point MATLAB to location of functions
 
 %% information about measurement and sampling interval indices for analysis
 ind_Deltat = find(Deltat_all == Deltat_analysis); %index for measurement interval
 ind_deltat = find(deltat_all == deltat_analysis); %index for sampling interval
+ind_Site = find(strcmp(Sites,Site_sampleplot)); %index for site
+
+%% get z0 for Site
+z0_Site = z0Re_Q_fit;
 
 %% initialize unbinned values
 fplus_all = cell(N_Sites,1); %fraction of time above fluid threshold
 fint_all = cell(N_Sites,1); %fraction of time between impact and fluid threshold
 fint_down_all = cell(N_Sites,1); %fraction of time between impact and fluid threshold from downward crossing
+ind_fplus_all = cell(N_Sites,1); %indices for times above fluid threshold
+ind_fint_all = cell(N_Sites,1); %indices for times between impact and fluid threshold
+ind_fint_down_all = cell(N_Sites,1); %indices for times between impact and fluid threshold from downward crossing
 fQpred_ft_all = cell(N_Sites,1); %predicted transport fraction based on time above fluid threshold
 fQpred_it_all = cell(N_Sites,1); %predicted transport fraction based on time above impact threshold - average
 fQpred_hyst_all = cell(N_Sites,1); %predicted transport fraction based on time above fluid threshold and hysteresis - average
@@ -65,50 +82,63 @@ fQpred_hyst_bin_SE_all = cell(N_Sites,1); %predicted transport fraction based on
 
 %% go through sites
 for i = 1:N_Sites
-    
+%for i = 3    
     %get values for analysis
-    starttime = starttime_all{i}{ind_Deltat,ind_deltat};
-    endtime = endtime_all{i}{ind_Deltat,ind_deltat};
-    fQ = fQ_all{i}{ind_Deltat,ind_deltat};
-    u = u_all{i}{ind_Deltat,ind_deltat};
-    zU = zU_all{i}{ind_Deltat,ind_deltat};
+    StartTime = StartTime_subwindow{i}{ind_Deltat,ind_deltat};
+    EndTime = EndTime_subwindow{i}{ind_Deltat,ind_deltat};
+    fQ = fQ_subwindow_all{i}{ind_Deltat,ind_deltat};
+    u = u_subwindow{i}{ind_Deltat,ind_deltat};
+    t = t_subwindow{i}{ind_Deltat,ind_deltat};
+    zU = zU_subwindow{i}{ind_Deltat,ind_deltat};
     ustit = sqrt(tauit_all(i)/rho_Site(i));
     uit = (ustit/kappa).*log(zU./z0_Site(i));
     ustft = sqrt(tauft_all(i)/rho_Site(i));
     uft = (ustft/kappa).*log(zU./z0_Site(i));
-    N_subwindows = length(starttime);
+    N_subwindows = length(StartTime);
     
     %initialize unbinned values
     fplus_all{i} = zeros(N_subwindows,1);
     fint_all{i} = zeros(N_subwindows,1);
     fint_down_all{i} = zeros(N_subwindows,1);
+    ind_fplus_all{i} = cell(N_subwindows,1); %indices for times above fluid threshold
+    ind_fint_all{i} = cell(N_subwindows,1); %indices for times between impact and fluid threshold
+    ind_fint_down_all{i} = cell(N_subwindows,1); %indices for times between impact and fluid threshold from downward crossing
     fQpred_ft_all{i} = zeros(N_subwindows,1); %predicted transport fraction based on time above fluid threshold
     fQpred_it_all{i} = zeros(N_subwindows,1); %predicted transport fraction based on time above impact threshold
     fQpred_hyst_all{i} = zeros(N_subwindows,1); %predicted transport fraction based on time above fluid threshold and hysteresis
     
-    %initialize list for last state of wind
-    laststate_all = zeros(N_subwindows,1); 
-    % -1 if most recent time was below it
-    % +1 if most recent time was above ft
+    %initialize list for final state of wind in each subwindow
+    final_state_all = zeros(N_subwindows,1); 
+    % -1 if most recent time was predicted non-transport
+    % +1 if most recent time was 
     % 0 if most recent time unknown
     
     for j = 1:N_subwindows
-        
-        %get last state from previous window if it exists, use this to set init state
-        ind_last = find(starttime(j)==endtime);
+    %for j = 647:648    
+        %get final state from previous window if it lines up with current window, use this to set init state
+        ind_last = find(EndTime==StartTime(j));
         if ~isempty(ind_last)
-            init_state = laststate_all(ind_last);
+            init_state = final_state_all(ind_last);
         else
             init_state = 0;
         end
                 
         %determine fractions of u in different regions - window-averaged u
-        [fplus,fminus,fint,fint_up,fint_down] = CalculateWindHysteresis(u{j},uft(j),uit(j),init_state);
+        [fplus,~,fint,~,fint_down,ind_fplus,~,ind_fint,~,ind_fint_down,final_state] = ...
+            CalculateWindHysteresis(u{j},uft(j),uit(j),init_state);
 
+        %record last state
+        final_state_all(j) = final_state;
+        
         %add these fractions to list of values from window-averaged winds
         fplus_all{i}(j) = fplus; %fraction of time with u_avg above fluid threshold
         fint_all{i}(j) = fint; %fraction of time with u_avg in intermediate zone
         fint_down_all{i}(j) = fint_down; %fraction of time with u_avg in intermediate zone with downward crossing
+        
+        %add indices to list of values
+        ind_fplus_all{i}{j} = ind_fplus; %indices for times above fluid threshold
+        ind_fint_all{i}{j} = ind_fint; %indices for times between impact and fluid threshold
+        ind_fint_down_all{i}{j} = ind_fint_down; %indices for times between impact and fluid threshold from downward crossing
         
         %compute predicted values
         fQpred_ft_all{i}(j) = fplus; %predicted transport fraction based on time above fluid threshold
@@ -153,10 +183,23 @@ for i = 1:N_Sites
     end
 end
 
+%%%%%%%%%%%%%
+% SAVE DATA %
+%%%%%%%%%%%%%
+clear *binning
+save(SaveData_Path,'fint_all','fint_down_all','fplus_all',...
+    'fQ_bin_avg_all','fQ_bin_SE_all','fQpred*',...
+    'ind_fint_all','ind_fint_down_all','ind_fplus_all',...
+    'rho_Site','z0_Site','kappa');
+
+%%%%%%%%%
+% PLOTS %
+%%%%%%%%%
+
 %% plot fQ_pred versus fQ for sites
 
 %initialize plot
-figure(3); clf; 
+figure(1); clf; 
 for i = 1:N_Sites
     subplot(1,N_Sites,i); clf;
 end
@@ -196,6 +239,7 @@ for i = 1:N_Sites
     text(0.05,0.95,paneltext{i},'FontSize',PlotFont)
     xlabel('transport activity, $$f_Q$$','interpreter','latex');
     ylabel('predicted activity, $$f_{Q,pred}$$','interpreter','latex');
+    title(SiteNames{i});
     set(gca,'FontSize',PlotFont);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 end

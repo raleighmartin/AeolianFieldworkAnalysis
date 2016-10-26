@@ -1,4 +1,19 @@
-%BINNING DATA BY ABSOLUTE RANGES
+%% FUNCTION TO GROUP VALUES TOGETHER INTO BINS
+% This function allows bins to have a range of possible sizes
+
+%% input values
+% y = raw values for binning
+% y_bin_minrange = minimum y range for grouping raw values together in one bin
+% y_bin_maxrange = minimum y range for grouping raw values together in one bin
+% bin_N_min = minimum number of values per bin
+
+%% output values
+% y_bin_values = values grouped by bin
+% y_bin_N = number of values in each bin
+% y_bin_min = minimum value in each bin
+% y_bin_max = maximum value in each bin
+% y_bin_avg = mean value in each bin
+% y_bin_SE = standard error of values in each bin
 
 function [y_bin_values, y_bin_N, y_bin_min, y_bin_max, y_bin_avg, y_bin_SE] = ...
     Binning(y, y_bin_minrange, y_bin_maxrange, bin_N_min)
