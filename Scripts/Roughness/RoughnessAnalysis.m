@@ -250,8 +250,7 @@ for i = 1:length(Sites)
     end
 
     %adjust uncertainties for bins with only a single value
-%    ind_bin_full = find(Q_bin_N >= Q_bin_N_min);
-    ind_bin_full = find(Q_bin_N > 1);
+    ind_bin_full = find(Q_bin_N >= Q_bin_N_min);
     ind_bin_one = find(Q_bin_N == 1);
     zsRe_relerr_full = mean((zsRe_ln_Q_bin_SE_all{i}(ind_bin_full).*sqrt(Q_bin_N(ind_bin_full)))./zsRe_ln_Q_bin_avg_all{i}(ind_bin_full));
     zsRe_ln_Q_bin_SE_all{i}(ind_bin_one) = zsRe_relerr_full*zsRe_ln_Q_bin_avg_all{i}(ind_bin_one);
@@ -295,8 +294,8 @@ for i = 1:length(Sites)
     z0Re_fQ_fit(i) = exp(a);
     z0Re_ln_fQ_fit(i) = a;
     sigma_z0Re_ln_fQ_fit(i) = sigma_a;
-    dlnzsRe_dfQ_fit(i) = b;
-    sigma_dlnzsRe_dfQ_fit(i) = sigma_b;
+    dlnzsRe_dfQ_fit(i) = b %display values for paper
+    sigma_dlnzsRe_dfQ_fit(i) = sigma_b %display values for paper
     
     %perform linear fit, compute and save z0, z0 uncertainty, and fit slope - Log
     [a, b, sigma_a, sigma_b] = linearfit(fQ_fit_Log, zsLog_ln_fQ_fit, sigma_zsLog_ln_fQ_fit);
@@ -328,9 +327,9 @@ for i = 1:length(Sites)
     
     %perform linear fit, compute and save z0, z0 uncertainty, and fit slope - Re
     [a, b, sigma_a, sigma_b] = linearfit(Q_fit_Re, zsRe_ln_Q_fit, sigma_zsRe_ln_Q_fit);
-    z0Re_Q_fit(i) = exp(a);
+    z0Re_Q_fit(i) = exp(a) %display values for paper
     z0Re_ln_Q_fit(i) = a;
-    sigma_z0Re_ln_Q_fit(i) = sigma_a;
+    sigma_z0Re_ln_Q_fit(i) = sigma_a %display values for paper
     dlnzsRe_dQ_fit(i) = b;
     sigma_dlnzsRe_dQ_fit(i) = sigma_b;
     
@@ -403,7 +402,7 @@ for n = 1:2
     %annotate plot
     legend(SiteNames,'Location','SouthEast');
     xlabel('transport activity, $$f_Q$$','interpreter','latex');
-    ylabel('effective roughness length, $$z_{s}$$ (m)','interpreter','latex');
+    ylabel('effective roughness height, $$z_{s}$$ (m)','interpreter','latex');
     set(gca,'FontSize',PlotFont);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
     set(gca,'YScale','log');
@@ -449,7 +448,7 @@ end
 ylim([1e-7 1e-2]);
 legend(SiteNames,'Location','SouthEast');
 xlabel('transport activity, $$f_Q$$','interpreter','latex');
-ylabel('effective roughness length, $$z_{s}$$ (m)','interpreter','latex');
+ylabel('effective roughness height, $$z_{s}$$ (m)','interpreter','latex');
 title('Log law derivation');
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
@@ -485,7 +484,7 @@ end
 ylim([1e-7 1e-2]);
 legend(SiteNames,'Location','SouthEast');
 xlabel('shear stress, $$\tau$$ (Pa)','interpreter','latex');
-ylabel('effective roughness length, $$z_{s}$$ (m)','interpreter','latex');
+ylabel('effective roughness height, $$z_{s}$$ (m)','interpreter','latex');
 title('Reynolds stress derivation');
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
@@ -513,7 +512,7 @@ end
 ylim([1e-7 1e-2]);
 legend(SiteNames,'Location','SouthEast');
 xlabel('shear stress, $$\tau$$ (Pa)','interpreter','latex');
-ylabel('effective roughness length, $$z_{s}$$ (m)','interpreter','latex');
+ylabel('effective roughness height, $$z_{s}$$ (m)','interpreter','latex');
 title('Log law derivation');
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
@@ -576,7 +575,7 @@ for n = 1:2
     %annotate plot
     legend(SiteNames,'Location','SouthEast');
     xlabel('saltation flux, $$Q$$ (gm$$^{-1}$$s$$^{-1}$$)','interpreter','latex');
-    ylabel('effective roughness length, $$z_{s}$$ (m)','interpreter','latex');
+    ylabel('effective roughness height, $$z_{s}$$ (m)','interpreter','latex');
     set(gca,'FontSize',PlotFont);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
     set(gca,'YScale','log');
@@ -622,7 +621,7 @@ end
 ylim([1e-7 1e-2]);
 legend(SiteNames,'Location','SouthEast');
 xlabel('saltation flux, $$Q$$ (gm$$^{-1}$$s$$^{-1}$$)','interpreter','latex');
-ylabel('effective roughness length, $$z_{s}$$ (m)','interpreter','latex');
+ylabel('effective roughness height, $$z_{s}$$ (m)','interpreter','latex');
 title('Log law derivation');
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');

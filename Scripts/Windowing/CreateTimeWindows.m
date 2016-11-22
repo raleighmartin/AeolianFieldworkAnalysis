@@ -4,17 +4,17 @@
 %% initialize
 clearvars;
 
-% % %% set time interval for computing wind/flux windows - full analysis - restricted by BSNE
-% WindowTimeInterval = duration(0,30,0); %duration of window for computations
-% RunningTimeInterval = duration(0,30,0); %do not use overlapping windows
-% use_time_outside_BSNE = 0; %use times outside BSNE intervals? 0 for no, 1 for yes
-% SaveName = 'TimeWindows_30min_Restricted';
-
-% set time interval for computing wind/flux windows - full analysis - unrestricted by BSNE
+% %% set time interval for computing wind/flux windows - full analysis - restricted by BSNE
 WindowTimeInterval = duration(0,30,0); %duration of window for computations
 RunningTimeInterval = duration(0,30,0); %do not use overlapping windows
-use_time_outside_BSNE = 1; %use times outside BSNE intervals? 0 for no, 1 for yes
-SaveName = 'TimeWindows_30min_Unrestricted';
+use_time_outside_BSNE = 0; %use times outside BSNE intervals? 0 for no, 1 for yes
+SaveName = 'TimeWindows_30min_Restricted';
+
+% % set time interval for computing wind/flux windows - full analysis - unrestricted by BSNE
+% WindowTimeInterval = duration(0,30,0); %duration of window for computations
+% RunningTimeInterval = duration(0,30,0); %do not use overlapping windows
+% use_time_outside_BSNE = 1; %use times outside BSNE intervals? 0 for no, 1 for yes
+% SaveName = 'TimeWindows_30min_Unrestricted';
 
 %% information about sites for analysis
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};

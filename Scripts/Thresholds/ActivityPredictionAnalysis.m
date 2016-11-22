@@ -12,14 +12,10 @@ kappa = 0.4; %von Karman parameter
 Deltat_analysis = duration(0,1,0); %measurement interval for analysis
 deltat_analysis = duration(0,0,1); %sampling interval for analysis
 
-%% info for sample plot
-Site_sampleplot = 'Oceano';
-fQ_sampleplot = [0.2, 0.5, 0.8]; %fQ for timeseries sample plot
-
 %% plotting info
 PlotFont = 14;
-PlotMarkers = {'s','d','o','<','>'};
-PlotColors = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250],[0.2116 0.1898 0.5777],[0.6473 0.7456 0.4188]};
+PlotMarkers = {'s','d','o'};
+PlotColors = {'r','m','b'};
 
 %% binning info
 fQ_min = 0.05;
@@ -54,7 +50,6 @@ addpath(folder_Functions); %point MATLAB to location of functions
 %% information about measurement and sampling interval indices for analysis
 ind_Deltat = find(Deltat_all == Deltat_analysis); %index for measurement interval
 ind_deltat = find(deltat_all == deltat_analysis); %index for sampling interval
-ind_Site = find(strcmp(Sites,Site_sampleplot)); %index for site
 
 %% get z0 for Site
 z0_Site = z0Re_Q_fit;
@@ -79,6 +74,11 @@ fQpred_it_bin_avg_all = cell(N_Sites,1); %predicted transport fraction based on 
 fQpred_it_bin_SE_all = cell(N_Sites,1); %predicted transport fraction based on time above impact threshold - standard error
 fQpred_hyst_bin_avg_all = cell(N_Sites,1); %predicted transport fraction based on time above fluid threshold and hysteresis - average
 fQpred_hyst_bin_SE_all = cell(N_Sites,1); %predicted transport fraction based on time above fluid threshold and hysteresis - standard error
+
+%% initialize normalized chi2 values
+chi2nu_ft_all = zeros(N_Sites,1); %chi2nu for fluid threshold control
+chi2nu_it_all = zeros(N_Sites,1); %chi2nu for impact threshold control
+chi2nu_hyst_all = zeros(N_Sites,1); %chi2nu for hysteresis control
 
 %% go through sites
 for i = 1:N_Sites
@@ -114,7 +114,6 @@ for i = 1:N_Sites
     % 0 if most recent time unknown
     
     for j = 1:N_subwindows
-    %for j = 647:648    
         %get final state from previous window if it lines up with current window, use this to set init state
         ind_last = find(EndTime==StartTime(j));
         if ~isempty(ind_last)
@@ -181,7 +180,17 @@ for i = 1:N_Sites
         fQpred_hyst_bin_avg_all{i}(k) = mean(fQpred_hyst_binning(fQ_bin_ind));
         fQpred_hyst_bin_SE_all{i}(k) = std(fQpred_hyst_binning(fQ_bin_ind))/sqrt(length(fQ_bin_ind));
     end
+    
+    %compute chi2
+    chi2nu_ft_all(i) = sum((fQ_bin_avg_all{i}-fQpred_ft_bin_avg_all{i}).^2./fQpred_ft_bin_SE_all{i}.^2)./length(fQ_bin_avg_all{i}); %chi2nu for fluid threshold control
+    chi2nu_it_all(i) = sum((fQ_bin_avg_all{i}-fQpred_it_bin_avg_all{i}).^2./fQpred_it_bin_SE_all{i}.^2)./length(fQ_bin_avg_all{i}); %chi2nu for impact threshold control
+    chi2nu_hyst_all(i) = sum((fQ_bin_avg_all{i}-fQpred_hyst_bin_avg_all{i}).^2./fQpred_hyst_bin_SE_all{i}.^2)./length(fQ_bin_avg_all{i}); %chi2nu for hysteresis control
 end
+
+%display chi2 values
+round(chi2nu_ft_all,1)
+round(chi2nu_it_all,1)
+round(chi2nu_hyst_all,1)
 
 %%%%%%%%%%%%%
 % SAVE DATA %
@@ -207,9 +216,9 @@ end
 %plot average values
 for i = 1:N_Sites
     subplot(1,N_Sites,i); hold on;
-    plot(fQ_bin_avg_all{i},fQpred_ft_bin_avg_all{i},PlotMarkers{1},'Color',PlotColors{1});
-    plot(fQ_bin_avg_all{i},fQpred_it_bin_avg_all{i},PlotMarkers{2},'Color',PlotColors{2});
-    plot(fQ_bin_avg_all{i},fQpred_hyst_bin_avg_all{i},PlotMarkers{3},'Color',PlotColors{3});
+    plot(fQ_bin_avg_all{i},fQpred_it_bin_avg_all{i},PlotMarkers{1},'Color',PlotColors{1});
+    plot(fQ_bin_avg_all{i},fQpred_hyst_bin_avg_all{i},PlotMarkers{2},'Color',PlotColors{2});
+    plot(fQ_bin_avg_all{i},fQpred_ft_bin_avg_all{i},PlotMarkers{3},'Color',PlotColors{3});
 end
 
 %plot SE values
@@ -217,12 +226,12 @@ for i = 1:N_Sites
     subplot(1,N_Sites,i); hold on;
     N_fQ_bins = length(fQ_bin_avg_all{i});
     for k = 1:N_fQ_bins
-        plot(fQ_bin_avg_all{i}(k)+fQ_bin_SE_all{i}(k)*[-1 1],fQpred_ft_bin_avg_all{i}(k)*[1 1],'Color',PlotColors{1});
-        plot(fQ_bin_avg_all{i}(k)*[1 1],fQpred_ft_bin_avg_all{i}(k)+fQpred_ft_bin_SE_all{i}(k)*[-1 1],'Color',PlotColors{1});
-        plot(fQ_bin_avg_all{i}(k)+fQ_bin_SE_all{i}(k)*[-1 1],fQpred_it_bin_avg_all{i}(k)*[1 1],'Color',PlotColors{2});
-        plot(fQ_bin_avg_all{i}(k)*[1 1],fQpred_it_bin_avg_all{i}(k)+fQpred_it_bin_SE_all{i}(k)*[-1 1],'Color',PlotColors{2});
-        plot(fQ_bin_avg_all{i}(k)+fQ_bin_SE_all{i}(k)*[-1 1],fQpred_hyst_bin_avg_all{i}(k)*[1 1],'Color',PlotColors{3});
-        plot(fQ_bin_avg_all{i}(k)*[1 1],fQpred_hyst_bin_avg_all{i}(k)+fQpred_hyst_bin_SE_all{i}(k)*[-1 1],'Color',PlotColors{3});
+        plot(fQ_bin_avg_all{i}(k)+fQ_bin_SE_all{i}(k)*[-1 1],fQpred_it_bin_avg_all{i}(k)*[1 1],'Color',PlotColors{1});
+        plot(fQ_bin_avg_all{i}(k)*[1 1],fQpred_it_bin_avg_all{i}(k)+fQpred_it_bin_SE_all{i}(k)*[-1 1],'Color',PlotColors{1});
+        plot(fQ_bin_avg_all{i}(k)+fQ_bin_SE_all{i}(k)*[-1 1],fQpred_hyst_bin_avg_all{i}(k)*[1 1],'Color',PlotColors{2});
+        plot(fQ_bin_avg_all{i}(k)*[1 1],fQpred_hyst_bin_avg_all{i}(k)+fQpred_hyst_bin_SE_all{i}(k)*[-1 1],'Color',PlotColors{2});
+        plot(fQ_bin_avg_all{i}(k)+fQ_bin_SE_all{i}(k)*[-1 1],fQpred_ft_bin_avg_all{i}(k)*[1 1],'Color',PlotColors{3});
+        plot(fQ_bin_avg_all{i}(k)*[1 1],fQpred_ft_bin_avg_all{i}(k)+fQpred_ft_bin_SE_all{i}(k)*[-1 1],'Color',PlotColors{3});
     end
 end
 
@@ -237,8 +246,10 @@ paneltext = {'(a)';'(b)';'(c)'};
 for i = 1:N_Sites
     subplot(1,N_Sites,i);
     text(0.05,0.95,paneltext{i},'FontSize',PlotFont)
-    xlabel('transport activity, $$f_Q$$','interpreter','latex');
-    ylabel('predicted activity, $$f_{Q,pred}$$','interpreter','latex');
+    xlabel('observed activity, $$f_Q$$','interpreter','latex');
+    if i==1
+        ylabel('predicted activities, $$f_{Q,ft}, f_{Q,dual}, f_{Q,it}$$','interpreter','latex');
+    end
     title(SiteNames{i});
     set(gca,'FontSize',PlotFont);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
@@ -246,7 +257,7 @@ end
 
 %add legend just to last subplot
 subplot(1,N_Sites,N_Sites);
-legend({'fluid thres.','impact thres.','hysteresis'},'Location','SouthEast');
+legend({'impact thres.','dual thres.','fluid thres.'},'Location','SouthEast');
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));

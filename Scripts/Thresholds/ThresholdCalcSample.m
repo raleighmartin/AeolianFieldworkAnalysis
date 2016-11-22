@@ -135,7 +135,7 @@ ylim(ylim_u); %set plot ylimits
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 xlabel('time, $$t$$ (s)','Interpreter','Latex');
 ylabel('wind speed, $$u$$ (m/s)','Interpreter','Latex');
-text(T_sampleplot/30,0.95*ylim_u(2),'(b)','FontSize',PlotFont)
+text(T_sampleplot/30,0.95*ylim_u(2),'(d)','FontSize',PlotFont)
 set(gca, 'FontSize', PlotFont);
 
 %plot sample-averaged flux
@@ -149,7 +149,7 @@ ylim([0 ylim_ntotal_sampleplot]); %set plot ylimits
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 xlabel('time, $$t$$ (s)','Interpreter','Latex');
 ylabel('counts, $$N$$ (s$$^{-1}$$)','Interpreter','Latex');
-text(T_sampleplot/30,0.95*ylim_ntotal_sampleplot,'(c)','FontSize',PlotFont)
+text(T_sampleplot/30,0.95*ylim_ntotal_sampleplot,'(b)','FontSize',PlotFont)
 set(gca, 'FontSize', PlotFont);
 
 %plot sample-averaged wind
@@ -163,7 +163,7 @@ ylim(ylim_u); %set plot ylimits
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 xlabel('time, $$t$$ (s)','Interpreter','Latex');
 ylabel('wind speed, $$u$$ (m/s)','Interpreter','Latex');
-text(T_sampleplot/30,0.95*ylim_u(2),'(d)','FontSize',PlotFont)
+text(T_sampleplot/30,0.95*ylim_u(2),'(e)','FontSize',PlotFont)
 set(gca, 'FontSize', PlotFont);
 
 %plot transport activity
@@ -174,7 +174,7 @@ ylim([0 1]);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 xlabel('time, $$t$$ (s)','Interpreter','Latex');
 ylabel('transport activity, $$f_Q$$', 'Interpreter','Latex');
-text(T_sampleplot/30,0.95,'(e)','FontSize',PlotFont)
+text(T_sampleplot/30,0.95,'(c)','FontSize',PlotFont)
 set(gca, 'FontSize', PlotFont);
 
 %plot threshold wind

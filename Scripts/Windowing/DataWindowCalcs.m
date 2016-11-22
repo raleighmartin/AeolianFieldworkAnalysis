@@ -19,13 +19,13 @@ folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %
 folder_SaveData = '../../AnalysisData/Windowing/'; %folder for outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
 
-%% paths for loading and saving data - restricted
-LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted'); %path for 30 minute data - for thresholds analysis
-SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Restricted'); %path for 30 minute data - for thresholds analysis
+% %% paths for loading and saving data - restricted
+% LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted'); %path for 30 minute data - for thresholds analysis
+% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Restricted'); %path for 30 minute data - for thresholds analysis
 
-% %% paths for loading and saving data - unrestricted
-% LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
-% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+%% paths for loading and saving data - unrestricted
+LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
 
 %% load data and functions
 load(LoadData_Path); %load data
@@ -302,7 +302,7 @@ for i = 1:N_Sites
         end
         heatflux = mean((Temp-Tempbar).*(w-wbar));
         zL = (-(g./(Tempbar+273.15)).*heatflux)./(ustRe.^3./(kappa*zU));
-
+        
         %compute stress uncertainty using Marcelo's code - use only error-free data
         [sigma_uw_bar, ~] = random_error(uw, length(uw), 1/dt_wind_window(i), zU, ubar, 0, 0, 0, 1); %use script from Salesky et al (2012)
         sigma_tauRe_all{i}(j) = rho_a(i)*sigma_uw_bar; %uncertainty in tau

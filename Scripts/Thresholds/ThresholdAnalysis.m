@@ -412,6 +412,9 @@ end
 % SAVE DATA %
 %%%%%%%%%%%%%
 save(SaveData_Path,...
+    'deltat_all','Deltat_all',...
+    'diurnalrange_starthour','diurnalrange_endhour',...
+    'daterange_startdate','daterange_enddate',...
     'fQ_bin_avg_*','fQ_bin_SE_*',...
     'tauft_*','sigma_tauft_*',...
     'tauit_*','sigma_tauit_*',...
@@ -423,7 +426,10 @@ save(SaveData_Path,...
 %%%%%%%%%%%%
 
 %% plot tau_th versus fQ for sites
-figure(2); clf; hold on; %initialize plot
+figure(2); clf; 
+
+subplot(1,14,1:12);
+hold on; %initialize plot
 
 %plot average values
 for i = 1:N_Sites
@@ -447,21 +453,98 @@ end
 %plot fit intercept values
 for i = 1:N_Sites
     plot([0 0],tauft_all(i)+sigma_tauft_all(i)*[-1 1],'Color',PlotColors_Site{i},'LineWidth',2);
-    plot([0.999 0.999],tauit_all(i)+sigma_tauit_all(i)*[-1 1],'Color',PlotColors_Site{i},'LineWidth',2);
+    %choose x-location for plotting impact threshold
+    if i==2
+        x_it = 0.995;
+    else
+        x_it = 0.999;
+    end
+    plot([x_it x_it],tauit_all(i)+sigma_tauit_all(i)*[-1 1],'Color',PlotColors_Site{i},'LineWidth',2);        
 end
 
-%annotate plot
-legend(SiteNames,'Location','NorthEast');
+%organize plot
+legend(SiteNames,'Location','SouthWest');
 xlabel('transport activity, $$f_Q$$','interpreter','latex');
-ylabel('effective threshold, $$\tau_{th}$$ (Pa)','interpreter','latex');
-set(gca,'FontSize',PlotFont);
+ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+ylim([0.08 0.18]);
+ylims = ylim;
+text(0.02,ylims(2)-0.005,'(a)','FontSize',PlotFont);
+set(gca,'FontSize',PlotFont);
+
+%additional plot for values from flux law fit
+subplot(1,14,14); hold on;
+for i = 1:N_Sites
+    plot([0 0]+i/2,tauit_intercept(i),PlotMarkers_Site{i},'Color',PlotColors_Site{i}); %plot average values
+    plot([0 0]+i/2,tauit_intercept(i)+sigma_tauit_intercept(i)*[-1 1],'Color',PlotColors_Site{i},'LineWidth',2); %plot SE values
+end
+
+%organize plot
+xlim([0 2]);
+ylim(ylims);
+ylabel('threshold from stress-flux fit, $$\tau_{th,flux}$$ (Pa)','interpreter','latex');
+set(gca,'XTick',[],'XTickLabel',{''},'YTickLabel',{''},'YMinorTick','On','Box','On');
+text(0.3,ylims(2)-0.005,'(b)','FontSize',PlotFont);
+set(gca,'FontSize',PlotFont);
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6.5 5]);
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 5]);
 print([folder_Plots,'threshold_activity.png'],'-dpng');
 
+%% plot fQ versus fD
+
+%get indices for comparison
+ind_Deltat = find(Deltat_analysis == Deltat_all);
+ind_deltat = find(deltat_analysis == deltat_all);
+
+%get values for each site
+fD_plot = cell(N_Sites,1);
+fQ_plot = cell(N_Sites,1);
+for i = 1:N_Sites
+    ind_intermittent = find(fD_subwindow_all{i}{ind_Deltat,ind_deltat}>0 & fD_subwindow_all{i}{ind_Deltat,ind_deltat}<1);
+    fD_plot{i} = fD_subwindow_all{i}{ind_Deltat,ind_deltat}(ind_intermittent);
+    fQ_plot{i} = fQ_subwindow_all{i}{ind_Deltat,ind_deltat}(ind_intermittent);
+end
+
+%initialize plot
+figure(11); clf;
+
+%compare fD and fQ
+subplot(2,1,1); hold on;
+for i = 1:N_Sites
+    plot(fD_plot{i},fQ_plot{i},PlotMarkers_Site{i},'Color',PlotColors_Site{i},'MarkerSize',4);
+end
+
+%organize plot
+legend(SiteNames,'Location','SouthEast');
+xlabel('transport detection rate, $$f_D$$','interpreter','latex');
+ylabel('transport activity, $$f_Q$$','interpreter','latex');
+set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+xlim([0 1]);
+ylim([0 1]);
+text(0.02,0.95,'(a)','FontSize',PlotFont);
+set(gca,'FontSize',PlotFont);
+set(gca, 'LooseInset', get(gca,'TightInset'));
+
+%look at fQ/fD ratio
+subplot(2,1,2); hold on;
+for i = 1:N_Sites
+    plot(fD_plot{i},fQ_plot{i}./fD_plot{i},PlotMarkers_Site{i},'Color',PlotColors_Site{i},'MarkerSize',4);
+end
+
+%organize plot
+xlabel('transport detection rate, $$f_D$$','interpreter','latex');
+ylabel('ratio of activity to detection rate, $$f_Q/f_D$$','interpreter','latex');
+set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+xlim([0 1]);
+text(0.9,1.55,'(b)','FontSize',PlotFont);
+set(gca,'FontSize',PlotFont);
+set(gca, 'LooseInset', get(gca,'TightInset'));
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 5 9]);
+print([folder_Plots,'detection_activity.png'],'-dpng');
 
 
 %% plot tau_th versus fQ for measurement interval sensitivity analysis
@@ -499,7 +582,7 @@ for m = 1:N_Deltat
 end
 legend(legend_items,'Location','NorthEast');
 xlabel('transport activity, $$f_Q$$','interpreter','latex');
-ylabel('effective threshold, $$\tau_{th}$$ (Pa)','interpreter','latex');
+ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
 title(Site_sensitivityanalysis);
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
@@ -545,7 +628,7 @@ for s = 1:N_deltat
 end
 legend(legend_items,'Location','NorthEast');
 xlabel('transport activity, $$f_Q$$','interpreter','latex');
-ylabel('effective threshold, $$\tau_{th}$$ (Pa)','interpreter','latex');
+ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
 title(Site_sensitivityanalysis);
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
@@ -592,7 +675,7 @@ end
 
 legend(legend_items,'Location','NorthEast');
 xlabel('transport activity, $$f_Q$$','interpreter','latex');
-ylabel('effective threshold, $$\tau_{th}$$ (Pa)','interpreter','latex');
+ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
 title(Site_sensitivityanalysis);
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
@@ -639,7 +722,7 @@ end
 
 legend(legend_items,'Location','NorthEast');
 xlabel('transport activity, $$f_Q$$','interpreter','latex');
-ylabel('effective threshold, $$\tau_{th}$$ (Pa)','interpreter','latex');
+ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
 title(Site_sensitivityanalysis);
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');

@@ -78,7 +78,8 @@ for j = 1:N_fQ_sampleplot
     ind_fQ_sampleplot_all = find(abs(fQ_sampleplot(j)-fQ)==min(abs(fQ_sampleplot(j)-fQ))); %get all possible indices for fQ for sample plot
     fQ_diff = abs(fQpred_hyst_all{ind_Site}(ind_fQ_sampleplot_all)-fQ_sampleplot(j)); %get the differences between predicted fQs for these indices and sample value
     ind_fQ_sampleplot(j) = ind_fQ_sampleplot_all(find(fQ_diff==min(fQ_diff),1)); %get the index of the fQpred that is closest to fQ for sample plot
-    t_datetime = t{ind_fQ_sampleplot(j)}; %get times for sample plot (in datetime format)
+    ind_fQ_sampleplot(1) = 626; %set specific index for panel (a)
+    t_datetime = t{ind_fQ_sampleplot(j)}; %get times for sample plot (in datetime format);
     t_sampleplot{j} = seconds(t_datetime-t_datetime(1)+deltat_analysis/2); %get times for sample plot (in seconds)
     u_sampleplot{j} = u{ind_fQ_sampleplot(j)}; %get wind speeds for sample plot
     u_min_sampleplot(j) = min(u_sampleplot{j}); %get mininum wind speed
@@ -88,6 +89,12 @@ for j = 1:N_fQ_sampleplot
     ind_ft_sampleplot{j} = ind_fplus_all{ind_Site}{ind_fQ_sampleplot(j)}; %get indices of activity for fluid threshold hypothesis
     ind_it_sampleplot{j} = union(ind_fplus_all{ind_Site}{ind_fQ_sampleplot(j)},ind_fint_all{ind_Site}{ind_fQ_sampleplot(j)}); %get indices of activity for impact threshold hypothesis
     ind_hyst_sampleplot{j} = union(ind_fplus_all{ind_Site}{ind_fQ_sampleplot(j)},ind_fint_down_all{ind_Site}{ind_fQ_sampleplot(j)}); %get indices of activity for hysteresis hypothesis
+
+    %display values for paper
+    StartTime_sampleplot = t_datetime(1)
+    fQpred_ft_sampleplot = round(length(ind_ft_sampleplot{j})/length(t_sampleplot{j}),2)
+    fQpred_hyst_sampleplot = round(length(ind_hyst_sampleplot{j})/length(t_sampleplot{j}),2)
+    fQpred_it_sampleplot = round(length(ind_it_sampleplot{j})/length(t_sampleplot{j}),2)
 end
 
 %generate plot
@@ -110,6 +117,7 @@ for j = 1:N_fQ_sampleplot
     xlabel('time (s)');
     if j==1
         ylabel('wind speed, $$u$$ (m/s)','Interpreter','Latex');
+    elseif j==2
         h_legend = legend('wind speed','fluid thres., u_{ft}','impact thres., u_{it}');
         set(h_legend,'FontSize',PlotFont-4,'Location','NorthEast');
     end
@@ -145,7 +153,7 @@ for j = 1:N_fQ_sampleplot
     %make area plot
     subplot(2,N_fQ_sampleplot,j+N_fQ_sampleplot); hold on;
     h=area(t_area,[y_it,y_hyst,y_ft]);
-    if(min(ind_ft_sampleplot{j}>=10))
+    if(min(ind_ft_sampleplot{j})>=10 || min(ind_ft_sampleplot{j})<3)
         text(2,2.75,paneltext{2,j},'FontSize',PlotFont)
     else
         text(15,2.75,paneltext{2,j},'FontSize',PlotFont)
@@ -157,10 +165,12 @@ for j = 1:N_fQ_sampleplot
     set(gca,'yticklabel','','ytick',[],'YMinorTick','On','Box','On','FontSize',PlotFont);
     if j==1
         ylabel('transport expectation');
-        h_legend = legend([h(3) h(2) h(1)],'fluid thres.','hysteresis','impact thres.','Location','NorthEast');
+    elseif j==2
+        h_legend = legend([h(3) h(2) h(1)],'fluid thres.','dual thres.','impact thres.','Location','NorthEast');
         set(h_legend,'FontSize',PlotFont-4)
     end
-
+    ylim([0 3]);
+    
     %print plot
     set(gca, 'LooseInset', get(gca,'TightInset'));
     set(gcf,'PaperUnits','inches','PaperPosition',[0 0 11 7]);

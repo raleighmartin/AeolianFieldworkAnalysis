@@ -38,13 +38,13 @@ folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %
 folder_SaveData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
 
-%% paths for loading and saving data - restricted
-LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted'); %path for 30 minute data
-SaveData_Path = strcat(folder_SaveData,'DataSubwindows_30min_Restricted'); %path for 30 minute data
+% %% paths for loading and saving data - restricted
+% LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted'); %path for 30 minute data
+% SaveData_Path = strcat(folder_SaveData,'DataSubwindows_30min_Restricted'); %path for 30 minute data
 
-% %% paths for loading and saving data - unrestricted
-% LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Unrestricted'); %path for 30 minute data
-% SaveData_Path = strcat(folder_SaveData,'DataSubwindows_30min_Unrestricted'); %path for 30 minute data
+%% paths for loading and saving data - unrestricted
+LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Unrestricted'); %path for 30 minute data
+SaveData_Path = strcat(folder_SaveData,'DataSubwindows_30min_Unrestricted'); %path for 30 minute data
 
 %% load data and functions
 load(LoadData_Path); %load data
@@ -172,7 +172,7 @@ for i = 1:N_Sites
                     u_subwindow{i}{m,s}{subwindow_array_ind} = u_deltat(subwindow_window_ind); %winds for subwindow
                     v_subwindow{i}{m,s}{subwindow_array_ind} = v_deltat(subwindow_window_ind); %lateral winds for subwindow
                     w_subwindow{i}{m,s}{subwindow_array_ind} = w_deltat(subwindow_window_ind); %vertical winds for subwindow
-                    theta_subwindow{i}{m,s}(subwindow_array_ind) = 180/pi*atan(mean(v_deltat)./mean(u_deltat));
+                    theta_subwindow{i}{m,s}(subwindow_array_ind) = 180/pi*atan(mean(v_deltat(subwindow_window_ind))./mean(u_deltat((subwindow_window_ind))));
                     timeofday_subwindow{i}{m,s}(subwindow_array_ind) = hour(mean(t_wind_subwindow{i}{m,s}{subwindow_array_ind}))+minute(mean(t_wind_subwindow{i}{m,s}{subwindow_array_ind}))/60+second(mean(t_wind_subwindow{i}{m,s}{subwindow_array_ind}))/3600;
                     
                     %get indices of error points

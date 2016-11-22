@@ -30,16 +30,17 @@ FluxBSNE_all = cell(N_Sites,1);
 for i = 1:N_Sites
     GrainSizeData_Path = strcat(folder_ProcessedData,'GrainSize_',Sites{i});
     GrainSizeData_all{i} = load(GrainSizeData_Path);
-
-    ProcessedData_Path = strcat(folder_ProcessedData,'ProcessedData_',Sites{i});
-    load(ProcessedData_Path);
-    FluxBSNE_all{i} = ProcessedData.FluxBSNE;
-    clear ProcessedData;
+    
+    BSNEData_Path = strcat(folder_ProcessedData,'FluxBSNE_',Sites{i});
+    load(BSNEData_Path);
+    FluxBSNE_all{i} = FluxBSNE;
 end
 
 
 %% initialize combined surface samples
 d_surface_site = cell(N_Sites,1);
+d_surface_lower_site = cell(N_Sites,1);
+d_surface_upper_site = cell(N_Sites,1);
 dlogd_surface_site = cell(N_Sites,1);
 dV_surface_site = cell(N_Sites,1);
 dVdlogd_surface_site = cell(N_Sites,1);
@@ -97,38 +98,19 @@ for i = 1:N_Sites
     
     %add to cell array
     d_surface_site{i} = d_surface;
+    d_surface_lower_site{i} = d_surface_lower';
+    d_surface_upper_site{i} = d_surface_upper';
     dlogd_surface_site{i} = dlogd_surface;
-    dV_surface_site{i} = dV_surface_bar;
+    dV_surface_site{i} = dV_surface_bar';
     dVdlogd_surface_site{i} = dVdlogd_surface_bar;
     
-    %compute benchmark grain sizes
-    CV = cumsum(dV_surface_bar); %cumulative distribution by volume
-    
-    %get d10
-    ind_d10 = find(CV>=0.1, 1);
-    d_below = d_surface_lower(ind_d10);
-    d_above = d_surface_upper(ind_d10);
-    wt_below = (CV(ind_d10)-0.1)/dV_surface_bar(ind_d10);
-    wt_above = 1-wt_below;
-    d10_surface_site(i) = exp(wt_below*log(d_below)+wt_above*log(d_above));
+    %get d10, d50, d90
+    [d10, d50, d90] = ReferenceGrainSizes(dV_surface_bar, d_surface_lower, d_surface_upper);
+    d10_surface_site(i) = d10;
+    d50_surface_site(i) = d50;
+    d90_surface_site(i) = d90;
     sigma_d10_surface_site(i) = std([GrainSize_Surface.d_10_mm]);
-    
-    %get d50
-    ind_d50 = find(CV>=0.5, 1);
-    d_below = d_surface_lower(ind_d50);
-    d_above = d_surface_upper(ind_d50);
-    wt_below = (CV(ind_d50)-0.5)/dV_surface_bar(ind_d50);
-    wt_above = 1-wt_below;
-    d50_surface_site(i) = exp(wt_below*log(d_below)+wt_above*log(d_above));
     sigma_d50_surface_site(i) = std([GrainSize_Surface.d_50_mm]);
-    
-    %get d90
-    ind_d90 = find(CV>=0.9, 1);
-    d_below = d_surface_lower(ind_d90);
-    d_above = d_surface_upper(ind_d90);
-    wt_below = (CV(ind_d90)-0.9)/dV_surface_bar(ind_d90);
-    wt_above = 1-wt_below;
-    d90_surface_site(i) = exp(wt_below*log(d_below)+wt_above*log(d_above));
     sigma_d90_surface_site(i) = std([GrainSize_Surface.d_90_mm]);
     
     %% SURFACE - GET DAILY MEAN
@@ -144,41 +126,22 @@ for i = 1:N_Sites
     end
     
     %get daily d10, d50, d90
-    CV = cumsum(dV_surface_date')'; %cumulative distribution by volume
     dates_surface{i} = dates_unique';
     d10_surface_date{i} = zeros(N_dates,1);
     d50_surface_date{i} = zeros(N_dates,1);
     d90_surface_date{i} = zeros(N_dates,1);
     
     for j = 1:N_dates
-        %get d10
-        ind_d10 = find(CV(j,:)>=0.1, 1);
-        d_below = d_surface_lower(ind_d10);
-        d_above = d_surface_upper(ind_d10);
-        wt_below = (CV(j,ind_d10)-0.1)/dV_surface_date(j,ind_d10);
-        wt_above = 1-wt_below;
-        d10_surface_date{i}(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-        
-        %get d50
-        ind_d50 = find(CV(j,:)>=0.5, 1);
-        d_below = d_surface_lower(ind_d50);
-        d_above = d_surface_upper(ind_d50);
-        wt_below = (CV(j,ind_d50)-0.5)/dV_surface_date(j,ind_d50);
-        wt_above = 1-wt_below;
-        d50_surface_date{i}(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-        
-        %get d90
-        ind_d90 = find(CV(j,:)>=0.9, 1);
-        d_below = d_surface_lower(ind_d90);
-        d_above = d_surface_upper(ind_d90);
-        wt_below = (CV(j,ind_d90)-0.9)/dV_surface_date(j,ind_d90);
-        wt_above = 1-wt_below;
-        d90_surface_date{i}(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
+        %get d10, d50, d90
+        [d10, d50, d90] = ReferenceGrainSizes(dV_surface_date(j,:), d_surface_lower, d_surface_upper);
+        d10_surface_date{i}(j) = d10;
+        d50_surface_date{i}(j) = d50;
+        d90_surface_date{i}(j) = d90;
     end
     
     
     %% SURFACE - GET CLUSTER MEAN FOR OCEANO
-    if i == 3;
+    if i == 3
         d_surface_cluster = d_surface;
         dlogd_surface_cluster = dlogd_surface;
         dV_surface_cluster = zeros(N_clusters,N_d);
@@ -190,7 +153,6 @@ for i = 1:N_Sites
         end
         
         %get daily d10, d50, d90
-        CV = cumsum(dV_surface_cluster')'; %cumulative distribution by volume
         d10_surface_cluster = zeros(N_clusters,1);
         d50_surface_cluster = zeros(N_clusters,1);
         d90_surface_cluster = zeros(N_clusters,1);
@@ -201,35 +163,16 @@ for i = 1:N_Sites
         for j = 1:N_clusters
             ind_cluster = intersect(find(dates_samples>=cluster_StartDate(j)),find(dates_samples<=cluster_EndDate(j)));
             
-            %get d10
-            ind_d10 = find(CV(j,:)>=0.1, 1);
-            d_below = d_surface_lower(ind_d10);
-            d_above = d_surface_upper(ind_d10);
-            wt_below = (CV(j,ind_d10)-0.1)/dV_surface_cluster(j,ind_d10);
-            wt_above = 1-wt_below;
-            d10_surface_cluster(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
+            %get d10, d50, d90
+            [d10, d50, d90] = ReferenceGrainSizes(dV_surface_cluster(j,:), d_surface_lower, d_surface_upper);
+            d10_surface_cluster(j) = d10;
+            d50_surface_cluster(j) = d50;
+            d90_surface_cluster(j) = d90;
             sigma_d10_surface_cluster(j) = std([GrainSize_Surface(ind_cluster).d_10_mm]);
-            
-            %get d50
-            ind_d50 = find(CV(j,:)>=0.5, 1);
-            d_below = d_surface_lower(ind_d50);
-            d_above = d_surface_upper(ind_d50);
-            wt_below = (CV(j,ind_d50)-0.5)/dV_surface_cluster(j,ind_d50);
-            wt_above = 1-wt_below;
-            d50_surface_cluster(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
             sigma_d50_surface_cluster(j) = std([GrainSize_Surface(ind_cluster).d_50_mm]);
-            
-            %get d90
-            ind_d90 = find(CV(j,:)>=0.9, 1);
-            d_below = d_surface_lower(ind_d90);
-            d_above = d_surface_upper(ind_d90);
-            wt_below = (CV(j,ind_d90)-0.9)/dV_surface_cluster(j,ind_d90);
-            wt_above = 1-wt_below;
-            d90_surface_cluster(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
             sigma_d90_surface_cluster(j) = std([GrainSize_Surface(ind_cluster).d_90_mm]);
         end
     end
-    
     
     %% BSNE SAMPLES
     GrainSize_BSNE = GrainSizeData_all{i}.GrainSize_BSNE;
@@ -276,32 +219,11 @@ for i = 1:N_Sites
     dV_airborne_site{i} = dV_airborne_bar;
     dVdlogd_airborne_site{i} = dVdlogd_airborne_bar;
     
-    %compute benchmark grain sizes
-    CV = cumsum(dV_airborne_bar); %cumulative distribution by volume
-    
-    %get d10
-    ind_d10 = find(CV>=0.1, 1);
-    d_below = d_airborne_lower(ind_d10);
-    d_above = d_airborne_upper(ind_d10);
-    wt_below = (CV(ind_d10)-0.1)/dV_airborne_bar(ind_d10);
-    wt_above = 1-wt_below;
-    d10_airborne_site(i) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-    
-    %get d50
-    ind_d50 = find(CV>=0.5, 1);
-    d_below = d_airborne_lower(ind_d50);
-    d_above = d_airborne_upper(ind_d50);
-    wt_below = (CV(ind_d50)-0.5)/dV_airborne_bar(ind_d50);
-    wt_above = 1-wt_below;
-    d50_airborne_site(i) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-    
-    %get d90
-    ind_d90 = find(CV>=0.9, 1);
-    d_below = d_airborne_lower(ind_d90);
-    d_above = d_airborne_upper(ind_d90);
-    wt_below = (CV(ind_d90)-0.9)/dV_airborne_bar(ind_d90);
-    wt_above = 1-wt_below;
-    d90_airborne_site(i) = exp(wt_below*log(d_below)+wt_above*log(d_above));
+    %get d10, d50, d90
+    [d10, d50, d90] = ReferenceGrainSizes(dV_airborne_bar, d_airborne_lower, d_airborne_upper);
+    d10_airborne_site(j) = d10;
+    d50_airborne_site(j) = d50;
+    d90_airborne_site(j) = d90;
     
     
     %% BSNE - GET DAILY MEAN
@@ -317,41 +239,22 @@ for i = 1:N_Sites
     end
     
     %get daily d10, d50, d90
-    CV = cumsum(dV_airborne_date')'; %cumulative distribution by volume
     dates_airborne{i} = dates_unique';
     d10_airborne_date{i} = zeros(N_dates,1);
     d50_airborne_date{i} = zeros(N_dates,1);
     d90_airborne_date{i} = zeros(N_dates,1);
     
     for j = 1:N_dates
-        %get d10
-        ind_d10 = find(CV(j,:)>=0.1, 1);
-        d_below = d_airborne_lower(ind_d10);
-        d_above = d_airborne_upper(ind_d10);
-        wt_below = (CV(j,ind_d10)-0.1)/dV_airborne_date(j,ind_d10);
-        wt_above = 1-wt_below;
-        d10_airborne_date{i}(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-        
-        %get d50
-        ind_d50 = find(CV(j,:)>=0.5, 1);
-        d_below = d_airborne_lower(ind_d50);
-        d_above = d_airborne_upper(ind_d50);
-        wt_below = (CV(j,ind_d50)-0.5)/dV_airborne_date(j,ind_d50);
-        wt_above = 1-wt_below;
-        d50_airborne_date{i}(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-        
-        %get d90
-        ind_d90 = find(CV(j,:)>=0.9, 1);
-        d_below = d_airborne_lower(ind_d90);
-        d_above = d_airborne_upper(ind_d90);
-        wt_below = (CV(j,ind_d90)-0.9)/dV_airborne_date(j,ind_d90);
-        wt_above = 1-wt_below;
-        d90_airborne_date{i}(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
+        %get d10, d50, d90
+        [d10, d50, d90] = ReferenceGrainSizes(dV_airborne_date(j,:), d_airborne_lower, d_airborne_upper);
+        d10_airborne_date{i}(j) = d10;
+        d50_airborne_date{i}(j) = d50;
+        d90_airborne_date{i}(j) = d90;
     end
     
     
     %% BSNE - GET CLUSTER MEAN FOR OCEANO
-    if i == 3;
+    if i == 3
         d_airborne_cluster = d_airborne;
         dlogd_airborne_cluster = dlogd_airborne;
         dV_airborne_cluster = zeros(N_clusters,N_d);
@@ -363,35 +266,16 @@ for i = 1:N_Sites
         end
         
         %get daily d10, d50, d90
-        CV = cumsum(dV_airborne_cluster')'; %cumulative distribution by volume
         d10_airborne_cluster = zeros(N_clusters,1);
         d50_airborne_cluster = zeros(N_clusters,1);
         d90_airborne_cluster = zeros(N_clusters,1);
         
         for j = 1:N_clusters
-            %get d10
-            ind_d10 = find(CV(j,:)>=0.1, 1);
-            d_below = d_airborne_lower(ind_d10);
-            d_above = d_airborne_upper(ind_d10);
-            wt_below = (CV(j,ind_d10)-0.1)/dV_airborne_cluster(j,ind_d10);
-            wt_above = 1-wt_below;
-            d10_airborne_cluster(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-            
-            %get d50
-            ind_d50 = find(CV(j,:)>=0.5, 1);
-            d_below = d_airborne_lower(ind_d50);
-            d_above = d_airborne_upper(ind_d50);
-            wt_below = (CV(j,ind_d50)-0.5)/dV_airborne_cluster(j,ind_d50);
-            wt_above = 1-wt_below;
-            d50_airborne_cluster(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
-            
-            %get d90
-            ind_d90 = find(CV(j,:)>=0.9, 1);
-            d_below = d_airborne_lower(ind_d90);
-            d_above = d_airborne_upper(ind_d90);
-            wt_below = (CV(j,ind_d90)-0.9)/dV_airborne_cluster(j,ind_d90);
-            wt_above = 1-wt_below;
-            d90_airborne_cluster(j) = exp(wt_below*log(d_below)+wt_above*log(d_above));
+            %get d10, d50, d90
+            [d10, d50, d90] = ReferenceGrainSizes(dV_airborne_cluster(j,:), d_airborne_lower, d_airborne_upper);
+            d10_airborne_cluster(j) = d10;
+            d50_airborne_cluster(j) = d50;
+            d90_airborne_cluster(j) = d90;
         end
     end
     

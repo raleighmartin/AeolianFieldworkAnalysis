@@ -6,21 +6,21 @@ clearvars;
 %% parameter values
 kappa = 0.4; %von Karman parameter
 rho_a = [1.16, 1.22, 1.22]; %air density kg/m^3 (assumes T~30 C at Jeri and ~15 C at Rancho and Oceano)
-z0 = [0.620e-4, 1.018e-4, 1.082e-4];
+z0 = [6.87e-5, 1.22e-4, 9.96e-5];
 fD_min = 0.005; %minimum detection rate for zero flux
 
 %% folders for loading and saving data
 folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_SaveData = '../../AnalysisData/windowing/'; %folder for outputs of this analysis
+folder_SaveData = '../../AnalysisData/Windowing/'; %folder for outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
 
 % %% paths for loading and saving data - restricted
 % LoadData_Path = strcat(folder_LoadData,'DataSubwindows_30min_Restricted'); %path for 30 minute data - for thresholds analysis
 % SaveData_Path = strcat(folder_SaveData,'DataSubwindowCalcs_30min_Restricted'); %path for 30 minute data - for thresholds analysis
-
+% 
 %% paths for loading and saving data - unrestricted
-LoadData_Path = strcat(folder_LoadData,'Datasubwindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
-SaveData_Path = strcat(folder_SaveData,'DatasubwindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+LoadData_Path = strcat(folder_LoadData,'DataSubwindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+SaveData_Path = strcat(folder_SaveData,'DataSubwindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
 
 %% load data and functions
 load(LoadData_Path); %load data
@@ -107,30 +107,6 @@ for i = 1:N_Sites
                     %calculate flux activity
                     [fD,fQ,lambda] = CalculateFluxActivity(ntotal,seconds(deltat_all(s)),fD_min);
                     
-%                     %mean values
-%                     ntotal_bar = mean(ntotal); %mean total counts rate per second
-%                     T = length(ntotal); %number of data points
-%                     fD = sum(ntotal_bar>0)/T; %detection rate
-%                                         
-%                     %estimate particle arrival rate per averaging window
-%                     if fD<=fD_min %set to zero if below detection limit
-%                         lambda = 0;
-%                     else %otherwise estimate arrival rate based on fD
-%                         lambda = ntotal_bar*seconds(deltat_all(s))/fD;
-%                     end
-% 
-%                     %estimate flux activity from flux detection rate and particle arrival rate
-%                     if lambda==0 %if no (or negligible) flux, set frequencies to zero
-%                         fQ = 0;
-%                     elseif fD==1 %if fD = 1, set fQ to 1
-%                         fQ = 1;
-%                     else %otherwise, estimate fQ based on other parameters
-%                         fQ = fD/(1-exp(-lambda)); %calculate fQ
-%                         if fQ>1
-%                             fQ = 1; %if correction gives fQ>1, just set as 1
-%                         end
-%                     end
-
                     %determine wind corresponding to fQ (only non-error points)
                     u_sort = sort(u); %sort u's
                     ind_uth_fQ = round((1-fQ)*T); %get index in list of u's corresponding to threshold
