@@ -1,7 +1,6 @@
 %% Function to read in 'Data' and add calibration values based on
 % 'InstrumentVariables' and 'InstrumentCalibration'
 % Dependencies: NONE
-% Used by: DataExtraction_Jericoacoara2014
 
 function DataWithCalibration = ParseCalibrationFactor(Data,InstrumentVariables,InstrumentCalibration)
 

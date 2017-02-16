@@ -17,7 +17,7 @@
 % ust = b*kappa
 % zs = exp(-a*kappa/ust)
 
-%use method of bevington and robinson (p. 105)
+%use method of bevington and robinson for linear fitting and error estimation (p. 105)
 function [ust,zs,sigma_ust,sigma_zs] = uz_profilefit(u, z, sigma_u)
 
 %set kappa = 0.4

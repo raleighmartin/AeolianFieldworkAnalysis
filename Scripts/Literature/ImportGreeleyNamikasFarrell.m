@@ -9,11 +9,10 @@ ust_relerr = 0.1; %10% relative error for u*
 %% filepath information
 folder_LiteratureData = '../../../../Google Drive/Data/Literature/'; %location where Namikas and Greeley data are stored
 folder_ProcessedData = '../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for storing data output
-folder_AnalysisData = '../../AnalysisData/StressFlux/'; %folder for storing outputs of this analysis
-folder_Plots = '../../PlotOutput/StressFlux/'; %folder for plots
+folder_SaveData = '../../AnalysisData/Literature/'; %folder for storing outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
 addpath(folder_Functions); %point MATLAB to location of functions
-SaveData_Path = strcat(folder_AnalysisData,'LitData'); %folder for saving data
+SaveData_Path = strcat(folder_SaveData,'LitData'); %folder for saving data
 
 %% processing variables
 delimiter = '\t';
@@ -29,7 +28,7 @@ N_Greeley96 = 10;
 ust_Greeley96 = [0.47; 0.51; 0.49; 0.31; 0.35; 0.31; 0.54; 0.49; 0.41; 0.42]; %u* values (m/s) used in Kok and Renno (2008)
 sigma_ust_Greeley96 = ust_Greeley96*ust_relerr; %calculate u* uncertainty based on assumed relative error
 Q_pub_Greeley96 = [NaN; NaN; NaN; NaN; 16.1; 2.7; 19; 19; 10.4; 10.4]; %values from Table 1 in paper
-d50_Greeley96 = 0.230; %median grain size (mm) value from paper
+d50_Greeley96 = 0.230; %"modal" grain size (mm) value from paper (p. 10)
 %Greeley96_OutlierInd = [4];
 Greeley96_OutlierInd = [];
 
@@ -50,7 +49,8 @@ formatSpec_Farrell12 = '%f%f%f%f%f%f%f%[^\n\r]';
 N_Farrell12 = 14;
 ust_Farrell12 = [0.54; 0.47; 0.53; 0.49; 0.50; 0.50; 0.47; 0.45; 0.51; 0.48; 0.41; 0.50; 0.50; 0.49]; %u* values (m/s) from paper
 sigma_ust_Farrell12 = ust_Farrell12*ust_relerr; %calculate u* uncertainty based on assumed relative error
-d50_Farrell12 = 0.545659491010631; %use median grain size (mm) from Jeri deployment since they don't report it
+d50_Farrell12 = NaN; %median grain diameter not provided in paper
+%d50_Farrell12 = 0.545659491010631; %use median grain size (mm) from Jeri deployment since they don't report it
 Farrell12_OutlierInd = [1,12:14];
 %exclude first sample because of shorter time interval
 %exclude last three because they are from coarser CSFC (as opposed to the rest of the samples from finer CSFF)
@@ -132,20 +132,22 @@ RunName_Greeley96{10} = '6b';
 zq_Greeley96 = zeros(N_Greeley96,1); %(m)
 sigma_zq_Greeley96 = zeros(N_Greeley96,1); %(m)
 Q_fit_Greeley96 = zeros(N_Greeley96,1); %(g/m/s)
-
+sigma_Q_fit_Greeley96 = zeros(N_Greeley96,1); %(g/m/s)
 for i=1:N_Greeley96
-    [q0,zq,~,sigma_q0,sigma_zq,~] = qz_profilefit(q_Greeley96{i}, z_Greeley96{i}); %fit will assume equal uncertainties
-    Q = q0*zq;
+    [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q] = qz_profilefit(q_Greeley96{i}, z_Greeley96{i}); %fit will assume equal uncertainties
+    %Q = q0*zq;
     zq_Greeley96(i) = zq;
     sigma_zq_Greeley96(i) = sigma_zq; %flux height uncertainty
     Q_fit_Greeley96(i) = Q;
+    sigma_Q_fit_Greeley96(i) = sigma_Q;
 end
 
 %% Remove outlier value(s) from data
 N_Greeley96 = length(Greeley96_GoodInd);
 q_Greeley96 = q_Greeley96(Greeley96_GoodInd);
 Q_pub_Greeley96 = Q_pub_Greeley96(Greeley96_GoodInd);
-Q_fit_Greeley96 =Q_fit_Greeley96(Greeley96_GoodInd);
+Q_fit_Greeley96 = Q_fit_Greeley96(Greeley96_GoodInd);
+sigma_Q_fit_Greeley96 = sigma_Q_fit_Greeley96(Greeley96_GoodInd);
 RunName_Greeley96 = RunName_Greeley96(Greeley96_GoodInd);
 ust_Greeley96 = ust_Greeley96(Greeley96_GoodInd);
 z_Greeley96 = z_Greeley96(Greeley96_GoodInd);
@@ -223,20 +225,23 @@ RunName_Namikas03{9} = '14';
 zq_Namikas03 = zeros(N_Namikas03,1); %e-folding height (m)
 sigma_zq_Namikas03 = zeros(N_Namikas03,1); %e-folding height (m)
 Q_fit_Namikas03 = zeros(N_Namikas03,1); %total flux (g/m/s)
+sigma_Q_fit_Namikas03 = zeros(N_Namikas03,1); %total flux (g/m/s)
 
 for i=1:N_Namikas03
-    [q0,zq,~,sigma_q0,sigma_zq,~] = qz_profilefit(q_Namikas03{i}, z_Namikas03{i});
-    Q = q0*zq; %calculate total flux (g/m/s)
+    [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q] = qz_profilefit(q_Namikas03{i}, z_Namikas03{i});
+    %Q = q0*zq; %calculate total flux (g/m/s)
     zq_Namikas03(i) = zq;
     sigma_zq_Namikas03(i) = sigma_zq;
     Q_fit_Namikas03(i) = Q;
+    sigma_Q_fit_Namikas03(i) = sigma_Q;
 end
 
 %remove outlier values
 N_Namikas03 = length(Namikas03_GoodInd);
 q_Namikas03 = q_Namikas03(Namikas03_GoodInd);
 Q_pub_Namikas03 = Q_pub_Namikas03(Namikas03_GoodInd);
-Q_fit_Namikas03 =Q_fit_Namikas03(Namikas03_GoodInd);
+Q_fit_Namikas03 = Q_fit_Namikas03(Namikas03_GoodInd);
+sigma_Q_fit_Namikas03 = sigma_Q_fit_Namikas03(Namikas03_GoodInd);
 RunName_Namikas03 = RunName_Namikas03(Namikas03_GoodInd);
 ust_Namikas03 = ust_Namikas03(Namikas03_GoodInd);
 z_Namikas03 = z_Namikas03(Namikas03_GoodInd);
@@ -256,6 +261,7 @@ q_Farrell12 = cell(N_Farrell12,1); %flux (g/m^2/s)
 zq_Farrell12 = zeros(N_Farrell12,1); %e-folding height (m)
 sigma_zq_Farrell12 = zeros(N_Farrell12,1); %e-folding height uncertainty (m)
 Q_fit_Farrell12 = zeros(N_Farrell12,1); %total flux (g/m/s)
+sigma_Q_fit_Farrell12 = zeros(N_Farrell12,1); %total flux (g/m/s)
 RunName_Farrell12 = cell(N_Farrell12,1); %run name
 
 % Allocate imported array to column variable names and cell arrays
@@ -271,26 +277,7 @@ for i = 1:N_Farrell12
     z_bottom_profile = dataArray_Farrell12{5}(ind_profile)-H_profile; %bottom height of profile traps (m)
     
     %iterative fit to profile to optimize trap heights for fitting
-    %[z_profile,q0,zq,Q,~,sigma_zq] = BSNE_profilefit(q_Farrell12{i}, z_bottom_profile, H_profile);
-    [z_profile,q0,zq,Q,~,sigma_zq,~,~,~,~,~,z_profile_geomean,q0_geomean,zq_geomean,Q_geomean] = BSNE_profilefit(q_Farrell12{i}, z_bottom_profile, H_profile);
-%     %start with guess of trap midpoint heights as arithmetic mean of traps
-%     z_profile = z_bottom_profile + H_profile/2;
-%     
-%     %height-integrated flux from exponential fit
-%     [q0,zq,sigma_q0,sigma_zq,qz_pred,sigma_qz_pred,sigma_logqz_pred] = qz_profilefit(q_Farrell12{i}, z_profile);
-%     
-%     %now that we have zq, redo calculation of trap heights
-%     z_profile_old = z_profile; %document previous z-profile to see difference
-%     z_profile = z_profile_calc(z_bottom_profile,H_profile,zq); %calculate new trap midpoint heights based on zq
-%     z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
-%     
-%     %iterate until the z_profile_difference is minutely small
-%     while(z_profile_difference>1e-8)
-%         [q0,zq,~,sigma_q0,sigma_zq,~] = qz_profilefit(q_Farrell12{i}, z_profile); %height-integrated flux from exponential fit
-%         z_profile_old = z_profile; %document previous z-profile to see difference
-%         z_profile = z_profile_calc(z_bottom_profile,H_profile,zq); %calculate new trap midpoint heights based on zq
-%         z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
-%     end
+    [z_profile,q0,zq,Q,~,sigma_zq,sigma_Q,~,~,~,~,z_profile_geomean,q0_geomean,zq_geomean,Q_geomean] = BSNE_profilefit(q_Farrell12{i}, z_bottom_profile, H_profile);
     
     %add final list of profile heights to array
     z_Farrell12{i} = z_profile;
@@ -298,7 +285,9 @@ for i = 1:N_Farrell12
     %add fluxes to array
     zq_Farrell12(i) = zq; %e-folding height (m)
     sigma_zq_Farrell12(i) = sigma_zq; %e-folding height uncertainty (m)
-    Q_fit_Farrell12(i) = q0*zq; %total flux (g/m/s)
+    %Q_fit_Farrell12(i) = q0*zq; %total flux (g/m/s)
+    Q_fit_Farrell12(i) = Q; %total flux (g/m/s)
+    sigma_Q_fit_Farrell12(i) = sigma_Q; %total flux (g/m/s)
     
     %add run name to list
     RunName_Farrell12{i} = int2str(i);
@@ -308,8 +297,10 @@ end
 N_Farrell12 = length(Farrell12_GoodInd);
 q_Farrell12 = q_Farrell12(Farrell12_GoodInd);
 Q_fit_Farrell12 =Q_fit_Farrell12(Farrell12_GoodInd);
+sigma_Q_fit_Farrell12 =sigma_Q_fit_Farrell12(Farrell12_GoodInd);
 RunName_Farrell12 = RunName_Farrell12(Farrell12_GoodInd);
 ust_Farrell12 = ust_Farrell12(Farrell12_GoodInd);
+sigma_ust_Farrell12 = sigma_ust_Farrell12(Farrell12_GoodInd);
 z_Farrell12 = z_Farrell12(Farrell12_GoodInd);
 zq_Farrell12 = zq_Farrell12(Farrell12_GoodInd);
 sigma_zq_Farrell12 = sigma_zq_Farrell12(Farrell12_GoodInd);

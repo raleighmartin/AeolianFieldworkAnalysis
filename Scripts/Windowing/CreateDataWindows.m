@@ -11,32 +11,46 @@ u_sigma_max = 5; %maximum standard deviation in total wind for error detection
 %% information about where to load/save data, plots, and functions
 folder_TimeData = '../../AnalysisData/Windowing/'; %folder for outputs of this analysis
 folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
+folder_TimeseriesPlot = '../../PlotOutput/Timeseries/'; %folder for sample timeseries plots
 folder_Functions = '../Functions/'; %folder with functions
 addpath(folder_Functions); %point MATLAB to location of functions
-
-% information for sample plots
-folder_TimeseriesPlot = '../../PlotOutput/Timeseries/'; %folder for sample timeseries plots
-dt_plot = duration(0,0,5); %time for window-average for plot
-h1 = figure(1);
-set(h1,'visible','off');
 
 %% Specific information for windowing data - restricted windows
 LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Restricted'); %path for loading time windows
 SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Restricted'); %path for saving output data
 
+% %% Specific information for windowing data - restricted windows - with alternate base anemometer
+% LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Restricted'); %path for loading time windows
+% AnemometerName_base_alt = {'U2';'U2';'S2'}; %provide alternative anemometers for analysis
+% SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Restricted_alt'); %path for saving output data
+
 % %% Specific information for windowing data - unrestricted windows
 % LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Unrestricted'); %path for loading time windows
 % SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Unrestricted'); %path for saving output data
 
+%% Specific information for windowing data - Yue's windows
+% LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_Oceano_Yue_1'); %path for loading time windows
+% SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_Oceano_Yue_1'); %path for saving output data
+% LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_Oceano_Yue_2'); %path for loading time windows
+% SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_Oceano_Yue_2'); %path for saving output data
+% LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_Oceano_Yue_3'); %path for loading time windows
+% SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_Oceano_Yue_3'); %path for saving output data
+% LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_Oceano_Yue_4'); %path for loading time windows
+% SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_Oceano_Yue_4'); %path for saving output data
+ 
 %% load time windows
 load(LoadTimeData_Path);
+
+%% set alternate anemometer if indicated
+if exist('AnemometerName_base_alt','var')
+    AnemometerName_base = AnemometerName_base_alt;
+end
 
 %% load processed data for each site, add to cell arrays of all sites 
 FluxData = cell(N_Sites,1);
 WeatherData = cell(N_Sites,1);
 WindData_base = cell(N_Sites,1);
-WindData_profile = cell(N_Sites,1);
-N_Anemometers = zeros(N_Sites,1); %number of anemometers
+
 for i = 1:N_Sites
     ProcessedData_Path = strcat(folder_ProcessedData,'ProcessedData_',Sites{i});
     load(ProcessedData_Path); %load processed data
@@ -47,14 +61,10 @@ for i = 1:N_Sites
     
     %get wind data
     WindData = ProcessedData.(AnemometerType{i}); %data only for base anemometer
-    N_Anemometers(i) = length(AnemometerName_profile{i}); %number of anemometers
     WindData_base{i} = WindData.(AnemometerName_base{i}); %data only for base anemometer
-    WindData_profile{i} = cell(length(AnemometerName_profile{i}),1);
-    for k = 1:length(AnemometerName_profile{i})
-        WindData_profile{i}{k} = WindData.(AnemometerName_profile{i}{k}); %data for anemometer profile
-    end
         
     clear ProcessedData; %remove 'ProcessedData' to clear up memory
+    clear WindData; %remove 'WindData' to clear up memory
 end
 
 %% initialize variable lists
@@ -99,28 +109,6 @@ v_int_window = cell(N_Sites,1); %rotated interpolated transverse wind for time w
 w_int_window = cell(N_Sites,1); %rotated interpolated vertical wind for time window
 ind_wind_err_window = cell(N_Sites,1); %times for wind error points
 N_wind_err_window = cell(N_Sites,1); %number of wind error points
-
-%full profile values (not including interpolated points)
-theta_profile_window = cell(N_Sites,1); %wind angle for time window
-u_profile_window = cell(N_Sites,1); %rotated streamwise wind for time window
-v_profile_window = cell(N_Sites,1); %rotated transverse wind for time window
-w_profile_window = cell(N_Sites,1); %rotated vertical wind for time window
-Temp_profile_window = cell(N_Sites,1); %temperature for time window
-
-%% combine start and end times for windows with and without flux data
-hasfluxdata_window = cell(N_Sites,1);
-
-for i = 1:N_Sites
-    %list of zeros for windows with flux data, list of ones for windows with no flux data
-    hasfluxdata_window{i} = [ones(size(StartTime_window{i})); zeros(size(StartTime_window_noflux{i}))];
-   
-    % get combined start times and end times - replace existing arrays
-    StartTime_window{i} = [StartTime_window{i}; StartTime_window_noflux{i}]; %include windows with no flux data
-    EndTime_window{i} = [EndTime_window{i}; EndTime_window_noflux{i}]; %include windows with no flux data
-    Date_window{i} = [Date_window{i}; Date_window_noflux{i}]; %include windows with no flux data
-    zU_base_window{i} = [zU_base_window{i}; zU_base_window_noflux{i}]; %include windows with no flux data
-    zU_profile_window{i} = [zU_profile_window{i}; zU_profile_window_noflux{i}]; %include windows with no flux data
-end
 
 %% PERFORM ANALYSIS FOR EACH SITE
 for i = 1:N_Sites
@@ -172,13 +160,7 @@ for i = 1:N_Sites
     ind_wind_err_window{i} = cell(N_Windows,1); %times for wind error points
     N_wind_err_window{i} = zeros(N_Windows,1); %number of wind error points
     
-    %mean profile values (not including interpolated values)
-    theta_profile_window{i} = zeros(N_Windows,N_Anemometers(i))*NaN; %wind angles for anemometer
-    u_profile_window{i} = zeros(N_Windows,N_Anemometers(i))*NaN; %rotated streamwise wind for time window
-    v_profile_window{i} = zeros(N_Windows,N_Anemometers(i))*NaN; %rotated transverse wind for time window
-    w_profile_window{i} = zeros(N_Windows,N_Anemometers(i))*NaN; %rotated vertical wind for time window
-    Temp_profile_window{i} = zeros(N_Windows,N_Anemometers(i))*NaN; %temperature for time window
-
+        
     %% go through time windows
     for j = 1:N_Windows
 
@@ -296,10 +278,16 @@ for i = 1:N_Sites
         
         %further reduce IntervalInd based on eliminating error times
         [~, ErrInd, ~] = intersect(WindData_base{i}(IntervalN).t.int,WindData_base{i}(IntervalN).t.err);
-        ind_wind_err = intersect(ErrInd,IntervalInd)-IntervalInd(1); %get adjusted indices of error times
+        if strcmp(AnemometerType{i},'Sonic') %add in additional points from diagnostic flag if instrument is sonic
+            diag_ind = find(WindData_base{i}(IntervalN).diag.raw~=0); %get diagnostic points for interval
+            ErrInd = union(ErrInd,diag_ind); %add these to error points
+        end
         IntervalInd_noerr = setdiff(IntervalInd,ErrInd); %indices for interval excluding error times
         t_wind_noerr = WindData_base{i}(IntervalN).t.int(IntervalInd_noerr); %times for interval excluding error times
 
+        %get indices of error times
+        [~,ind_wind_err,~] = intersect(IntervalInd,ErrInd); %indices for error time within interval;
+        
         %get velocity values using no error points
         u = WindData_base{i}(IntervalN).u.int(IntervalInd_noerr);
         v = WindData_base{i}(IntervalN).v.int(IntervalInd_noerr);
@@ -318,7 +306,7 @@ for i = 1:N_Sites
         
         %compute wind angle
         theta = atan(mean(v./u))*180/pi; %wind angle
-
+        
         %rotate instrument, call these 'rot' values
         [u_rot, v_rot, w_rot] = reorient_anemometers_vanboxel2004(u, v, w); %rotate instrument
 
@@ -343,7 +331,7 @@ for i = 1:N_Sites
         %recompute ind_wind_err to include points with wind outside 5 sigma
         u_total = sqrt(u_int.^2+v_int.^2+w_int.^2); %total wind
         ind_bad_wind = find(u_total>u_total_max); %get indices of points with total wind above upper limit
-        ind_wind_err = union(ind_wind_err,ind_bad_wind); %combine these indices with ErrInd points
+        ind_wind_err = union(ind_wind_err,ind_bad_wind); %combine these indices with existing error points
                 
         %add to window lists
         t_wind_int_window{i}{j} = t_wind; %interpolated wind times
@@ -354,105 +342,8 @@ for i = 1:N_Sites
         %add number of errors to list
         ind_wind_err_window{i}{j} = ind_wind_err; %record list of error time indices
         N_wind_err_window{i}(j) = length(ind_wind_err); %record number of error times
-
-        %% create sample timeseries plot
-        
-        %get window averages
-        t_plot = t_wind(1):dt_plot:t_wind(end-1); %times
-        u_plot = window_average(u_rot_int, t_wind, dt_plot); %compute window average
-        w_plot = window_average(w_rot_int, t_wind, dt_plot); %compute window average
-        qz_plot = zeros(length(t_plot),N_zW);
-        for k=1:N_zW
-            qz_plot(:,k) = window_average(qz(:,k), t_flux, dt_plot); %compute window average
-        end
-        
-        %create plot
-        subplot(6,1,1:2);
-        plot(t_plot,u_plot);
-        ylabel('streamwise wind speed, $$u$$ (ms$$^{-1}$$)','Interpreter','Latex');
-        title([SiteNames{i},', ',datestr(StartTime, 'yyyy-mm-dd HH:MM'),' - ',datestr(EndTime, 'HH:MM')]);
-        set(gca,'FontSize',13,'XMinorTick','On','YMinorTick','On','Box','On');
-        ylims = [floor(min(u_plot)) ceil(max(u_plot))];
-        ylim(ylims);
-        text(min(t_plot)+duration(0,0,30),ylims(2)*0.97,'(a)','FontSize',13);
-
-        subplot(6,1,3);
-        plot(t_plot,w_plot);
-        ylabel('vert. wind speed, $$w$$ (ms$$^{-1}$$)','Interpreter','Latex');
-        set(gca,'FontSize',13,'XMinorTick','On','YMinorTick','On','Box','On');
-        ylims = [floor(min(w_plot)*10) ceil(max(w_plot)*10)]/10;
-        ylim(ylims);
-        text(min(t_plot)+duration(0,0,30),ylims(2)*0.65,'(b)','FontSize',13);
-
-        subplot(6,1,4:6); cla; hold on;
-        legend_items = cell(N_zW,1);
-        for k=1:N_zW
-            plot(t_plot,qz_plot(:,k));
-            legend_items{k} = ['$$z_',int2str(k),'$$ = ',num2str(round(zW(k)*100,1)),' cm'];
-        end
-        legend(legend_items,'Location','NorthWest','Interpreter','Latex');
-        ylabel('partial saltation flux, $$q_i$$ (gm$$^{-2}$$s$$^{-1}$$)','Interpreter','Latex');
-        set(gca,'FontSize',13,'XMinorTick','On','YMinorTick','On','Box','On');
-        ylims = [0 ceil(max(max(qz_plot))/10)]*10;
-        if range(ylims)==0; ylims = [0 10]; end; %adjust ylims if no saltation
-        ylim(ylims);
-        text(min(t_plot)+duration(0,7,0),ylims(2)*0.95,'(c)','FontSize',13);
-        set(gcf, 'PaperPosition',[0 0 10.5 13]);
-        print([folder_TimeseriesPlot,'SampleTimeseries_',Sites{i},'_',int2str(j),'.png'],'-dpng');
-
-        %% WIND DATA FOR INTERVAL - PROFILE
-        for k = 1:N_Anemometers(i)
-            
-            %only perform extraction if there are data in window
-            if ~isnan(zU_profile_window{i}(j,k))
-                
-                %extract time interval
-                [~, ~, IntervalN, IntervalInd] = ExtractVariableTimeInterval(WindData_profile{i}{k},StartTime,EndTime,'u','int','int');
-
-                %use only longest interval
-                ind_longest = find(cellfun(@length,IntervalInd)==max(cellfun(@length,IntervalInd)));
-                IntervalN = IntervalN(ind_longest); %number of interval
-                IntervalInd = IntervalInd{ind_longest}; %indices for interval
-                %t_wind = WindData_profile{i}{k}(IntervalN).t.int(IntervalInd); %times for longest interval
-
-                %further reduce IntervalInd based on eliminating error times
-                [~, ErrInd, ~] = intersect(WindData_profile{i}{k}(IntervalN).t.int,WindData_profile{i}{k}(IntervalN).t.err);
-                ind_wind_err = intersect(ErrInd,IntervalInd)-IntervalInd(1); %get adjusted indices of error times
-                IntervalInd_noerr = setdiff(IntervalInd,ErrInd); %indices for interval excluding error times
-                %t_wind_noerr = WindData_profile{i}{k}(IntervalN).t.int(IntervalInd_noerr); %times for interval excluding error times
-
-                %get velocity values using no error points
-                u = WindData_profile{i}{k}(IntervalN).u.int(IntervalInd_noerr);
-                v = WindData_profile{i}{k}(IntervalN).v.int(IntervalInd_noerr);
-                w = WindData_profile{i}{k}(IntervalN).w.int(IntervalInd_noerr);
-                Temp = WindData_profile{i}{k}(IntervalN).T.int(IntervalInd_noerr);
-
-                %remove additional error points based on large deviations in wind velocity
-                u_total = sqrt(u.^2+v.^2+w.^2); %total wind
-                u_total_max = mean(u_total)+u_sigma_max*std(u_total); %maximum total wind based on multiple of std dev
-                ind_good_wind = find(u_total<=u_total_max); %get indices of points with total wind below upper limit
-                %t_wind_noerr = t_wind_noerr(ind_good_wind); %keep only good t
-                u = u(ind_good_wind); %keep only good u
-                v = v(ind_good_wind); %keep only good v
-                w = w(ind_good_wind); %keep only good w
-                Temp = Temp(ind_good_wind); %keep only good temperatures
-
-                %compute wind angle
-                theta = atan(mean(v./u))*180/pi; %wind angle
-
-                %rotate instrument, call these 'rot' values
-                [u_rot, v_rot, w_rot] = reorient_anemometers_vanboxel2004(u, v, w); %rotate instrument
-
-                %add to window lists - mean values
-                theta_profile_window{i}(j,k) = theta; %wind angle
-                u_profile_window{i}(j,k) = mean(u_rot); %rotated streamwise wind
-                v_profile_window{i}(j,k) = mean(v_rot); %rotated transverse wind
-                w_profile_window{i}(j,k) = mean(w_rot); %rotated vertical wind
-                Temp_profile_window{i}(j,k) = mean(Temp); %temperature
-            end
-        end
     end
 end
 
 % SAVE DATA
-save(SaveDataWindows_Path,'Sites','SiteNames','N_Sites','AnemometerName_base','AnemometerName_profile','*window'); %save primary data reduced file in ProcessedData folder
+save(SaveDataWindows_Path,'Sites','SiteNames','N_Sites','AnemometerName_base','*window','-v7.3'); %save primary data reduced file in ProcessedData folder

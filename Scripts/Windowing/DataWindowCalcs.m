@@ -12,20 +12,43 @@ fD_min = 0.005; %minimum detection rate for zero flux
 Q_min = 0.05; %detection limit for Q, set to zero if below this value
 zq_Q_min = 0.10; %assumed saltation height for detection limit for exponential profile for detection limit for individual Wenglor
 zW_limit = 3; %limit on number of unique Wenglor heights in profile
-zU_max = 2.5; %maximum anemometer height for profile fit (m)
+
+%% dates with known zero flux at each site (to set Q=fQ=0 if Wenglors are inactive)
+Dates_zeroflux = {[datetime(2014,11,18)],... %Jeri
+    [datetime(0,0,0)],... %none for Rancho Guadalupe
+    [datetime(2015,5,17),datetime(2015,5,20),datetime(2015,5,21)]}; %Oceano
 
 %% folders for loading and saving data
 folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
 folder_SaveData = '../../AnalysisData/Windowing/'; %folder for outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
 
-% %% paths for loading and saving data - restricted
-% LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted'); %path for 30 minute data - for thresholds analysis
-% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Restricted'); %path for 30 minute data - for thresholds analysis
+%% paths for loading and saving data - restricted
+LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted'); %path for 30 minute data - for flux law analysis
+SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Restricted'); %path for 30 minute data - for flux law analysis
 
-%% paths for loading and saving data - unrestricted
-LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
-SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+% %% paths for loading and saving data - restricted - with alternate base anemometer
+% LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted_alt'); %path for 30 minute data - for flux law analysis
+% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Restricted_alt'); %path for 30 minute data - for flux law analysis
+
+% %% paths for loading and saving data - unrestricted
+% create_profile = 1; %toggle whether to do calcs for full profile
+% LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+
+%% paths for loading and saving data - Yue
+% rho_a = [1.22]; %air density kg/m^3 (assumes ~15 C at Oceano)
+% LoadData_Path = strcat(folder_LoadData,'DataWindows_Oceano_Yue_1'); %path for 30 minute data
+% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_Oceano_Yue_1'); %path for 30 minute data
+% rho_a = [1.22]; %air density kg/m^3 (assumes ~15 C at Oceano)
+% LoadData_Path = strcat(folder_LoadData,'DataWindows_Oceano_Yue_2'); %path for 30 minute data
+% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_Oceano_Yue_2'); %path for 30 minute data
+% rho_a = [1.22]; %air density kg/m^3 (assumes ~15 C at Oceano)
+% LoadData_Path = strcat(folder_LoadData,'DataWindows_Oceano_Yue_3'); %path for 30 minute data
+% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_Oceano_Yue_3'); %path for 30 minute data
+% rho_a = [1.22]; %air density kg/m^3 (assumes ~15 C at Oceano)
+% LoadData_Path = strcat(folder_LoadData,'DataWindows_Oceano_Yue_4'); %path for 30 minute data
+% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_Oceano_Yue_4'); %path for 30 minute data
 
 %% load data and functions
 load(LoadData_Path); %load data
@@ -55,15 +78,7 @@ sigma_tauRe_all = cell(N_Sites,1); %uncertainty in tau
 zsRe_all = cell(N_Sites,1); %observed roughness height from Reynolds stress
 ubar_all = cell(N_Sites,1); %mean wind velocity from lowest anemometer
 uwbar_all = cell(N_Sites,1); %mean wind product from lowest anemometer
-
-%initialize lists of wind values from anemometer profile
-zsLog_all = cell(N_Sites,1); %roughness height from wind profile
-sigma_zsLog_all = cell(N_Sites,1); %roughness height from wind profile - uncertainty
-ustLog_all = cell(N_Sites,1); %shear velocity from wind profile
-sigma_ustLog_all = cell(N_Sites,1); %shear velocity from wind profile - uncertainty
-tauLog_all = cell(N_Sites,1); %shear stress from wind profile 
-sigma_tauLog_all = cell(N_Sites,1); %shear stress from wind profile - uncertainty
-
+  
 %initiate lists of activity values
 fD_all = cell(N_Sites,1); %Wenglor detection frequency list
 fQ_all = cell(N_Sites,1); %Wenglor transport frequency matrix
@@ -106,15 +121,7 @@ for i = 1:N_Sites
     zsRe_all{i} = zeros(N_Windows,1)*NaN; %observed roughness height from lowest anemometer
     ubar_all{i} = zeros(N_Windows,1)*NaN; %observed wind velocity from lowest anemometer
     uwbar_all{i} = zeros(N_Windows,1)*NaN; %mean wind product from lowest anemometer
-    
-    %initialize lists of wind values from anemometer profile
-    zsLog_all{i} = zeros(N_Windows,1)*NaN; %roughness height from wind profile
-    sigma_zsLog_all{i} = zeros(N_Windows,1)*NaN; %roughness height from wind profile - uncertainty
-    ustLog_all{i} = zeros(N_Windows,1)*NaN; %shear velocity from wind profile
-    sigma_ustLog_all{i} = zeros(N_Windows,1)*NaN; %shear velocity from wind profile - uncertainty
-    tauLog_all{i} = zeros(N_Windows,1)*NaN; %shear stress from wind profile 
-    sigma_tauLog_all{i} = zeros(N_Windows,1)*NaN; %shear stress from wind profile - uncertainty
-    
+        
     %% go through time blocks
     for j = 1:N_Windows
 
@@ -206,6 +213,20 @@ for i = 1:N_Sites
                 df_Qfit=NaN;
             end
 
+            %Get window-averaged counts values for determining flux frequency
+            ntotal_int = ntotal_int_window{i}{j}; %interpolated total counts rate (counts/s)
+            t_flux = t_flux_int_window{i}{j}; %times for interpolated flux
+            ind_flux_err = ind_flux_err_window{i}{j}; %list of error time indices for flux
+            flux_err_binary = zeros(length(ntotal_int),1); %initialize timeseries with 0's and 1's for error points
+            flux_err_binary(ind_flux_err) = 1; %set error indices to 1
+            [ntotal_int_deltat, t_deltat_n] = window_average(ntotal_int, t_flux, deltat_fQ); %window-averaged counts rate timeseries (counts/s)
+            flux_err_binary_deltat = window_average(flux_err_binary, t_flux, deltat_fQ); %binary flux errors
+            ind_noerr_deltat = find(flux_err_binary_deltat==0); %get indices with no error in n
+            ntotal_deltat = ntotal_int_deltat(ind_noerr_deltat); %get total window-averaged counts rate (counts/s) only for non-error points
+ 
+            %calculate flux activity
+            [fD,fQ,lambda] = CalculateFluxActivity(ntotal_deltat,seconds(deltat_fQ),fD_min);
+            
             %convert to 0 if Q<Q_min or if Q=NaN AND expected Q<Q_min g/m/s based on lowest Wenglor and zq = 10 cm
             if Q<Q_min||(isnan(Q)&&...
                     ((zq_Q_min*qbar_unique(1))/exp(-zW_unique(1)/zq_Q_min)<Q_min))
@@ -214,6 +235,8 @@ for i = 1:N_Sites
                 zq=0;
                 sigma_q0=0;
                 sigma_zq=0;
+                fQ=0;
+                sigma_fQ=0;
             end
 
             %add to lists of values
@@ -228,51 +251,15 @@ for i = 1:N_Sites
             Cqnbar_all{i}{j} = Cqnbar; %calibration factor
             Chi2_Qfit_all{i}(j) = Chi2_Qfit; %normalized Chi2 for flux profile fit
             df_Qfit_all{i}(j) = df_Qfit; %degrees of freedom for flux profile fit
-            
-            %% flux frequency calcs
-            
-            % Get window-averaged counts values for determining flux frequency
-            ntotal_int = ntotal_int_window{i}{j}; %interpolated total counts rate (counts/s)
-            t_flux = t_flux_int_window{i}{j}; %times for interpolated flux
-            ind_flux_err = ind_flux_err_window{i}{j}; %list of error time indices for flux
-            flux_err_binary = zeros(length(ntotal_int),1); %initialize timeseries with 0's and 1's for error points
-            flux_err_binary(ind_flux_err) = 1; %set error indices to 1
-            [ntotal_int_deltat, t_deltat_n] = window_average(ntotal_int, t_flux, deltat_fQ); %window-averaged counts rate timeseries (counts/s)
-            flux_err_binary_deltat = window_average(flux_err_binary, t_flux, deltat_fQ); %binary flux errors
-            ind_noerr_deltat = find(flux_err_binary_deltat==0); %get indices with no error in n
-            ntotal_deltat = ntotal_int_deltat(ind_noerr_deltat); %get total window-averaged counts rate (counts/s) only for non-error points
-            
-            %calculate flux activity
-            [fD,fQ,lambda] = CalculateFluxActivity(ntotal_deltat,seconds(deltat_fQ),fD_min);
-            
-%             %calculate flux detection rate
-%             ntotal_bar = mean(ntotal_deltat); %mean total counts rate per second
-%             T = length(ntotal_deltat); %number of data points
-%             fD = sum(ntotal_bar>0)/T; %detection rate
-%             
-%             %estimate particle arrival rate per sampling interval
-%             if fD<=fD_min %set to zero if below detection limit
-%                 lambda = 0;
-%             else %otherwise estimate arrival rate per sampling interval based on fD
-%                 lambda = ntotal_bar*seconds(deltat_fQ)/fD;
-%             end
-%             
-%             %estimate flux activity from flux detection rate and particle arrival rate per sampling interval
-%             if lambda==0 %if no (or negligible) flux, set frequencies to zero
-%                 fQ = 0;
-%             elseif fD==1 %if fD = 1, set fQ to 1
-%                 fQ = 1;
-%             else %otherwise, estimate fQ based on other parameters
-%                 fQ = fD/(1-exp(-lambda)); %calculate fQ
-%                 if fQ>1
-%                     fQ = 1; %if correction gives fQ>1, just set as 1
-%                 end
-%             end
-
-            %add to lists of all values
-            fD_all{i}(j) = fD;
-            fQ_all{i}(j) = fQ;
-            lambda_all{i}(j) = lambda;
+            fD_all{i}(j) = fD; %flux detection rate
+            fQ_all{i}(j) = fQ; %flux frequency
+            lambda_all{i}(j) = lambda; %particle arrivals rate
+        
+        %if it's a designated day when we know there is no flux, set values accordingly
+        elseif ~isempty(find(Dates_zeroflux{i}==datetime(year(StartTime),month(StartTime),day(StartTime))))
+            fQ_all{i}(j) = 0;
+            Q_all{i}(j) = 0;
+            sigma_Q_all{i}(j) = 0;
         end
             
         %% WIND CALCULATIONS FOR INTERVAL - BASE ANEMOMETER
@@ -281,11 +268,9 @@ for i = 1:N_Sites
         zU = zU_base_window{i}(j);
         
         %get wind speed
-        u = u_window{i}{j}; %uninterpolated wind
-        u_int = u_int_window{i}{j}; %interpolated wind
-        w = w_window{i}{j}; %uninterpolated wind
-        w_int = w_int_window{i}{j}; %interpolated wind
-        Temp = Temp_window{i}{j};
+        u = u_window{i}{j}; %error-free wind
+        w = w_window{i}{j}; %error-free wind
+        Temp = Temp_window{i}{j}; %error-free temperatures
         
         %make computations
         ubar = mean(u);
@@ -321,40 +306,26 @@ for i = 1:N_Sites
 
         %add stability value to list
         zL_all{i}(j) = zL;
-        
-        %% WIND CALCULATIONS FOR INTERVAL - PROFILE
-        %get anemometer heights and wind profile
-        zU_profile = zU_profile_window{i}(j,:);
-        u_profile = u_profile_window{i}(j,:); %uninterpolated wind
-
-        %get indices of values in height range of interest
-        ind_fit = find(zU_profile<=zU_max);
-        
-        %use only values in height range for fit
-        [ustLog,zsLog,sigma_ustLog,sigma_zsLog] = uz_profilefit(u_profile(ind_fit), zU_profile(ind_fit));
-        
-        %add values to lists
-        zsLog_all{i}(j) = zsLog; %roughness height from wind profile
-        sigma_zsLog_all{i}(j) = sigma_zsLog; %roughness height from wind profile - uncertainty
-        ustLog_all{i}(j) = ustLog; %shear velocity from wind profile
-        sigma_ustLog_all{i}(j) = sigma_ustLog; %shear velocity from wind profile - uncertainty
-        tauLog_all{i}(j) = rho_a(i)*ustLog.^2; %shear stress from wind profile 
-        sigma_tauLog_all{i}(j) = 2*rho_a(i)*sigma_ustLog*ustLog; %shear stress from wind profile - uncertainty
     end
 end
 
+%calculate adjusted theta (relative to dominant wind during saltation at site)
+theta_adjusted_all = cell(N_Sites,1);
+theta_all = theta_window; %rename variable for wind angles
+for i = 1:N_Sites
+    theta_adjusted_all{i}=theta_all{i}-mean(theta_all{i}(Q_all{i}>0));
+end
+
 %%RENAME ADDITIONAL VALUES NEEDED FOR FLUX LAW ANALYSIS
-theta_all = theta_window; %wind angles
 W_ID_all = W_ID_window; %Wenglor IDs
 Date_all = Date_window; %dates
 StartTimes_all = StartTime_window; %start times
 EndTimes_all = EndTime_window; %start times
 zU_all = zU_base_window; %anemometer heights
-zU_profile_all = zU_profile_window; %anemometer profile heights
 zW_all = zW_window; %Wenglor height
 sigma_zW_all = sigma_zW_window; %uncertainty in Wenglor height
 zW_min_all = zW_min_window; %mininum Wenglor height
 zW_max_all = zW_max_window; %maximum Wenglor height
 
 % SAVE DATA
-save(SaveData_Path,'Sites','SiteNames','N_Sites','*_all'); %save reduced file in GitHub folder
+save(SaveData_Path,'Site*','N_Sites','*_all'); %save reduced file in GitHub folder

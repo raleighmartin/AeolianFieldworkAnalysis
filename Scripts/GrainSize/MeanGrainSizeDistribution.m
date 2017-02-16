@@ -21,8 +21,8 @@ for i=1:N_clusters
 end
 
 %% plotting information
-PlotFont = 14;
-LineWidth_Surface = 1;
+PlotFont = 12;
+LineWidth_Plot = 1;
 
 %% load grain size / processed data
 GrainSizeData_all = cell(N_Sites,1);
@@ -284,7 +284,7 @@ end
 %plot just surface GSD for each site
 figure(1); clf; hold on;
 for i = 1:N_Sites
-    plot(d_surface_site{i},dVdlogd_surface_site{i},'LineWidth',LineWidth_Surface);
+    plot(d_surface_site{i},dVdlogd_surface_site{i},'LineWidth',LineWidth_Plot);
 end
 set(gca,'xscale','log','yscale','log');
 legend(Sites,'Location','NorthWest');
@@ -295,24 +295,22 @@ ax.XTick = [0.06:0.01:0.1, 0.2:0.1:1, 2];
 ax.XTickLabel = {'0.06','','','','0.1','0.2','0.3','','0.5','','','','','1','2'};
 ax.YTick = [0.01:0.01:0.1, 0.2:0.1:1, 2];
 ax.YTickLabel = {'0.01','0.02','0.03','','0.05','','','','','0.1','0.2','0.3','','0.5','','','','','1','2'};
-xlabel('\textbf{Particle diameter, $$d$$ (mm)}','Interpreter','Latex');
-ylabel('\textbf{Norm. surface size distr., $$\frac{dV}{d\ln(d)}$$}','Interpreter','Latex');
+xlabel('Particle diameter, $$d$$ (mm)','Interpreter','Latex');
+ylabel('Normalized surface grain size distribution, $$\frac{dV}{d\ln(d)}$$','Interpreter','Latex');
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 set(gca,'FontSize',PlotFont);
 
 %print plot for draft
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 6]);
+set(gcf,'PaperUnits','inches','PaperSize',[6 5],'PaperPosition',[0 0 6 5],'PaperPositionMode','Manual');
 print([folder_Plots,'MeanGSD_Surface.png'],'-dpng');
-set(gcf,'PaperUnits','centimeters','PaperPosition',[0 0 18 12.7]);
-print([folder_Plots,'MeanGSD_Surface.eps'],'-depsc');
 
 
-%plot mean GSD for each site
+%plot mean GSD for each site - surface and airborne
 figure(2); clf;
 subplot(2,1,1); hold on;
 for i = 1:N_Sites
-    plot(d_surface_site{i},dVdlogd_surface_site{i},'LineWidth',LineWidth_Surface);
+    plot(d_surface_site{i},dVdlogd_surface_site{i},'LineWidth',LineWidth_Plot);
 end
 set(gca,'xscale','log','yscale','log');
 legend(Sites,'Location','NorthWest');
@@ -331,7 +329,7 @@ set(gca,'FontSize',PlotFont);
 
 subplot(2,1,2); hold on;
 for i = 1:N_Sites
-    plot(d_airborne_site{i},dVdlogd_airborne_site{i},'LineWidth',LineWidth_Surface);
+    plot(d_airborne_site{i},dVdlogd_airborne_site{i},'LineWidth',LineWidth_Plot);
 end
 set(gca,'xscale','log','yscale','log');
 ylim([1e-2 2]);
@@ -356,7 +354,7 @@ print([folder_Plots,'MeanGSD.png'],'-dpng');
 figure(3); clf;
 subplot(2,1,1); hold on;
 for i = 1:N_clusters
-    plot(d_surface_cluster,dVdlogd_surface_cluster(i,:),'LineWidth',LineWidth_Surface);
+    plot(d_surface_cluster,dVdlogd_surface_cluster(i,:),'LineWidth',LineWidth_Plot);
 end
 set(gca,'xscale','log','yscale','log');
 legend(cluster_names,'Location','NorthWest');
@@ -375,7 +373,7 @@ set(gca,'FontSize',PlotFont);
 
 subplot(2,1,2); hold on;
 for i = 1:N_clusters
-    plot(d_airborne_cluster,dVdlogd_airborne_cluster(i,:),'LineWidth',LineWidth_Surface);
+    plot(d_airborne_cluster,dVdlogd_airborne_cluster(i,:),'LineWidth',LineWidth_Plot);
 end
 set(gca,'xscale','log','yscale','log');
 legend(cluster_names,'Location','NorthWest');

@@ -6,15 +6,50 @@ clearvars;
 
 %% information about where to load/save data
 folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_SaveData = '../../../../Google Drive/Data/AeolianFieldwork/Export/'; %folder for storing outputs of this extraction
+folder_SaveData = '../../../../Google Drive/Data/AeolianFieldwork/Export/Daily/'; %folder for storing outputs of this extraction
 
-%% information for data extraction
-Site = 'Oceano'; %name of field site
-Dates = [datetime(2015,6,2);datetime(2015,6,3)]; %dates for data extraction
-WindInstrumentType = 'Sonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
+%info about which data to use
 use_raw_wind = 1; %use raw (non-interpolated) wind data? 0 for no, 1 for yes
 use_calibrated_flux = 1; %use calibrated flux values? 0 for no (raw Wenglor counts), 1 for yes
 use_time_outside_BSNE = 1; %use times outside BSNE intervals (affects calibration)? 0 for no, 1 for yes
+
+%% information for full data extraction - Jericoacoara
+Site = 'Jericoacoara'; %name of field site
+Dates = [datetime(2014,11,13);...
+    datetime(2014,11,14);...
+    datetime(2014,11,18);...
+    datetime(2014,11,20)]; %dates for data extraction
+WindInstrumentType = 'Ultrasonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
+
+% %% information for full data extraction - Rancho Guadalupe
+% Site = 'RanchoGuadalupe'; %name of field site
+% Dates = [datetime(2015,3,23);...
+%     datetime(2015,3,24)]; %dates for data extraction
+% WindInstrumentType = 'Ultrasonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
+
+% %% information for full data extraction - Oceano
+% Site = 'Oceano'; %name of field site
+% Dates = [datetime(2015,5,15);...
+%     datetime(2015,5,16);...
+%     datetime(2015,5,17);...
+%     datetime(2015,5,18);...
+%     datetime(2015,5,19);...
+%     datetime(2015,5,20);...
+%     datetime(2015,5,21);...
+%     datetime(2015,5,22);...
+%     datetime(2015,5,23);...
+%     datetime(2015,5,24);...
+%     datetime(2015,5,26);...
+%     datetime(2015,5,27);...
+%     datetime(2015,5,28);...
+%     datetime(2015,5,29);...
+%     datetime(2015,5,30);...
+%     datetime(2015,5,31);...
+%     datetime(2015,6,1);...
+%     datetime(2015,6,2);...
+%     datetime(2015,6,3);...
+%     datetime(2015,6,4)]; %dates for data extraction
+% WindInstrumentType = 'Sonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
 
 %% load functions
 folder_Functions = '../Functions/'; %folder with functions
@@ -101,21 +136,39 @@ for i = 1:length(ind_Export)
     for j = 1:N_Anemometers_profile
         
         %extract wind variables
-        [u, t, IntervalN, IntervalInd] = ...
+        [~, ~, IntervalN, IntervalInd] = ...
             ExtractVariableTimeInterval(WindData.(AnemometerName_profile{j}),...
             StartTimesExport(i),EndTimesExport(i),'u',wind_arg,wind_arg); %horizontal wind and time
-        v = WindData.(AnemometerName_profile{j})(IntervalN(1)).v.(wind_arg)(IntervalInd{1}); %transverse wind
-        w = WindData.(AnemometerName_profile{j})(IntervalN(1)).w.(wind_arg)(IntervalInd{1}); %vertical wind
-        T = WindData.(AnemometerName_profile{j})(IntervalN(1)).T.(wind_arg)(IntervalInd{1}); %temperature
-        diag = double(WindData.(AnemometerName_profile{j})(IntervalN(1)).diag.(wind_arg)(IntervalInd{1})); %diagnostic variable
-        z = WindData.(AnemometerName_profile{j})(IntervalN(1)).z.z; %anemometer height
-        
-        %create wind data table
-        wind_data_table = table(hour(t),minute(t),second(t),u,v,w,T,diag,'VariableNames',{'Hour','Minute','Second','u','v','w','T','diag'});
-        
-        %write table to text file
-        name_wind_data = [name_header,'_Wind_',AnemometerName_profile{j},'_z',int2str(1000*z),'mm.txt'];
-        writetable(wind_data_table,[folder_SaveData,name_wind_data]);
+
+        %do export if there are data in time interval
+        if ~isempty(IntervalN)
+
+            %keep only longest component
+            length_IntervalInd = cellfun('length',IntervalInd);
+            ind_IntervalInd = find(length_IntervalInd==max(length_IntervalInd));
+            IntervalN = IntervalN(ind_IntervalInd);
+            IntervalInd = IntervalInd{ind_IntervalInd};
+
+            %get variable values
+            t = WindData.(AnemometerName_profile{j})(IntervalN).t.(wind_arg)(IntervalInd); %time
+            u = WindData.(AnemometerName_profile{j})(IntervalN).u.(wind_arg)(IntervalInd); %horizontal wind
+            v = WindData.(AnemometerName_profile{j})(IntervalN).v.(wind_arg)(IntervalInd); %transverse wind
+            w = WindData.(AnemometerName_profile{j})(IntervalN).w.(wind_arg)(IntervalInd); %vertical wind
+            T = WindData.(AnemometerName_profile{j})(IntervalN).T.(wind_arg)(IntervalInd); %temperature
+            z = WindData.(AnemometerName_profile{j})(IntervalN).z.z; %anemometer height
+            
+            %create wind data table
+            if strcmp(WindInstrumentType,'Sonic') %include diagnostic flag if wind data is of 'Sonic' type
+                diag = double(WindData.(AnemometerName_profile{j})(IntervalN).diag.(wind_arg)(IntervalInd)); %diagnostic variable
+                wind_data_table = table(hour(t),minute(t),second(t),u,v,w,T,diag,'VariableNames',{'Hour','Minute','Second','u','v','w','T','diag'});
+            else
+                wind_data_table = table(hour(t),minute(t),second(t),u,v,w,T,'VariableNames',{'Hour','Minute','Second','u','v','w','T'});           
+            end
+
+            %write table to text file
+            name_wind_data = [name_header,'_Wind_',AnemometerName_profile{j},'_z',int2str(1000*z),'mm.txt'];
+            writetable(wind_data_table,[folder_SaveData,name_wind_data]);
+        end
     end
     
     %export wind metadata values into text file
@@ -126,14 +179,26 @@ for i = 1:length(ind_Export)
     fprintf(fileID,'v (m/s) \r');
     fprintf(fileID,'w (m/s) \r');
     fprintf(fileID,'T (C) \r');
-    fprintf(fileID,'error diagnostic \r');
+    if strcmp(WindInstrumentType,'Sonic') %include diagnostic flag if wind data is of 'Sonic' type
+        fprintf(fileID,'error diagnostic \r');
+    end  
     
     %% export flux variables
-    [~, t, IntervalN, IntervalInd] = ...
+    %find data interval
+    [~, ~, IntervalN, IntervalInd] = ...
         ExtractVariableTimeInterval(WenglorData,...
         StartTimesExport(i),EndTimesExport(i),'qz','qz','t'); %get times
-    q = WenglorData(IntervalN(1)).qz.(flux_arg); %get fluxes
-    z = WenglorData(IntervalN(1)).qz.z; %get heights
+    
+    %keep only longest component
+    length_IntervalInd = cellfun('length',IntervalInd);
+    ind_IntervalInd = find(length_IntervalInd==max(length_IntervalInd));
+    IntervalN = IntervalN(ind_IntervalInd);
+    IntervalInd = IntervalInd{ind_IntervalInd};
+    
+    %get values
+    t = WenglorData(IntervalN).t.t(IntervalInd); %get times
+    q = WenglorData(IntervalN).qz.(flux_arg)(IntervalInd,:); %get fluxes
+    z = WenglorData(IntervalN).qz.z(IntervalInd,:); %get heights
 
     %get information for flux table
     N_q = size(q,2); %get number of fluxes in profile
