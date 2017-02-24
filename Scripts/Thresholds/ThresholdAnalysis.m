@@ -8,7 +8,7 @@ rho_Site = [1.16, 1.22, 1.22]; %air density kg/m^3 (assumes T~30 C at Jeri and ~
 
 %% info about time scales for core analysis
 Deltat_analysis = duration(0,1,0); %measurement interval for analysis
-deltat_analysis = duration(0,0,1); %sampling interval for analysis
+deltat_analysis = duration(0,0,2); %sampling interval for analysis
 
 %% filtering info
 theta_max = 20; %maximum absolute wind angle for calcs
@@ -23,7 +23,7 @@ daterange_startdate = [datetime(2015,5,15);datetime(2015,5,23);datetime(2015,6,1
 daterange_enddate = [datetime(2015,5,19);datetime(2015,5,28);datetime(2015,6,4)];
 
 %% plotting info
-PlotFont = 14;
+PlotFont = 12;
 PlotMarkers_Site = {'s','d','o'};
 PlotColors_Site = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250]};
 PlotMarkers_Sensitivity = {'s','d','o','<','>'};
@@ -62,7 +62,7 @@ sigma_z0_Site = 10.^(sigma_z0Re_ln_Q_fit);
 
 %% get flux law intercept values for Sites
 tauit_intercept = tauit_linearfit_all;
-sigma_tauit_intercept = tauit_sigma_linearfit_all;
+sigma_tauit_intercept = sigma_tauit_linearfit_all;
 
 %% get predominant wind direction for each site from mean of 30-minute windows with full transport
 theta_Site = zeros(N_Sites,1); %predominant wind for each site
@@ -428,7 +428,9 @@ save(SaveData_Path,...
 %% plot tau_th versus fQ for sites
 figure(2); clf; 
 
-subplot(1,14,1:12);
+%subplot(1,14,1:12);
+subplot('Position',[0.09 0.1 0.76 0.88]); hold on;
+
 hold on; %initialize plot
 
 %plot average values
@@ -473,7 +475,8 @@ text(0.02,ylims(2)-0.005,'(a)','FontSize',PlotFont);
 set(gca,'FontSize',PlotFont);
 
 %additional plot for values from flux law fit
-subplot(1,14,14); hold on;
+%subplot(1,14,14); hold on;
+subplot('Position',[0.91 0.1 0.08 0.88]); hold on;
 for i = 1:N_Sites
     plot([0 0]+i/2,tauit_intercept(i),PlotMarkers_Site{i},'Color',PlotColors_Site{i}); %plot average values
     plot([0 0]+i/2,tauit_intercept(i)+sigma_tauit_intercept(i)*[-1 1],'Color',PlotColors_Site{i},'LineWidth',2); %plot SE values
@@ -489,8 +492,9 @@ set(gca,'FontSize',PlotFont);
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 5]);
+set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_activity.png'],'-dpng');
+print([folder_Plots,'threshold_activity.tif'],'-dtiff','-r600');
 
 %% plot fQ versus fD
 
@@ -543,9 +547,9 @@ set(gca,'FontSize',PlotFont);
 set(gca, 'LooseInset', get(gca,'TightInset'));
 
 %print plot
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 5 9]);
+set(gcf,'PaperUnits','inches','PaperSize',[5 7],'PaperPosition',[0 0 5 7],'PaperPositionMode','Manual');
 print([folder_Plots,'detection_activity.png'],'-dpng');
-
+print([folder_Plots,'detection_activity.tif'],'-dtiff','-r600');
 
 %% plot tau_th versus fQ for measurement interval sensitivity analysis
 figure(12); clf; hold on; %initialize plot
@@ -589,9 +593,9 @@ set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6.5 5]);
+set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_activity_measurementinterval.png'],'-dpng');
-
+print([folder_Plots,'threshold_activity_measurementinterval.tif'],'-dtiff','-r600');
 
 %% plot tau_th versus fQ for sampling interval sensitivity analysis
 figure(13); clf; hold on; %initialize plot
@@ -635,9 +639,9 @@ set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6.5 5]);
+set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_activity_samplinginterval.png'],'-dpng');
-
+print([folder_Plots,'threshold_activity_samplinginterval.tif'],'-dtiff','-r600');
 
 %% plot tau_th versus fQ for diurnal period sensitivity analysis
 figure(14); clf; hold on; %initialize plot
@@ -682,9 +686,9 @@ set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6.5 5]);
+set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_activity_diurnalrange.png'],'-dpng');
-
+print([folder_Plots,'threshold_activity_diurnalrange.tif'],'-dtiff','-r600');
 
 %% plot tau_th versus fQ for date period sensitivity analysis
 figure(15); clf; hold on; %initialize plot
@@ -729,5 +733,6 @@ set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6.5 5]);
+set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_activity_daterange.png'],'-dpng');
+print([folder_Plots,'threshold_activity_daterange.tif'],'-dtiff','-r600');

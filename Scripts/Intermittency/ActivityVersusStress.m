@@ -36,7 +36,7 @@ load(LoadSecondaryData_Path);
 addpath(folder_Functions); %point MATLAB to location of functions
 
 %% plotting info
-PlotFont = 14;
+PlotFont = 12;
 PlotMarkers_Site = {'s','d','o'};
 PlotColors_Site = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250]};
 
@@ -139,5 +139,6 @@ set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6.5 5]);
+set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
 print([folder_Plots,'fQ_tau.png'],'-dpng');
+print([folder_Plots,'fQ_tau.tif'],'-dtiff','-r600');

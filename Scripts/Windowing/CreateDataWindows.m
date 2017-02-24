@@ -15,18 +15,18 @@ folder_TimeseriesPlot = '../../PlotOutput/Timeseries/'; %folder for sample times
 folder_Functions = '../Functions/'; %folder with functions
 addpath(folder_Functions); %point MATLAB to location of functions
 
-%% Specific information for windowing data - restricted windows
-LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Restricted'); %path for loading time windows
-SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Restricted'); %path for saving output data
+% %% Specific information for windowing data - restricted windows
+% LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Restricted'); %path for loading time windows
+% SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Restricted'); %path for saving output data
 
 % %% Specific information for windowing data - restricted windows - with alternate base anemometer
 % LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Restricted'); %path for loading time windows
 % AnemometerName_base_alt = {'U2';'U2';'S2'}; %provide alternative anemometers for analysis
 % SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Restricted_alt'); %path for saving output data
 
-% %% Specific information for windowing data - unrestricted windows
-% LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Unrestricted'); %path for loading time windows
-% SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Unrestricted'); %path for saving output data
+%% Specific information for windowing data - unrestricted windows
+LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Unrestricted'); %path for loading time windows
+SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Unrestricted'); %path for saving output data
 
 %% Specific information for windowing data - Yue's windows
 % LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_Oceano_Yue_1'); %path for loading time windows

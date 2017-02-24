@@ -37,6 +37,7 @@ folder_Functions = '../Functions/'; %folder with functions
 folder_Plots = '../../PlotOutput/Roughness/'; %folder for plots
 
 %% paths for loading and saving data - restricted
+LoadProfileData_Path = strcat(folder_LoadData,'LogProfiles_30min_Restricted'); %path for 30 minute data on log profiles
 LoadData_Path = strcat(folder_LoadData,'DataWindowCalcs_30min_Restricted'); %path for 30 minute data
 SaveData_Path = strcat(folder_SaveData,'RoughnessCalcs_30min_Restricted'); %path for 30 minute data
 
@@ -45,11 +46,12 @@ SaveData_Path = strcat(folder_SaveData,'RoughnessCalcs_30min_Restricted'); %path
 % SaveData_Path = strcat(folder_SaveData,'RoughnessCalcs_30min_Unrestricted'); %path for 30 minute data
 
 %% load data
+load(LoadProfileData_Path);
 load(LoadData_Path);
 addpath(folder_Functions); %point MATLAB to location of functions
 
 %% plotting info
-PlotFont = 14;
+PlotFont = 12;
 PlotMarkers_Site = {'s','d','o'};
 PlotColors_Site = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250]};
 
@@ -361,8 +363,10 @@ for n = 1:2
     elseif n==2
         %print plot
         set(gca, 'LooseInset', get(gca,'TightInset'));
-        set(gcf,'PaperUnits','inches','PaperPosition',[0 0 5 4]);
+        set(gcf,'PaperUnits','inches','PaperSize',[5 4],'PaperPosition',[0 0 5 4],'PaperPositionMode','Manual');
         print([folder_Plots,'zsRe_fQ.png'],'-dpng');
+        print([folder_Plots,'zsRe_fQ.tif'],'-dtiff','-r600');
+
         %set up subplot
         clf;
         subplot(1,2,1);
@@ -456,8 +460,9 @@ set(gca,'YScale','log');
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 5]);
+set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
 print([folder_Plots,'zs_fQ.png'],'-dpng');
+%print([folder_Plots,'zs_fQ.tif'],'-dpng','-dtiff');
 
 %% plot zs versus tau
 figure(2); clf; %initialize plot
@@ -520,9 +525,9 @@ set(gca,'YScale','log');
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 5]);
+set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
 print([folder_Plots,'zs_tau.png'],'-dpng');
-
+%print([folder_Plots,'zs_tau.tif'],'-dtiff','-r600');
 
 %% plot zs versus Q
 figure(3); clf; %initialize plot
@@ -534,8 +539,10 @@ for n = 1:2
     elseif n==2
         %print plot
         set(gca, 'LooseInset', get(gca,'TightInset'));
-        set(gcf,'PaperUnits','inches','PaperPosition',[0 0 5 4]);
+        set(gcf,'PaperUnits','inches','PaperSize',[5 4],'PaperPosition',[0 0 5 4],'PaperPositionMode','Manual');
         print([folder_Plots,'zsRe_Q.png'],'-dpng');
+        print([folder_Plots,'zsRe_Q.tif'],'-dtiff','-r600');
+
         %set up subplot
         clf;
         subplot(1,2,1);
@@ -629,5 +636,6 @@ set(gca,'YScale','log');
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperPosition',[0 0 8 5]);
+set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
 print([folder_Plots,'zs_Q.png'],'-dpng');
+%print([folder_Plots,'zs_Q.tif'],'-dtiff','-r600');
