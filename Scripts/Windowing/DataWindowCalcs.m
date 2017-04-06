@@ -23,17 +23,17 @@ folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %
 folder_SaveData = '../../AnalysisData/Windowing/'; %folder for outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
 
-% %% paths for loading and saving data - restricted
-% LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted'); %path for 30 minute data - for flux law analysis
-% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Restricted'); %path for 30 minute data - for flux law analysis
+%% paths for loading and saving data - restricted
+LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted'); %path for 30 minute data - for flux law analysis
+SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Restricted'); %path for 30 minute data - for flux law analysis
 
 % %% paths for loading and saving data - restricted - with alternate base anemometer
 % LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Restricted_alt'); %path for 30 minute data - for flux law analysis
 % SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Restricted_alt'); %path for 30 minute data - for flux law analysis
 
-%% paths for loading and saving data - unrestricted
-LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
-SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+% %% paths for loading and saving data - unrestricted
+% LoadData_Path = strcat(folder_LoadData,'DataWindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+% SaveData_Path = strcat(folder_SaveData,'DataWindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
 
 %% paths for loading and saving data - Yue
 % rho_a = [1.22]; %air density kg/m^3 (assumes ~15 C at Oceano)
@@ -248,6 +248,7 @@ for i = 1:N_Sites
             nbar_all{i}{j} = nbar; %counts rate
             sigma_nbar_all{i}{j} = sigma_nbar; %counts rate uncertainty
             Cqnbar_all{i}{j} = Cqnbar; %calibration factor
+            sigma_Cqnbar_all{i}{j} = sigma_Cqnbar; %calibration factor
             Chi2_Qfit_all{i}(j) = Chi2_Qfit; %normalized Chi2 for flux profile fit
             df_Qfit_all{i}(j) = df_Qfit; %degrees of freedom for flux profile fit
             fD_all{i}(j) = fD; %flux detection rate

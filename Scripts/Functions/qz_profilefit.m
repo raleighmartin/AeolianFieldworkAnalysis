@@ -5,6 +5,7 @@
 %qz - vertical fluxes (g/m^2/s)
 %sigma_z = height uncertainty
 %sigma_qz = flux uncertainty
+%zq_estimated = value of zq for uncertainty estimation - set to 0.1 m if no value given
 
 %%OUTPUTS
 %q0 - profile fit (g/m^2/s)
@@ -25,13 +26,12 @@
 % zq = -1/b
 
 %use method of bevington and robinson (p. 105)
-function [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_fit,sigma_qz_fit,sigma_logqz_fit,sigma2_q0zq] = qz_profilefit(qz, z, sigma_qz, sigma_z)
+function [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_fit,sigma_qz_fit,sigma_logqz_fit,sigma2_q0zq] = qz_profilefit(qz, z, sigma_qz, sigma_z, zq_estimated)
 
-% %set input error values arbitrarily as one if input is not given
-% if nargin == 2
-%     sigma_qz = ones(size(qz)); 
-%     sigma_z = ones(size(z));
-% end
+%set zq_estimated = 0.1 m if no value given
+if nargin <= 4
+    zq_estimated = 0.1; 
+end
 
 %compute log of flux
 logqz = log(qz); %[log(q)]
@@ -40,7 +40,8 @@ logqz = log(qz); %[log(q)]
 if nargin == 2 %if no uncertainties given, use function linearfit without sigma_logqz
     [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit, sigma2_ab, da_dy, db_dy] = linearfit(z,logqz);
 else %otherwise, use function with sigma_logqz
-    sigma_logqz = sqrt((sigma_qz.^2./qz.^2)+(sigma_z.^2./z.^2)); %[log(q)] compute uncertainty in log(qz)
+    sigma_logqz = sqrt((sigma_qz.^2./qz.^2)+(sigma_z.^2./zq_estimated.^2)); %[log(q)] compute uncertainty in log(qz)
+    %sigma_logqz = sqrt((sigma_qz.^2./qz.^2)+(sigma_z.^2./z.^2)); %[log(q)] compute uncertainty in log(qz)
     [a, b, sigma_a, sigma_b, ~, sigma_logqz_fit, sigma2_ab, da_dy, db_dy] = linearfit(z,logqz,sigma_logqz);
 end
 q0 = exp(a); %[g/m^2/s]

@@ -19,7 +19,7 @@ z_profile_old = z_profile; %document previous z-profile to see difference
 z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
 z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
 
-%iterate until the z_profile is minutely small
+%iterate until the z_profile_difference is minutely small
 while(z_profile_difference>1e-8)
     if nargin == 3 %if no uncertainties provided
         [~,zq] = qz_profilefit(qz_profile, z_profile);

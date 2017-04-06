@@ -220,8 +220,8 @@ end
 xlim([0 0.45]);
 ylim([0 65]);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-xlabel('Wind shear stress, $$\tau$$ (Pa)','Interpreter','Latex');
-ylabel('Saltation mass flux, $$Q$$ (gm$$^{-1}$$s$$^{-1}$$)','Interpreter','Latex');
+xlabel('Wind shear stress, $$\tau_{i}$$ (Pa)','Interpreter','Latex');
+ylabel('Saltation mass flux, $$Q_{i}$$ (gm$$^{-1}$$s$$^{-1}$$)','Interpreter','Latex');
 legend(legend_items,'Location','NorthWest');
 set(gca,'FontSize',PlotFont);
 
@@ -489,3 +489,77 @@ set(gca, 'LooseInset', get(gca,'TightInset'))
 set(gcf,'PaperUnits','inches','PaperSize',[5 4.5],'PaperPosition',[0 0 5 4.5],'PaperPositionMode','Manual');
 print([folder_Plots,'Q_std.png'],'-dpng'); %for draft
 print([folder_Plots,'Q_std.tif'],'-dtiff','-r600'); %for publication
+
+%% PLOT Q VERSUS TAUEX BINNED DATA FOR ARXIV PAPER
+figure(22); clf; hold on;
+
+%plot binned values
+for i = 1:N_Sites
+    plot(tauex_fit_all{i},Q_fit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_plot);
+end
+
+%plot error bars
+for i = 1:N_Sites
+    for j = 1:length(tauex_fit_all{i})
+        plot(ones(2,1)*tauex_fit_all{i}(j),Q_fit_all{i}(j)+[-1 1]*sigma_Q_fit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_plot); %y error
+        plot(tauex_fit_all{i}(j)+[1 -1]*sigma_tauex_fit_all{i}(j),ones(2,1)*Q_fit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_plot); %x error
+    end
+end
+
+%plot fit values
+tauex_fit = [0 0.35];
+for i = 1:N_Sites %for individual sites
+    plot(tauex_fit, 1e3*ustit_linearfit_all(i)/g*CQ_all(i)*tauex_fit,'-','Color',Colors_Field{i},'LineWidth',LineWidth_plot);
+end
+
+xlim([0 0.35]);
+ylim([0 65]);
+set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+xlabel('Excess shear stress, $$\tau_{ex} = \tau - \tau_{it}$$ (Pa)','Interpreter','Latex');
+ylabel('Saltation mass flux, $$Q$$ (gm$$^{-1}$$s$$^{-1}$$)','Interpreter','Latex');
+legend(SiteNames,'Location','NorthWest');
+set(gca,'FontSize',PlotFont);
+
+%print plot
+set(gca, 'LooseInset', get(gca,'TightInset'))
+set(gcf,'PaperUnits','inches','PaperSize',[6 4.5],'PaperPosition',[0 0 6 4.5],'PaperPositionMode','Manual');
+print([folder_Plots,'Q_tauex.png'],'-dpng'); %for draft
+print([folder_Plots,'Q_tauex.tif'],'-dtiff','-r600'); %for publication
+
+%% PLOT CQ VERSUS TAUEX
+figure(23); clf; hold on;
+
+%plot binned values
+for i = 1:N_Sites
+    ind_plot = find(tauex_fit_all{i}>2*sigma_tauit_linearfit_all(i));
+    plot(tauratio_fit_all{i}(ind_plot),CQ_fit_all{i}(ind_plot),Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_plot);
+    %errorbar(tauex_fit_all{i},CQ_fit_all{i},sigma_CQ_fit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_Field,'LineWidth',LineWidth_Field);
+end
+
+%plot error bars
+for i = 1:N_Sites
+    ind_plot = find(tauex_fit_all{i}>2*sigma_tauit_linearfit_all(i));
+    for j = 1:length(ind_plot)
+        plot(ones(2,1)*tauratio_fit_all{i}(ind_plot(j)),CQ_fit_all{i}(ind_plot(j))+[-1, 1]*sigma_CQ_fit_all{i}(ind_plot(j)),'Color',Colors_Field{i},'LineWidth',LineWidth_plot);
+    end
+end
+
+%plot fit values
+tauratio_fit = [1 4];
+for i = 1:N_Sites
+    plot(tauratio_fit, ones(2,1)*CQ_all(i),'Color',Colors_Field{i});
+end
+
+xlim([1 4]);
+ylim([0 10]);
+set(gca,'XMinorTick','On','YMinorTick','On','XScale','Log','Box','On');
+xlabel('Dimensionless shear stress, $$\tau/\tau_{it}$$','Interpreter','Latex');
+ylabel('Dimensionless saltation flux, $$\hat{C_{Q}}$$','Interpreter','Latex');
+legend(SiteNames,'Location','SouthEast');
+set(gca,'FontSize',PlotFont);
+
+%print plot
+set(gca, 'LooseInset', get(gca,'TightInset'))
+set(gcf,'PaperUnits','inches','PaperSize',[6 4.5],'PaperPosition',[0 0 6 4.5],'PaperPositionMode','Manual');
+print([folder_Plots,'CQ_tauratio.png'],'-dpng'); %for draft
+print([folder_Plots,'CQ_tauratio.tif'],'-dtiff','-r600'); %for publication

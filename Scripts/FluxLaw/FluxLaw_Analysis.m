@@ -518,6 +518,15 @@ tauex_bin_avg_all = cell(N_Sites,1); %avg tauex in bin
 tauex_bin_sigma_all = cell(N_Sites,1); %total estimated tauex uncertainty for bin (combination of tau and tauit uncertainty)
 tauex_bin_min_all = cell(N_Sites,1); %minimum tauex in bin
 
+%ititialize lists of tau ratio values for tau bins
+tauratio_bin_avg_all = cell(N_Sites,1); %avg tau/tauit in bin
+tauratio_bin_sigma_all = cell(N_Sites,1); %uncertainty in tau/tauit for bin
+tauratio_bin_min_all = cell(N_Sites,1); %determine minimum tau/tauit in bin based on threshold by Site
+
+%initialize CQs 
+CQ_bin_avg_all = cell(N_Sites,1); %get average CQ for tau bins
+CQ_bin_sigma_all = cell(N_Sites,1); %total estimated CQ uncertainty for bin
+
 %initialize Qnorm for tau bins
 Qnorm_bin_avg_all = cell(N_Sites,1); %avg Qnorm in bin
 Qnorm_bin_sigma_all = cell(N_Sites,1); %total estimated Qnorm uncertainty for bin (combination of Q and ustit uncertainty)
@@ -526,6 +535,16 @@ for i=1:N_Sites
     tauex_bin_avg_all{i} = tau_bin_avg_all{i} - tauit_linearfit_all(i); %determine tauex based on threshold by Site
     tauex_bin_sigma_all{i} = sqrt(tau_bin_sigma_all{i}.^2 + sigma_tauit_linearfit_all(i).^2); %uncertainty in tauex combines tau uncertainty and threshold uncertainty
     tauex_bin_min_all{i} = tau_bin_min_all{i} - tauit_linearfit_all(i); %determine minimum tauex in bin based on threshold by Site
+    
+    tauratio_bin_avg_all{i} = tau_bin_avg_all{i}/tauit_linearfit_all(i); %determine tauratio based on threshold by Site
+    tauratio_bin_sigma_all{i} = sqrt(tau_bin_sigma_all{i}.^2 + (sigma_tauit_linearfit_all(i).*tauratio_bin_avg_all{i}).^2)/tauit_linearfit_all(i); %uncertainty in tauratio combines tau uncertainty and threshold uncertainty
+    tauratio_bin_min_all{i} = tau_bin_min_all{i}/tauit_linearfit_all(i); %determine minimum tauratio in bin based on threshold by Site
+    
+    CQ_bin_avg_all{i} = (Q_bin_avg_all{i}*1e-3)./((1/g)*ustit_linearfit_all(i).*tauex_bin_avg_all{i}); %compute CQ
+    CQ_Q_sigma = Q_bin_sigma_all{i}.*(CQ_bin_avg_all{i}./Q_bin_avg_all{i}); %contribution of Q to CQ uncertainty
+    CQ_ustit_sigma = sigma_ustit_linearfit_all(i).*(CQ_bin_avg_all{i}./ustit_linearfit_all(i)); %contribution of ustit to CQ uncertainty
+    CQ_tauex_sigma = tauex_bin_sigma_all{i}.*(CQ_bin_avg_all{i}./tauex_bin_avg_all{i}); %contribution of tauex to CQ uncertainty
+    CQ_bin_sigma_all{i} = sqrt(CQ_Q_sigma.^2+CQ_ustit_sigma.^2+CQ_tauex_sigma.^2); %total CQ uncertainty
     
     Qnorm_bin_avg_all{i} = (Q_bin_avg_all{i}*1e-3).*g./ustit_linearfit_all(i); %avg Qnorm in bin
     Qnorm_bin_sigma_all{i} = Qnorm_bin_avg_all{i}.*sqrt((Q_bin_sigma_all{i}./Q_bin_avg_all{i}).^2+(sigma_ustit_linearfit_all(i)./ustit_linearfit_all(i)).^2); %total estimated Qnorm uncertainty for bin (combination of Q and ustit uncertainty)
@@ -551,18 +570,26 @@ for i = 1:N_Sites
     sigma_Ct_all(i) = sqrt((1/length(ind_CQ))*(g/zq_bar_all(i))*sum((Q_over_tauex-mean(Q_over_tauex)).^2)); %get uncertainty in Ct/(1-e) for site
 end
 
-%initialize fit values for tauex and tauratio
+%compute fit values for tauex, tauratio, Qnorm, and CQ
 tauex_fit_all = cell(N_Sites,1); %tauex's for fit
 sigma_tauex_fit_all = cell(N_Sites,1); %sigma tauex's for fit
+tauratio_fit_all = cell(N_Sites,1); %tauratio's for fit
+sigma_tauratio_fit_all = cell(N_Sites,1); %sigma tauratio's for fit
 Qnorm_fit_all = cell(N_Sites,1); %Qnorm's for fit
 sigma_Qnorm_fit_all = cell(N_Sites,1); %sigma_Qnorm's for fit
+CQ_fit_all = cell(N_Sites,1); %CQ's for fit
+sigma_CQ_fit_all = cell(N_Sites,1); %sigma_CQ's for fit
 
 for i = 1:N_Sites
     ind_fit = find(fQ_bin_avg_all{i}>=fQ_Qtau_fit_min);
     tauex_fit_all{i} = tauex_bin_avg_all{i}(ind_fit);
     sigma_tauex_fit_all{i} = tauex_bin_sigma_all{i}(ind_fit);
+    tauratio_fit_all{i} = tauratio_bin_avg_all{i}(ind_fit);
+    sigma_tauratio_fit_all{i} = tauratio_bin_sigma_all{i}(ind_fit);
     Qnorm_fit_all{i} = Qnorm_bin_avg_all{i}(ind_fit); %Qnorm's for fit
     sigma_Qnorm_fit_all{i} = Qnorm_bin_sigma_all{i}(ind_fit); %sigma_Qnorm's for fit
+    CQ_fit_all{i} = CQ_bin_avg_all{i}(ind_fit);
+    sigma_CQ_fit_all{i} = CQ_bin_sigma_all{i}(ind_fit);
 end
 
 %% GET MEAN VALUE OF C_Q FOR ALL SITES
