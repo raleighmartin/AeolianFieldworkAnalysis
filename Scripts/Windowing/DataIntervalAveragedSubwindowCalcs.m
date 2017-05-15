@@ -19,8 +19,8 @@ folder_Functions = '../Functions/'; %folder with functions
 % SaveData_Path = strcat(folder_SaveData,'DataSubwindowCalcs_30min_Restricted'); %path for 30 minute data - for thresholds analysis
 % 
 %% paths for loading and saving data - unrestricted
-LoadData_Path = strcat(folder_LoadData,'DataSubwindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
-SaveData_Path = strcat(folder_SaveData,'DataSubwindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+LoadData_Path = strcat(folder_LoadData,'DataIntervalAveragedSubwindows_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
+SaveData_Path = strcat(folder_SaveData,'DataIntervalAveragedSubwindowCalcs_30min_Unrestricted'); %path for 30 minute data - for thresholds analysis
 
 %% load data and functions
 load(LoadData_Path); %load data

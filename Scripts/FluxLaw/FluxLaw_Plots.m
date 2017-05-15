@@ -16,10 +16,12 @@ rho_a = [1.16, 1.22, 1.22]; %air density kg/m^3 (assumes T~30 C at Jeri and ~15 
 %% folders for loading data and functions
 folder_LoadData = '../../AnalysisData/FluxLaw/'; %folder for retrieving data for this analysis
 folder_Functions = '../Functions/'; %folder with functions
-
-%% paths for loading and printing plots - restricted
-LoadData_Path = strcat(folder_LoadData,'FluxLawCalcs_30min_Restricted'); %path for 30 minute data
+folder_LoadThresholdData = '../../AnalysisData/Thresholds/'; %folder for retrieving data for this analysis
 folder_Plots = '../../PlotOutput/FluxLaw/'; %folder for plots
+
+%% paths for loading data - restricted
+LoadData_Path = strcat(folder_LoadData,'FluxLawCalcs_30min_Restricted'); %path for 30 minute data
+LoadThresholdData_Path = strcat(folder_LoadThresholdData,'ThresholdAnalysisData'); %path for 30 minute data
 
 % %% paths for loading and printing plots - restricted - alternate data
 % LoadData_Path = strcat(folder_LoadData,'FluxLawCalcs_30min_Restricted_alt'); %path for 30 minute data
@@ -27,6 +29,7 @@ folder_Plots = '../../PlotOutput/FluxLaw/'; %folder for plots
 
 %load data
 load(LoadData_Path);
+load(LoadThresholdData_Path);
 addpath(folder_Functions); %point MATLAB to location of functions
 
 %set info for plotting
@@ -56,9 +59,11 @@ Q_threehalvesfit_plot = cell(N_Sites,1); %values for plotting 3/2 fits
 % generate values for plotting fits
 for i = 1:N_Sites
     %get values for plotting fits
-    tau_linearfit_plot{i} = linspace(tauit_linearfit_all(i),max(tau_fit_all{i}),50);
+    tau_linearfit_plot{i} = linspace(tauit_linearfit_all(i),0.5,50);
+    %tau_linearfit_plot{i} = linspace(tauit_linearfit_all(i),max(tau_fit_all{i}),50);
     Q_linearfit_plot{i} = C_linearfit_all(i)*(tau_linearfit_plot{i}-tauit_linearfit_all(i));
-    tau_threehalvesfit_plot{i} = linspace(tauit_threehalvesfit_all(i),max(tau_fit_all{i}),50);
+    tau_threehalvesfit_plot{i} = linspace(tauit_threehalvesfit_all(i),0.5,50);
+    %tau_threehalvesfit_plot{i} = linspace(tauit_threehalvesfit_all(i),max(tau_fit_all{i}),50);
     ust_threehalvesfit_plot{i} = sqrt(tau_threehalvesfit_plot{i}/rho_a(i));
     Q_threehalvesfit_plot{i} = C_threehalvesfit_all(i)*...
         ust_threehalvesfit_plot{i}.*...
@@ -237,7 +242,7 @@ figure(2); clf;
 
 for i = 1:N_Sites
     %subplot(N_Sites,1,i); hold on;
-    subplot('Position',[0.15 1.03-0.32*i 0.8 0.25]); hold on;
+    subplot('Position',[0.18 1.04-0.325*i 0.78 0.26]); hold on;
     
     %plot binned values
     plot(tau_fit_all{i},Q_fit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_plot,'LineWidth',LineWidth_plot);
@@ -253,13 +258,14 @@ for i = 1:N_Sites
     end
 
     %format plot
-    xlim([0 0.45]);
+    xlim([0 0.5]);
     ylim([0 ceil(max(Q_threehalvesfit_plot{i}/5))*5]);
 %     xlim([0 ceil(max(tau_fit_all{i}/0.05))*0.05]);
 %     ylim([0 65]);
     xlims = xlim; ylims = ylim; %get x and y limit information
     text(0.02*xlims(2),0.05*ylims(2),panel_labels{i},'FontSize',9.5,'FontWeight','Bold');
     set(gca,'YTick',0:10:ylims(2));
+    set(gca,'XTick',0:0.1:0.5);
     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
     set(gca, 'LooseInset', get(gca,'TightInset'))
     if i==3
@@ -563,3 +569,45 @@ set(gca, 'LooseInset', get(gca,'TightInset'))
 set(gcf,'PaperUnits','inches','PaperSize',[6 4.5],'PaperPosition',[0 0 6 4.5],'PaperPositionMode','Manual');
 print([folder_Plots,'CQ_tauratio.png'],'-dpng'); %for draft
 print([folder_Plots,'CQ_tauratio.tif'],'-dtiff','-r600'); %for publication
+
+%% PLOT FQ VERSUS TAU
+figure(24); clf; hold on;
+
+% %plot tau_it
+% plot([1 1],[0 1],'k-','LineWidth',2); %vertical line for impact threshold
+
+LineStyle_Sites = {':','--','-.'};
+
+%plot fQ and tau_ft
+for i = 1:N_Sites
+    h1(i) = plot(tauft_all(i)/tauit_all(i)*[1 1],[0 1],'LineStyle',LineStyle_Sites{i},'Color',Colors_Field{i},'LineWidth',2); %vertical lines for fluid threshold
+    h2(i) = plot(tau_fit_all{i}/tauit_all(i),fQ_fit_all{i},Markers_Field{i},'Color',Colors_Field{i},'MarkerSize',MarkerSize_plot);
+end
+
+%plot error bars
+for i = 1:N_Sites
+    for j = 1:length(tau_fit_all{i})
+        plot(ones(2,1)*tau_fit_all{i}(j)/tauit_all(i),fQ_fit_all{i}(j)+[-1, 1]*sigma_fQ_fit_all{i}(j),'Color',Colors_Field{i},'LineWidth',LineWidth_plot);
+    end
+end
+
+%generate legend items
+legend_items = cell(N_Sites*2,1);
+for i=1:N_Sites
+    legend_items{i}=[SiteNames{i}, ' data'];
+    legend_items{N_Sites+i}=[SiteNames{i}, ' \tau_{ft}'];
+end
+    
+%format plot
+xlim([1 4]);
+ylim([0 1]);
+set(gca,'XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont,'LooseInset',get(gca,'TightInset'))
+xlabel('Shear stress ratio, $$\tau / \tau_{it}$$','Interpreter','Latex');
+ylabel('Saltation activity, $$f_{Q}$$','interpreter','latex');
+legend([h2, h1],legend_items,'Location','SouthEast');
+
+%print plot
+set(gca, 'LooseInset', get(gca,'TightInset'))
+set(gcf,'PaperUnits','inches','PaperSize',[6 4.5],'PaperPosition',[0 0 6 4.5],'PaperPositionMode','Manual');
+print([folder_Plots,'fQ_tauratio.png'],'-dpng'); %for draft
+print([folder_Plots,'fQ_tauratio.tif'],'-dtiff','-r600'); %for publication

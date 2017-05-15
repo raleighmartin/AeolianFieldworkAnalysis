@@ -1,164 +1,164 @@
-% %% LOOK AT CALIBRATION VALUES FOR WENGLORS TO DETERMINE SYSTEMATIC TRENDS
-% 
-% %% clear existing data and load processed data and metadata
-% clearvars;
-% 
-% %% indicate where to find processed data
-% folder_ProcessedData = '../../../Google Drive/Data/AeolianFieldwork/Processed/';
-% 
-% %% indicate where to save analysis data
-% folder_SaveData = '../DataOutput/';
-% 
-% %% indicate where to save plots
-% folder_Plots = '../PlotOutput/WenglorCalibration/';
-% 
-% %% information about sites for analysis
-% Site_Names = {'Jericoacoara','RanchoGuadalupe','Oceano'};
-% Folder_Names = {'Jericoacoara2014','RanchoGuadalupe2015','Oceano2015'};
-% N_Sites = length(Site_Names);
-% 
-% %% load processed data and metadata for each site, keep only Wenglor and BSNE data
-% Data_Wenglor = cell(N_Sites,1); %initialize cell array containing Wenglor data
-% Data_BSNE = cell(N_Sites,1); %initialize cell array containing BSNE data
-% Metadata = cell(N_Sites,1); %initialize cell array containing metadata
-% for i = 1:N_Sites
-%     ProcessedData_Path = strcat(folder_ProcessedData,'ProcessedData_',Site_Names{i});
-%     Metadata_Path = strcat(folder_ProcessedData,'Metadata_',Site_Names{i});
-%     load(ProcessedData_Path); %load processed data
-%     Data_Wenglor{i} = ProcessedData.Wenglor; %get Wenglor processed data
-%     Data_BSNE{i} = ProcessedData.BSNE; %get BSNE processed data
-%     Metadata{i} = load(Metadata_Path); %load metadata
-%     clear ProcessedData;
-% end
-% 
-% %% get Wenglor calibration factors by site, Wenglor name, and interval number
-% 
-% %initialize cell arrays of values for each site
-% SiteNames = {'Jeri','Rancho','Oceano'};
-% z_Site = cell(N_Sites,1); %cell array with Wenglor heights for each site
-% C_Site = cell(N_Sites,1); %cell array with calibration factors for each site
-% counts_Site = cell(N_Sites,1); %cell array with particle counts for each site
-% flux_Wenglor_Site = cell(N_Sites,1); %cell array with expected fluxes for each site
-% flux_BSNE_Site = cell(N_Sites,1); %cell array of BSNE fluxes for each site
-% WID_Site = cell(N_Sites,1); %cell array of Wenglor identifier
-% 
-% for i = 1:N_Sites
-%     
-%     %get start and end times of BSNE intervals
-%     StartTimes_BSNE = [Data_BSNE{i}(:).StartTime];
-%     EndTimes_BSNE = [Data_BSNE{i}.EndTime];
-%     flux_BSNE = [Data_BSNE{i}.Q];
-%     N_Intervals = length(StartTimes_BSNE);
-%     
-%     %get list of Wenglors
-%     Wenglors = fieldnames(Data_Wenglor{i});
-%     N_Wenglors = length(Wenglors);
-%     
-%     %initialize cell arrays of heights, calibration factors, mean particle counts, expected fluxes, and IDs for each Wenglor
-%     z_Wenglor = cell(N_Wenglors,1);
-%     C_Wenglor = cell(N_Wenglors,1);
-%     counts_Wenglor = cell(N_Wenglors,1);
-%     flux_Wenglor = cell(N_Wenglors,1);
-%     WID_Wenglor = cell(N_Wenglors,1);
-%     
-%     %get calibration factors for Wenglors in each interval
-%     for j=1:N_Wenglors
-%         
-%         %initialize lists of heights, calibration factors, counts, expected fluxes, and IDs for all intervals
-%         z_Intervals = zeros(N_Intervals,1);
-%         C_Intervals = zeros(N_Intervals,1);
-%         counts_Intervals = zeros(N_Intervals,1);
-%         flux_Intervals = zeros(N_Intervals,1);
-%         WID_Intervals = cell(N_Intervals,1);
-%         
-%         for k=1:N_Intervals
-%             [counts, ~, IntervalNumber, IntervalInd] = ExtractVariableTimeInterval(Data_Wenglor{i}.(Wenglors{j}),StartTimes_BSNE(k),EndTimes_BSNE(k),'n','int','int');
-%                         
-%             %if interval contains data
-%             if ~isempty(counts)
-%                 
-%                 %get Wenglor height
-%                 z_Intervals(k) = Data_Wenglor{i}.(Wenglors{j})(IntervalNumber(1)).InstrumentHeight.z;
-%                 
-%                 %get Wenglor calibration factor
-%                 C = mode(Data_Wenglor{i}.(Wenglors{j})(IntervalNumber(1)).flux.qzPerCount);
-%                 if ~isinf(C)
-%                     C_Intervals(k) = C;
-%                 else
-%                     C_Intervals(k) = NaN;
-%                 end
-%                 
-%                 %get Wenglor mean counts per second
-%                 counts_Intervals(k) = mean(counts)*25;
-%                 
-%                 %get Wenglor expected fluxes
-%                 flux_Intervals(k) = mean(Data_Wenglor{i}.(Wenglors{j})(IntervalNumber(1)).flux.qz(IntervalInd{1}));
-%                 
-%                 %get Wenglor ID
-%                 WID_Intervals{k} = Metadata{i}.InstrumentMetadata.InstrumentID(intersect(...
-%                     find(strcmp(Metadata{i}.InstrumentMetadata.Instrument,Wenglors{j})),... %match in metadata list for specific Wenglor
-%                     find(Metadata{i}.InstrumentMetadata.StartTime==Data_Wenglor{i}.(Wenglors{j})(IntervalNumber(1)).StartTime))); %match in metadata list for specific start time
-%             
-%             %if interval does not contain data
-%             else
-%                 z_Intervals(k) = NaN;
-%                 C_Intervals(k) = NaN;
-%                 counts_Intervals(k) = NaN;
-%                 flux_Intervals(k) = NaN;
-%             end
-%         end
-%         
-%         %add list of calibration factors to cell array for Wenglor
-%         z_Wenglor{j} = z_Intervals;
-%         C_Wenglor{j} = C_Intervals;
-%         counts_Wenglor{j} = counts_Intervals;
-%         flux_Wenglor{j} = flux_Intervals;
-%         WID_Wenglor{j} = WID_Intervals;
-%     end
-% 
-%     %add cell array of calibration factors for each site
-%     z_Site{i} = z_Wenglor;
-%     C_Site{i} = C_Wenglor;
-%     counts_Site{i} = counts_Wenglor;
-%     flux_Wenglor_Site{i} = flux_Wenglor;
-%     flux_BSNE_Site{i} = flux_BSNE;
-%     WID_Site{i} = WID_Wenglor;
-% end
-% 
-% %% Separate calibration factors and heights by each unique Wenglor
-% WIDs = cell(N_Sites,1);
-% WID_z = cell(N_Sites,1);
-% WID_C = cell(N_Sites,1);
-% WID_counts = cell(N_Sites,1);
-% WID_Wenglor_flux = cell(N_Sites,1);
-% WID_BSNE_flux = cell(N_Sites,1);
-% 
-% for i = 1:N_Sites;
-%     
-%     %get all possible Wenglor ID's
-%     WIDs{i} = unique(Metadata{i}.InstrumentMetadata.InstrumentID(...
-%         strcmp(Metadata{i}.InstrumentMetadata.InstrumentType,'Wenglor')));
-%     N_WIDs = length(WIDs{i});
-%     
-%     WID_z{i} = cell(N_WIDs,1);
-%     WID_C{i} = cell(N_WIDs,1);
-%     WID_counts{i} = cell(N_WIDs,1);
-%     WID_Wenglor_flux{i} = cell(N_WIDs,1);
-%     WID_BSNE_flux{i} = cell(N_WIDs,1);
-%     
-%     for j = 1:length(WID_Site{i})
-%         for k = 1:length(WID_Site{i}{j})
-%             if ~isnan(C_Site{i}{j}(k))
-%                 ind_WID = find(strcmp(WIDs{i},WID_Site{i}{j}{k})); %get index of WID within list
-%                 WID_z{i}{ind_WID}(length(WID_z{i}{ind_WID})+1)=z_Site{i}{j}(k); %add Wenglor height to list for this WID
-%                 WID_C{i}{ind_WID}(length(WID_C{i}{ind_WID})+1)=C_Site{i}{j}(k); %add Wenglor calibration factor to list for this WID
-%                 WID_counts{i}{ind_WID}(length(WID_counts{i}{ind_WID})+1)=counts_Site{i}{j}(k); %add Wenglor mean counts/second to list for this WID
-%                 WID_Wenglor_flux{i}{ind_WID}(length(WID_Wenglor_flux{i}{ind_WID})+1)=flux_Wenglor_Site{i}{j}(k); %add Wenglor expected flux to list for this WID
-%                 WID_BSNE_flux{i}{ind_WID}(length(WID_BSNE_flux{i}{ind_WID})+1)=flux_BSNE_Site{i}(k); %add BSNE flux to list for this WID
-%             end
-%         end
-%     end
-% end
+%% LOOK AT CALIBRATION VALUES FOR WENGLORS TO DETERMINE SYSTEMATIC TRENDS
+
+%% clear existing data and load processed data and metadata
+clearvars;
+
+%% indicate where to find processed data
+folder_ProcessedData = '../../../Google Drive/Data/AeolianFieldwork/Processed/';
+
+%% indicate where to save analysis data
+folder_SaveData = '../DataOutput/';
+
+%% indicate where to save plots
+folder_Plots = '../PlotOutput/WenglorCalibration/';
+
+%% information about sites for analysis
+Site_Names = {'Jericoacoara','RanchoGuadalupe','Oceano'};
+Folder_Names = {'Jericoacoara2014','RanchoGuadalupe2015','Oceano2015'};
+N_Sites = length(Site_Names);
+
+%% load processed data and metadata for each site, keep only Wenglor and BSNE data
+Data_Wenglor = cell(N_Sites,1); %initialize cell array containing Wenglor data
+Data_BSNE = cell(N_Sites,1); %initialize cell array containing BSNE data
+Metadata = cell(N_Sites,1); %initialize cell array containing metadata
+for i = 1:N_Sites
+    ProcessedData_Path = strcat(folder_ProcessedData,'ProcessedData_',Site_Names{i});
+    Metadata_Path = strcat(folder_ProcessedData,'Metadata_',Site_Names{i});
+    load(ProcessedData_Path); %load processed data
+    Data_Wenglor{i} = ProcessedData.Wenglor; %get Wenglor processed data
+    Data_BSNE{i} = ProcessedData.BSNE; %get BSNE processed data
+    Metadata{i} = load(Metadata_Path); %load metadata
+    clear ProcessedData;
+end
+
+%% get Wenglor calibration factors by site, Wenglor name, and interval number
+
+%initialize cell arrays of values for each site
+SiteNames = {'Jeri','Rancho','Oceano'};
+z_Site = cell(N_Sites,1); %cell array with Wenglor heights for each site
+C_Site = cell(N_Sites,1); %cell array with calibration factors for each site
+counts_Site = cell(N_Sites,1); %cell array with particle counts for each site
+flux_Wenglor_Site = cell(N_Sites,1); %cell array with expected fluxes for each site
+flux_BSNE_Site = cell(N_Sites,1); %cell array of BSNE fluxes for each site
+WID_Site = cell(N_Sites,1); %cell array of Wenglor identifier
+
+for i = 1:N_Sites
+    
+    %get start and end times of BSNE intervals
+    StartTimes_BSNE = [Data_BSNE{i}(:).StartTime];
+    EndTimes_BSNE = [Data_BSNE{i}.EndTime];
+    flux_BSNE = [Data_BSNE{i}.Q];
+    N_Intervals = length(StartTimes_BSNE);
+    
+    %get list of Wenglors
+    Wenglors = fieldnames(Data_Wenglor{i});
+    N_Wenglors = length(Wenglors);
+    
+    %initialize cell arrays of heights, calibration factors, mean particle counts, expected fluxes, and IDs for each Wenglor
+    z_Wenglor = cell(N_Wenglors,1);
+    C_Wenglor = cell(N_Wenglors,1);
+    counts_Wenglor = cell(N_Wenglors,1);
+    flux_Wenglor = cell(N_Wenglors,1);
+    WID_Wenglor = cell(N_Wenglors,1);
+    
+    %get calibration factors for Wenglors in each interval
+    for j=1:N_Wenglors
+        
+        %initialize lists of heights, calibration factors, counts, expected fluxes, and IDs for all intervals
+        z_Intervals = zeros(N_Intervals,1);
+        C_Intervals = zeros(N_Intervals,1);
+        counts_Intervals = zeros(N_Intervals,1);
+        flux_Intervals = zeros(N_Intervals,1);
+        WID_Intervals = cell(N_Intervals,1);
+        
+        for k=1:N_Intervals
+            [counts, ~, IntervalNumber, IntervalInd] = ExtractVariableTimeInterval(Data_Wenglor{i}.(Wenglors{j}),StartTimes_BSNE(k),EndTimes_BSNE(k),'n','int','int');
+                        
+            %if interval contains data
+            if ~isempty(counts)
+                
+                %get Wenglor height
+                z_Intervals(k) = Data_Wenglor{i}.(Wenglors{j})(IntervalNumber(1)).InstrumentHeight.z;
+                
+                %get Wenglor calibration factor
+                C = mode(Data_Wenglor{i}.(Wenglors{j})(IntervalNumber(1)).flux.qzPerCount);
+                if ~isinf(C)
+                    C_Intervals(k) = C;
+                else
+                    C_Intervals(k) = NaN;
+                end
+                
+                %get Wenglor mean counts per second
+                counts_Intervals(k) = mean(counts)*25;
+                
+                %get Wenglor expected fluxes
+                flux_Intervals(k) = mean(Data_Wenglor{i}.(Wenglors{j})(IntervalNumber(1)).flux.qz(IntervalInd{1}));
+                
+                %get Wenglor ID
+                WID_Intervals{k} = Metadata{i}.InstrumentMetadata.InstrumentID(intersect(...
+                    find(strcmp(Metadata{i}.InstrumentMetadata.Instrument,Wenglors{j})),... %match in metadata list for specific Wenglor
+                    find(Metadata{i}.InstrumentMetadata.StartTime==Data_Wenglor{i}.(Wenglors{j})(IntervalNumber(1)).StartTime))); %match in metadata list for specific start time
+            
+            %if interval does not contain data
+            else
+                z_Intervals(k) = NaN;
+                C_Intervals(k) = NaN;
+                counts_Intervals(k) = NaN;
+                flux_Intervals(k) = NaN;
+            end
+        end
+        
+        %add list of calibration factors to cell array for Wenglor
+        z_Wenglor{j} = z_Intervals;
+        C_Wenglor{j} = C_Intervals;
+        counts_Wenglor{j} = counts_Intervals;
+        flux_Wenglor{j} = flux_Intervals;
+        WID_Wenglor{j} = WID_Intervals;
+    end
+
+    %add cell array of calibration factors for each site
+    z_Site{i} = z_Wenglor;
+    C_Site{i} = C_Wenglor;
+    counts_Site{i} = counts_Wenglor;
+    flux_Wenglor_Site{i} = flux_Wenglor;
+    flux_BSNE_Site{i} = flux_BSNE;
+    WID_Site{i} = WID_Wenglor;
+end
+
+%% Separate calibration factors and heights by each unique Wenglor
+WIDs = cell(N_Sites,1);
+WID_z = cell(N_Sites,1);
+WID_C = cell(N_Sites,1);
+WID_counts = cell(N_Sites,1);
+WID_Wenglor_flux = cell(N_Sites,1);
+WID_BSNE_flux = cell(N_Sites,1);
+
+for i = 1:N_Sites;
+    
+    %get all possible Wenglor ID's
+    WIDs{i} = unique(Metadata{i}.InstrumentMetadata.InstrumentID(...
+        strcmp(Metadata{i}.InstrumentMetadata.InstrumentType,'Wenglor')));
+    N_WIDs = length(WIDs{i});
+    
+    WID_z{i} = cell(N_WIDs,1);
+    WID_C{i} = cell(N_WIDs,1);
+    WID_counts{i} = cell(N_WIDs,1);
+    WID_Wenglor_flux{i} = cell(N_WIDs,1);
+    WID_BSNE_flux{i} = cell(N_WIDs,1);
+    
+    for j = 1:length(WID_Site{i})
+        for k = 1:length(WID_Site{i}{j})
+            if ~isnan(C_Site{i}{j}(k))
+                ind_WID = find(strcmp(WIDs{i},WID_Site{i}{j}{k})); %get index of WID within list
+                WID_z{i}{ind_WID}(length(WID_z{i}{ind_WID})+1)=z_Site{i}{j}(k); %add Wenglor height to list for this WID
+                WID_C{i}{ind_WID}(length(WID_C{i}{ind_WID})+1)=C_Site{i}{j}(k); %add Wenglor calibration factor to list for this WID
+                WID_counts{i}{ind_WID}(length(WID_counts{i}{ind_WID})+1)=counts_Site{i}{j}(k); %add Wenglor mean counts/second to list for this WID
+                WID_Wenglor_flux{i}{ind_WID}(length(WID_Wenglor_flux{i}{ind_WID})+1)=flux_Wenglor_Site{i}{j}(k); %add Wenglor expected flux to list for this WID
+                WID_BSNE_flux{i}{ind_WID}(length(WID_BSNE_flux{i}{ind_WID})+1)=flux_BSNE_Site{i}(k); %add BSNE flux to list for this WID
+            end
+        end
+    end
+end
 
 %% plot calibration factor versus Wenglor height
 figure(1); clf;

@@ -53,6 +53,5 @@ sigma_qz_fit = sigma_logqz_fit.*qz_fit; %confidence on prediction of qz [g/m^2/s
 
 %calculate Q and sigma_Q
 Q = q0*zq; %get total flux [g/m/s]
-sigma2_q0zq = (exp(a)/b^2)*sigma2_ab;
-%sigma2_q0zq = (exp(a)/b^2)*sum((sigma_qz.^2/qz.^2).*da_dy.*db_dy); %%technically more correct, produces slightly larger covariance by accounting for z
+sigma2_q0zq = q0*zq^2*sigma2_ab;
 sigma_Q = sqrt((sigma_q0*zq)^2 + (sigma_zq*q0)^2 + 2*sigma2_q0zq*Q); %estimate uncertainty in total flux including covariance of parameters (Bevington and Robinson, Eq. 3.13)

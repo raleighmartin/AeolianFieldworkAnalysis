@@ -5,12 +5,12 @@ close all;
 
 %% interval times
 T_subwindow = [...
-%     duration(0,0,0.04),...   %17 hrs
-%     duration(0,0,0.08),...   %8 hrs
-    duration(0,0,0.12);...   %6 hrs 
-%     duration(0,0,0.2),...    %3.3 hrs
-    duration(0,0,0.4);...    %1.7 hrs
-%     duration(0,0,0.6),...    %1 hr
+% %     duration(0,0,0.04),...   %17 hrs
+% %     duration(0,0,0.08),...   %8 hrs
+%     duration(0,0,0.12);...   %6 hrs 
+% %     duration(0,0,0.2),...    %3.3 hrs
+%     duration(0,0,0.4);...    %1.7 hrs
+% %     duration(0,0,0.6),...    %1 hr
     duration(0,0,1);...    %40 minutes
     duration(0,0,2);...    %20 minutes
     duration(0,0,3);...    %14 minutes
@@ -69,6 +69,7 @@ theta_subwindow = cell(N_Sites,1); %wind angle for subwindow
 
 %% initialize flux arrays
 zq_BSNE_subwindow = cell(N_Sites,1); %associated BSNE zq's
+sigma_zq_BSNE_subwindow = cell(N_Sites,1); %associated BSNE sigma_zq's
 zW_subwindow = cell(N_Sites,1); %flux heights for subwindow
 sigma_zW_subwindow = cell(N_Sites,1); %uncertainty on flux heights for subwindow
 qbar_subwindow = cell(N_Sites,1); %partial flux for subwindow
@@ -103,6 +104,7 @@ for i = 1:N_Sites
 
     %% initialize variable arrays - flux
     zq_BSNE_subwindow{i} = cell(N_T_subwindow,1); %associated BSNE zq's
+    sigma_zq_BSNE_subwindow{i} = cell(N_T_subwindow,1); %associated BSNE sigma_zq's
     zW_subwindow{i} = cell(N_T_subwindow,1); %flux heights for subwindow
     sigma_zW_subwindow{i} = cell(N_T_subwindow,1); %uncertainty on flux heights for subwindow
     qbar_subwindow{i} = cell(N_T_subwindow,1); %partial flux for subwindow
@@ -137,6 +139,7 @@ for i = 1:N_Sites
 
         %% initialize flux values
         zq_BSNE_subwindow{i}{m} = zeros(N_subwindows,1); %associated BSNE zq's
+        sigma_zq_BSNE_subwindow{i}{m} = zeros(N_subwindows,1); %associated BSNE sigma_zq's
         zW_subwindow{i}{m} = cell(N_subwindows,1); %flux heights for subwindow
         sigma_zW_subwindow{i}{m} = cell(N_subwindows,1); %uncertainty on flux heights for subwindow
         qbar_subwindow{i}{m} = cell(N_subwindows,1); %partial flux for subwindow
@@ -155,6 +158,7 @@ for i = 1:N_Sites
             %% get information about BSNE
             ind_BSNE = find([FluxBSNE.StartTime] <= StartTime_window{i}(ind_windows(j)) & [FluxBSNE.EndTime] >= EndTime_window{i}(ind_windows(j)));
             zq_BSNE = FluxBSNE(ind_BSNE).z.zq; %get best fit saltation layer height for BSNE profile
+            sigma_zq_BSNE = FluxBSNE(ind_BSNE).z.sigma_zq; %get best fit saltation layer height for BSNE profile
             
             %% get wind values for window
             zU = zU_base_window{i}(ind_windows(j)); %anemometer height
@@ -174,7 +178,7 @@ for i = 1:N_Sites
             
             %% get subwindow times within window
             window_StartTime_subwindow = StartTime_window{i}(ind_windows(j))+((1:N_subwindows_per_window)-1)*T_subwindow(m);
-            window_EndTime_subwindow = EndTime_window{i}(ind_windows(j))+(1:N_subwindows_per_window)*T_subwindow(m);
+            window_EndTime_subwindow = StartTime_window{i}(ind_windows(j))+(1:N_subwindows_per_window)*T_subwindow(m);
 
             %% go through subwindows
             for k = 1:N_subwindows_per_window
@@ -215,6 +219,7 @@ for i = 1:N_Sites
                 
                 %% add flux values to arrays
                 zq_BSNE_subwindow{i}{m}(subwindow_array_ind) = zq_BSNE; %zq for BSNE
+                sigma_zq_BSNE_subwindow{i}{m}(subwindow_array_ind) = sigma_zq_BSNE; %sigma_zq for BSNE
                 zW_subwindow{i}{m}{subwindow_array_ind} = zW; %flux heights for subwindow
                 sigma_zW_subwindow{i}{m}{subwindow_array_ind} = sigma_zW; %uncertainty on flux heights for subwindow
                 qbar_subwindow{i}{m}{subwindow_array_ind} = qbar; %partial fluxes
@@ -243,6 +248,7 @@ for i = 1:N_Sites
         wbar_subset = wbar_subwindow{i}{m}; %vertical wind timeseries array
         theta_subset = theta_subwindow{i}{m}; %wind angle for subwindow
         zq_BSNE_subset = zq_BSNE_subwindow{i}{m}; %associated BSNE zq's
+        sigma_zq_BSNE_subset = sigma_zq_BSNE_subwindow{i}{m}; %associated BSNE sigma_zq's
         zW_subset = zW_subwindow{i}{m}; %flux heights for subwindow
         sigma_zW_subset = sigma_zW_subwindow{i}{m}; %uncertainty on flux heights for subwindow
         qbar_subset = qbar_subwindow{i}{m}; %partial flux for subwindow
@@ -267,6 +273,7 @@ for i = 1:N_Sites
     wbar_site = wbar_subwindow{i}; %vertical wind timeseries array
     theta_site = theta_subwindow{i}; %wind angle for site
     zq_BSNE_site = zq_BSNE_subwindow{i}; %associated BSNE zq's
+    sigma_zq_BSNE_site = sigma_zq_BSNE_subwindow{i}; %associated BSNE sigma_zq's
     zW_site = zW_subwindow{i}; %flux heights for subwindow
     sigma_zW_site = sigma_zW_subwindow{i}; %uncertainty on flux heights for subwindow
     qbar_site = qbar_subwindow{i}; %partial flux for subwindow

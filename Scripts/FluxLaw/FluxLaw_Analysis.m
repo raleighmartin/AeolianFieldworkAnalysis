@@ -26,7 +26,7 @@ fQ_bin_maxrange = 0.2; %maximum range of fQ for binning
 folder_LoadData = '../../AnalysisData/Windowing/'; %folder for retrieving data for this analysis
 folder_SaveData = '../../AnalysisData/FluxLaw/'; %folder for outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
-folder_GrainSizeData = '../../AnalysisData/GrainSize/'; %folder for grain size data
+folder_GrainSizeData = '../../AnalysisData/BSNE/'; %folder for grain size data
 folder_LitData = '../../AnalysisData/Literature/'; %folder for loading lit data
 
 %% paths for loading and saving data - restricted
@@ -421,6 +421,7 @@ sigma_ust_fit_all = cell(N_Sites,1);
 tau_fit_all = cell(N_Sites,1);
 sigma_tau_fit_all = cell(N_Sites,1);
 fQ_fit_all = cell(N_Sites,1);
+sigma_fQ_fit_all = cell(N_Sites,1);
 Q_fit_all = cell(N_Sites,1);
 sigma_Q_fit_all = cell(N_Sites,1);
 
@@ -462,6 +463,7 @@ for i = 1:N_Sites
     tau_fit_all{i} = tau_bin_avg_all{i}(ind_fit);
     sigma_tau_fit_all{i} = tau_bin_sigma_all{i}(ind_fit);
     fQ_fit_all{i} = fQ_bin_avg_all{i}(ind_fit);
+    sigma_fQ_fit_all{i} = fQ_bin_sigma_all{i}(ind_fit);
     Q_fit_all{i} = Q_bin_avg_all{i}(ind_fit);
     sigma_Q_fit_all{i} = Q_bin_sigma_all{i}(ind_fit);
 

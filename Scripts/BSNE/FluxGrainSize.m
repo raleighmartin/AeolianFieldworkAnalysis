@@ -15,7 +15,7 @@ N_d_bin = length(d_bin_lower);
 
 %% information about where to load data and save plots
 folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_AnalysisData = '../../AnalysisData/GrainSize/'; %folder for mean grain size data
+folder_AnalysisData = '../../AnalysisData/BSNE/'; %folder for mean grain size data
 folder_SaltationData = '../../AnalysisData/Windowing/'; %folder for saltation flux data
 MeanGrainSizeData_Path = strcat(folder_AnalysisData,'MeanGrainSize'); %path for loading mean grain size data
 SaltationFluxData_Path = strcat(folder_SaltationData,'DataWindowCalcs_30min_Restricted'); %path for loading saltation data
@@ -268,156 +268,156 @@ for i = 1:N_Sites
     end
 end
 
-% %%plot variation in reference grain sizes with saltation flux
-% figure(1); clf;
-% for i = 1:N_Sites
-%     subplot(1,N_Sites,i); hold on;
-%     h90 = plot(Q_interval{i},d90_airborne_interval_bar{i},'^');
-%     h50 = plot(Q_interval{i},d50_airborne_interval_bar{i},'o');
-%     h10 = plot(Q_interval{i},d10_airborne_interval_bar{i},'v');
-%     c90 = get(h90,'Color');
-%     c50 = get(h50,'Color');
-%     c10 = get(h10,'Color');
-%     plot([0 max(Q_interval{i})],d90_surface_site(i)*[1 1],'Color',c90);
-%     plot([0 max(Q_interval{i})],d50_surface_site(i)*[1 1],'Color',c50);
-%     plot([0 max(Q_interval{i})],d10_surface_site(i)*[1 1],'Color',c10);
-%     ylim([0 0.9]);
-%     xlabel('saltation flux, $$Q$$ (g m$$^{-1}$$ s$$^{-1}$$)','Interpreter','Latex')
-%     ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
-%     title(Sites{i});
-% end
-% legend('d_{90}','d_{50}','d_{10}');
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperPosition',[0 0 11 5]);
-% print([folder_Plots,'FluxGrainSize.png'],'-dpng');
-% 
-% %%plot variation in reference grain sizes with shear velocity
-% figure(2); clf;
-% for i = 1:N_Sites
-%     subplot(1,N_Sites,i); hold on;
-%     h90 = plot(ust_interval{i},d90_airborne_interval_bar{i},'^');
-%     h50 = plot(ust_interval{i},d50_airborne_interval_bar{i},'o');
-%     h10 = plot(ust_interval{i},d10_airborne_interval_bar{i},'v');
-%     c90 = get(h90,'Color');
-%     c50 = get(h50,'Color');
-%     c10 = get(h10,'Color');
-%     plot([0 max(ust_interval{i})],d90_surface_site(i)*[1 1],'Color',c90);
-%     plot([0 max(ust_interval{i})],d50_surface_site(i)*[1 1],'Color',c50);
-%     plot([0 max(ust_interval{i})],d10_surface_site(i)*[1 1],'Color',c10);
-%     ylim([0 0.9]);
-%     xlabel('shear velocity, $$u_{*}$$ (m s$$^{-1}$$)','Interpreter','Latex')
-%     ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
-%     title(Sites{i});
-% end
-% legend('d_{90}','d_{50}','d_{10}');
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperPosition',[0 0 11 5]);
-% print([folder_Plots,'ShearVelocityGrainSize.png'],'-dpng');
-% 
-% %%plot variation in partial fluxes with total flux
-% figure(3); clf;
-% for k = 1:N_d_bin
-%     subplot(1,N_d_bin,k); hold on;
-%     for i = 1:N_Sites
-%         plot(Q_interval{i},f_d_airborne_surface_ratio{i}(:,k),Marker_Site{i},'Color',Color_Site{i})
-%         title(['d = ',num2str(d_bin_lower(k)),' - ',num2str(d_bin_upper(k)),' mm']);
-%     end
-%     xlabel('saltation flux, $$Q$$','interpreter','latex');
-%     ylabel('fraction of size in air versus surface, $$f_{d,air}/f_{d,surf}$$','interpreter','latex');
-%     set(gca,'YScale','Log','YTickLabel',{'0.01','0.1','1','10'},'Box','On');
-%     ylim([1e-2 1e1]);
-% end
-% legend(Sites,'Location','NorthEast');
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperPosition',[0 0 14 4]);
-% print([folder_Plots,'Flux_GrainSizeRelativeFlux.png'],'-dpng');
-% 
-% %%plot variation in partial fluxes with shear velocity
-% figure(4); clf;
-% for k = 1:N_d_bin
-%     subplot(1,N_d_bin,k); hold on;
-%     for i = 1:N_Sites
-%         plot(ust_interval{i},f_d_airborne_surface_ratio{i}(:,k),Marker_Site{i},'Color',Color_Site{i})
-%         title(['d = ',num2str(d_bin_lower(k)),' - ',num2str(d_bin_upper(k)),' mm']);
-%     end
-%     xlabel('shear velocity, $$u_{*}$$ (m s$$^{-1}$$)','Interpreter','Latex')
-%     ylabel('fraction of size in air versus surface, $$f_{d,air}/f_{d,surf}$$','interpreter','latex');
-%     set(gca,'YScale','Log','YTickLabel',{'0.01','0.1','1','10'},'Box','On');
-%     ylim([1e-2 1e1]);
-% end
-% legend(Sites,'Location','NorthEast');
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperPosition',[0 0 14 4]);
-% print([folder_Plots,'ShearVelocity_GrainSizeRelativeFlux.png'],'-dpng');
-% 
-% %%plot variation in airborne grain sizes with height
-% figure(5); clf;
-% for i = 1:N_Sites
-%     %subplot(1,N_Sites,i); hold on;
-%     subplot('Position',[-0.26+0.325*i 0.13 0.27 0.82]); hold on;
-%     h90 = plot(z_airborne{i},d90_airborne_z{i},'^');
-%     h50 = plot(z_airborne{i},d50_airborne_z{i},'o');
-%     h10 = plot(z_airborne{i},d10_airborne_z{i},'v');
-%     c90 = get(h90,'Color');
-%     c50 = get(h50,'Color');
-%     c10 = get(h10,'Color');
-%     s90 = plot([0 max(z_airborne{i})],d90_surface_site(i)*[1 1],'Color',c90);
-%     s50 = plot([0 max(z_airborne{i})],d50_surface_site(i)*[1 1],'Color',c50);
-%     s10 = plot([0 max(z_airborne{i})],d10_surface_site(i)*[1 1],'Color',c10);
-%     ylim([0 0.9]);
-%     xlabel('height, $$z$$ (m)','Interpreter','Latex')
-%     if i==1
-%         ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
-%     elseif i==2
-%         legend([h90,h50,h10],'airborne d_{90}','airborne d_{50}','airborne d_{10}','Location','NorthEast');
-%     elseif i==3
-%         legend([s90,s50,s10],'surface d_{90}','surface d_{50}','surface d_{10}','Location','NorthEast');
-%     end
-%     set(gca,'XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
-%     title(Sites{i});
-% end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[9 4],'PaperPosition',[0 0 9 4],'PaperPositionMode','Manual');
-% print([folder_Plots,'HeightGrainSize.png'],'-dpng');
-% 
-% %%plot variation in expected calibration factor with height
-% figure(6); clf; 
-% subplot('Position',[0.08 0.115 0.4 0.86]); hold on;
-% for i = 1:N_Sites
-%     for j = 1:length(zW_all{i})
-%         if ~isnan(zW_all{i}{j})
-%             plot(zW_all{i}{j},Cqnbar_all{i}{j},Marker_Site{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot);
-%         end
-%     end
-% end
-% xlabel('Wenglor height, $$z$$ (m)','Interpreter','Latex')
-% ylabel('Observed calibration factor, $$C_{qn}$$ (g m$$^{-2}$$)','Interpreter','Latex');
-% text(0.012,80,'(a)','FontSize',PlotFont);
-% xlim([1e-2, 1]); 
-% ylim([1e-1 1e2]);
-% set(gca,'xscale','log','yscale','log','box','on','FontSize',PlotFont);
-% 
-% subplot('Position',[0.58 0.115 0.4 0.86]); hold on;
-% for i = 1:N_Sites
-%     plot(z_airborne{i},Cqn_airborne{i},Marker_Site{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot);
-% end
-% xlabel('Height of grain size measurement, $$z$$ (m)','Interpreter','Latex')
-% ylabel('Expected calibration factor, $$C_{qn,pred}$$ (g m$$^{-2}$$)','Interpreter','Latex');
-% text(0.012,80,'(b)','FontSize',PlotFont);
-% legend(Sites,'Location','SouthEast');
-% xlim([1e-2, 1]); 
-% ylim([1e-1 1e2]);
-% set(gca,'xscale','log','yscale','log','box','on','FontSize',PlotFont)
-% 
-% %print plot
-% set(gca, 'LooseInset', get(gca,'TightInset'));
-% set(gcf,'PaperUnits','inches','PaperSize',[8 4.5],'PaperPosition',[0 0 8 4.5],'PaperPositionMode','Manual');
-% print([folder_Plots,'HeightCalibration.png'],'-dpng');
+%%plot variation in reference grain sizes with saltation flux
+figure(1); clf;
+for i = 1:N_Sites
+    subplot(1,N_Sites,i); hold on;
+    h90 = plot(Q_interval{i},d90_airborne_interval_bar{i},'^');
+    h50 = plot(Q_interval{i},d50_airborne_interval_bar{i},'o');
+    h10 = plot(Q_interval{i},d10_airborne_interval_bar{i},'v');
+    c90 = get(h90,'Color');
+    c50 = get(h50,'Color');
+    c10 = get(h10,'Color');
+    plot([0 max(Q_interval{i})],d90_surface_site(i)*[1 1],'Color',c90);
+    plot([0 max(Q_interval{i})],d50_surface_site(i)*[1 1],'Color',c50);
+    plot([0 max(Q_interval{i})],d10_surface_site(i)*[1 1],'Color',c10);
+    ylim([0 0.9]);
+    xlabel('saltation flux, $$Q$$ (g m$$^{-1}$$ s$$^{-1}$$)','Interpreter','Latex')
+    ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+    title(Sites{i});
+end
+legend('d_{90}','d_{50}','d_{10}');
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 11 5]);
+print([folder_Plots,'FluxGrainSize.png'],'-dpng');
+
+%%plot variation in reference grain sizes with shear velocity
+figure(2); clf;
+for i = 1:N_Sites
+    subplot(1,N_Sites,i); hold on;
+    h90 = plot(ust_interval{i},d90_airborne_interval_bar{i},'^');
+    h50 = plot(ust_interval{i},d50_airborne_interval_bar{i},'o');
+    h10 = plot(ust_interval{i},d10_airborne_interval_bar{i},'v');
+    c90 = get(h90,'Color');
+    c50 = get(h50,'Color');
+    c10 = get(h10,'Color');
+    plot([0 max(ust_interval{i})],d90_surface_site(i)*[1 1],'Color',c90);
+    plot([0 max(ust_interval{i})],d50_surface_site(i)*[1 1],'Color',c50);
+    plot([0 max(ust_interval{i})],d10_surface_site(i)*[1 1],'Color',c10);
+    ylim([0 0.9]);
+    xlabel('shear velocity, $$u_{*}$$ (m s$$^{-1}$$)','Interpreter','Latex')
+    ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+    title(Sites{i});
+end
+legend('d_{90}','d_{50}','d_{10}');
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 11 5]);
+print([folder_Plots,'ShearVelocityGrainSize.png'],'-dpng');
+
+%%plot variation in partial fluxes with total flux
+figure(3); clf;
+for k = 1:N_d_bin
+    subplot(1,N_d_bin,k); hold on;
+    for i = 1:N_Sites
+        plot(Q_interval{i},f_d_airborne_surface_ratio{i}(:,k),Marker_Site{i},'Color',Color_Site{i})
+        title(['d = ',num2str(d_bin_lower(k)),' - ',num2str(d_bin_upper(k)),' mm']);
+    end
+    xlabel('saltation flux, $$Q$$','interpreter','latex');
+    ylabel('fraction of size in air versus surface, $$f_{d,air}/f_{d,surf}$$','interpreter','latex');
+    set(gca,'YScale','Log','YTickLabel',{'0.01','0.1','1','10'},'Box','On');
+    ylim([1e-2 1e1]);
+end
+legend(Sites,'Location','NorthEast');
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 14 4]);
+print([folder_Plots,'Flux_GrainSizeRelativeFlux.png'],'-dpng');
+
+%%plot variation in partial fluxes with shear velocity
+figure(4); clf;
+for k = 1:N_d_bin
+    subplot(1,N_d_bin,k); hold on;
+    for i = 1:N_Sites
+        plot(ust_interval{i},f_d_airborne_surface_ratio{i}(:,k),Marker_Site{i},'Color',Color_Site{i})
+        title(['d = ',num2str(d_bin_lower(k)),' - ',num2str(d_bin_upper(k)),' mm']);
+    end
+    xlabel('shear velocity, $$u_{*}$$ (m s$$^{-1}$$)','Interpreter','Latex')
+    ylabel('fraction of size in air versus surface, $$f_{d,air}/f_{d,surf}$$','interpreter','latex');
+    set(gca,'YScale','Log','YTickLabel',{'0.01','0.1','1','10'},'Box','On');
+    ylim([1e-2 1e1]);
+end
+legend(Sites,'Location','NorthEast');
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperPosition',[0 0 14 4]);
+print([folder_Plots,'ShearVelocity_GrainSizeRelativeFlux.png'],'-dpng');
+
+%%plot variation in airborne grain sizes with height
+figure(5); clf;
+for i = 1:N_Sites
+    %subplot(1,N_Sites,i); hold on;
+    subplot('Position',[-0.26+0.325*i 0.13 0.27 0.82]); hold on;
+    h90 = plot(z_airborne{i},d90_airborne_z{i},'^');
+    h50 = plot(z_airborne{i},d50_airborne_z{i},'o');
+    h10 = plot(z_airborne{i},d10_airborne_z{i},'v');
+    c90 = get(h90,'Color');
+    c50 = get(h50,'Color');
+    c10 = get(h10,'Color');
+    s90 = plot([0 max(z_airborne{i})],d90_surface_site(i)*[1 1],'Color',c90);
+    s50 = plot([0 max(z_airborne{i})],d50_surface_site(i)*[1 1],'Color',c50);
+    s10 = plot([0 max(z_airborne{i})],d10_surface_site(i)*[1 1],'Color',c10);
+    ylim([0 0.9]);
+    xlabel('height, $$z$$ (m)','Interpreter','Latex')
+    if i==1
+        ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+    elseif i==2
+        legend([h90,h50,h10],'airborne d_{90}','airborne d_{50}','airborne d_{10}','Location','NorthEast');
+    elseif i==3
+        legend([s90,s50,s10],'surface d_{90}','surface d_{50}','surface d_{10}','Location','NorthEast');
+    end
+    set(gca,'XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
+    title(Sites{i});
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[9 4],'PaperPosition',[0 0 9 4],'PaperPositionMode','Manual');
+print([folder_Plots,'HeightGrainSize.png'],'-dpng');
+
+%%plot variation in expected calibration factor with height
+figure(6); clf; 
+subplot('Position',[0.08 0.115 0.4 0.86]); hold on;
+for i = 1:N_Sites
+    for j = 1:length(zW_all{i})
+        if ~isnan(zW_all{i}{j})
+            plot(zW_all{i}{j},Cqnbar_all{i}{j},Marker_Site{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot);
+        end
+    end
+end
+xlabel('Wenglor height, $$z$$ (m)','Interpreter','Latex')
+ylabel('Observed calibration factor, $$C_{qn}$$ (g m$$^{-2}$$)','Interpreter','Latex');
+text(0.012,80,'(a)','FontSize',PlotFont);
+xlim([1e-2, 1]); 
+ylim([1e-1 1e2]);
+set(gca,'xscale','log','yscale','log','box','on','FontSize',PlotFont);
+
+subplot('Position',[0.58 0.115 0.4 0.86]); hold on;
+for i = 1:N_Sites
+    plot(z_airborne{i},Cqn_airborne{i},Marker_Site{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot);
+end
+xlabel('Height of grain size measurement, $$z$$ (m)','Interpreter','Latex')
+ylabel('Expected calibration factor, $$C_{qn,pred}$$ (g m$$^{-2}$$)','Interpreter','Latex');
+text(0.012,80,'(b)','FontSize',PlotFont);
+legend(Sites,'Location','SouthEast');
+xlim([1e-2, 1]); 
+ylim([1e-1 1e2]);
+set(gca,'xscale','log','yscale','log','box','on','FontSize',PlotFont)
+
+%print plot
+set(gca, 'LooseInset', get(gca,'TightInset'));
+set(gcf,'PaperUnits','inches','PaperSize',[8 4.5],'PaperPosition',[0 0 8 4.5],'PaperPositionMode','Manual');
+print([folder_Plots,'HeightCalibration.png'],'-dpng');
 
 %% PLOT size-conditioned Q VS u*
 figure(7); clf;

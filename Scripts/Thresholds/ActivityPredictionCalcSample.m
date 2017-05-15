@@ -10,12 +10,19 @@ deltat_analysis_s = seconds(deltat_analysis); %sampling interval for analysis in
 
 %% info for sample plot
 Site_sampleplot = 'Oceano';
-StartTime_sampleplot = [datetime(2015,5,16,15,4,0);...
-    datetime(2015,5,18,16,42,0);...
-    datetime(2015,5,27,16,38,0)];
-EndTime_sampleplot = [datetime(2015,5,16,15,5,0);...
-    datetime(2015,5,18,16,43,0);...
-    datetime(2015,5,27,16,39,0)];
+% StartTime_sampleplot = [datetime(2015,5,16,15,4,0);...
+%     datetime(2015,5,18,16,42,0);...
+%     datetime(2015,5,27,16,38,0)];
+% EndTime_sampleplot = [datetime(2015,5,16,15,5,0);...
+%     datetime(2015,5,18,16,43,0);...
+%     datetime(2015,5,27,16,39,0)];
+StartTime_sampleplot = [datetime(2015,5,27,12,45,0);...
+    datetime(2015,5,16,16,47,0);...
+    datetime(2015,5,24,15,35,0)];
+EndTime_sampleplot = [datetime(2015,5,27,12,45,0);...
+    datetime(2015,5,16,16,48,0);...
+    datetime(2015,5,24,15,36,0)];
+
 
 %% plotting info
 PlotFont = 12;
@@ -32,8 +39,8 @@ folder_SaveData = '../../AnalysisData/Thresholds/'; %folder for outputs of this 
 folder_Plots = '../../PlotOutput/Thresholds/'; %folder for plots
 
 %% paths for loading and saving data
-LoadSubwindowData_Path = strcat(folder_LoadSubwindowData,'DataSubwindows_30min_Unrestricted'); %path for loading time window data
-LoadSubwindowCalcs_Path = strcat(folder_LoadSubwindowCalcs,'DataSubwindowCalcs_30min_Unrestricted'); %path for loading time window data
+LoadSubwindowData_Path = strcat(folder_LoadSubwindowData,'DataIntervalAveragedSubwindows_30min_Unrestricted'); %path for loading time window data
+LoadSubwindowCalcs_Path = strcat(folder_LoadSubwindowCalcs,'DataIntervalAveragedSubwindowCalcs_30min_Unrestricted'); %path for loading time window data
 LoadThresholdData_Path = strcat(folder_LoadThresholdData,'ThresholdAnalysisData'); %path for threshold data
 LoadActivityPredictionData_Path = strcat(folder_SaveData,'ActivityPredictionData'); %folder for loading activity prediction
 SaveData_Path = strcat(folder_SaveData,'ActivityPredictionData'); %path for saving output data
@@ -80,6 +87,8 @@ t_area = cell(N_Sites,1);
 y_area_it = cell(N_Sites,1);
 y_area_ft = cell(N_Sites,1);
 y_area_hyst = cell(N_Sites,1);
+y_area_above = cell(N_Sites,1);
+y_area_below = cell(N_Sites,1);
 
 %get values for each sample plot interval
 for j = 1:N_sampleplot
@@ -156,6 +165,12 @@ for j = 1:N_sampleplot
         (uit_sampleplot(j)-u_sampleplot{j}(ind_end_hyst))./...
         (u_sampleplot{j}(ind_end_hyst+1)-u_sampleplot{j}(ind_end_hyst));
     
+    %get times for hysteresis zone from above and from below
+    t_start_above = t_end_ft;
+    t_end_above = t_end_it;
+    t_start_below = t_start_it;
+    t_end_below = t_start_ft;
+    
     %initialize t_area with first and last times
     t_area{j} = t_sampleplot{j}([1; end]);
     
@@ -203,49 +218,93 @@ for j = 1:N_sampleplot
             y_area_hyst{j} = [0; 0];
         end
     end
+     
+    %get first and last values for area plot - above
+    if min(ind_hyst_sampleplot{j})==1 && min(ind_ft_sampleplot{j})~=1
+        if max(ind_hyst_sampleplot{j})==N_t && max(ind_ft_sampleplot{j})~=N_t
+            y_area_above{j} = [1; 1];
+        else
+            y_area_above{j} = [1; 0];
+        end
+    else
+        if max(ind_hyst_sampleplot{j})==N_t && max(ind_ft_sampleplot{j})~=N_t
+            y_area_above{j} = [0; 1];
+        else
+            y_area_above{j} = [0; 0];
+        end
+    end
+    
+    %get first and last values for area plot - below
+    if min(ind_hyst_sampleplot{j})~=1 && min(ind_it_sampleplot{j})==1
+        if max(ind_hyst_sampleplot{j})~=N_t && max(ind_it_sampleplot{j})==N_t
+            y_area_below{j} = [1; 1];
+        else
+            y_area_below{j} = [1; 0];
+        end
+    else
+        if max(ind_hyst_sampleplot{j})~=N_t && max(ind_it_sampleplot{j})==N_t
+            y_area_below{j} = [0; 1];
+        else
+            y_area_below{j} = [0; 0];
+        end
+    end
     
     %get remaining values - it start and end times
     for k = 1:length(t_start_it)
-        t_area{j} = [t_area{j}; t_start_it(k); t_start_it(k)+0.001];
+        t_area{j} = [t_area{j}; t_start_it(k); t_start_it(k)];
         y_area_it{j} = [y_area_it{j}; 0; 1];
         y_area_ft{j} = [y_area_ft{j}; 0; 0];
         y_area_hyst{j} = [y_area_hyst{j}; 0; 0];
+        y_area_above{j} = [y_area_above{j}; 0; 0];
+        y_area_below{j} = [y_area_below{j}; 0; 1];
     end
     for k = 1:length(t_end_it)
-        t_area{j} = [t_area{j}; t_end_it(k); t_end_it(k)+0.001];
+        t_area{j} = [t_area{j}; t_end_it(k); t_end_it(k)];
         y_area_it{j} = [y_area_it{j}; 1; 0];
         y_area_ft{j} = [y_area_ft{j}; 0; 0];
         if ~isempty(find(t_end_hyst==t_end_it(k)))
             y_area_hyst{j} = [y_area_hyst{j}; 1; 0];
+            y_area_above{j} = [y_area_above{j}; 1; 0];
+            y_area_below{j} = [y_area_below{j}; 0; 0];
         else
             y_area_hyst{j} = [y_area_hyst{j}; 0; 0];
+            y_area_above{j} = [y_area_above{j}; 0; 0];
+            y_area_below{j} = [y_area_below{j}; 1; 0];
         end
     end 
 
     %get remaining values - ft start and end times
     for k = 1:length(t_start_ft)
-        t_area{j} = [t_area{j}; t_start_ft(k); t_start_ft(k)+0.001];
+        t_area{j} = [t_area{j}; t_start_ft(k); t_start_ft(k)];
         y_area_it{j} = [y_area_it{j}; 1; 1];
         y_area_ft{j} = [y_area_ft{j}; 0; 1];
         if ~isempty(find(t_start_hyst==t_start_ft(k)))
             y_area_hyst{j} = [y_area_hyst{j}; 0; 1];
+            y_area_above{j} = [y_area_above{j}; 0; 0];
+            y_area_below{j} = [y_area_below{j}; 1; 0];
         else
             y_area_hyst{j} = [y_area_hyst{j}; 1; 1];
+            y_area_above{j} = [y_area_above{j}; 1; 0];
+            y_area_below{j} = [y_area_below{j}; 0; 0];
         end
     end
     for k = 1:length(t_end_ft)
-        t_area{j} = [t_area{j}; t_end_ft(k); t_end_ft(k)+0.001];
+        t_area{j} = [t_area{j}; t_end_ft(k); t_end_ft(k)];
         y_area_it{j} = [y_area_it{j}; 1; 1];
         y_area_ft{j} = [y_area_ft{j}; 1; 0];
         y_area_hyst{j} = [y_area_hyst{j}; 1; 1];
+        y_area_above{j} = [y_area_above{j}; 0; 1];
+        y_area_below{j} = [y_area_below{j}; 0; 0];
     end
     
     %sort out values
     [t_area{j}, ind_sort] = sort(t_area{j});
     y_area_it{j} = y_area_it{j}(ind_sort);
-    y_area_hyst{j} = y_area_hyst{j}(ind_sort);    
     y_area_ft{j} = y_area_ft{j}(ind_sort);
-    
+    y_area_hyst{j} = y_area_hyst{j}(ind_sort);    
+    y_area_above{j} = y_area_above{j}(ind_sort);    
+    y_area_below{j} = y_area_below{j}(ind_sort);    
+
     %display values for paper
     StartTime = StartTime_sampleplot(j)
     fQpred_ft = round(length(ind_ft_sampleplot{j})/length(t_sampleplot{j}),2)
@@ -261,7 +320,7 @@ set(fig,'defaultAxesColorOrder',[0 0 0; 0 0 0]);
 paneltext = {'(a)','(b)','(c)'}; %panel labels
 
 xlims_sampleplot = [0 seconds(Deltat_analysis)];
-ylims_sampleplot = [floor(min(u_min_sampleplot))-1, ceil(max(u_max_sampleplot))];
+ylims_sampleplot = [floor(min(u_min_sampleplot)), ceil(max(u_max_sampleplot))];
 
 for j = 1:N_sampleplot
         
@@ -293,29 +352,29 @@ for j = 1:N_sampleplot
     yyaxis right
     
     %plot transport expectation
-    h4=area(t_area{j},[y_area_it{j},y_area_hyst{j},y_area_ft{j}]);
-    h4(1).FaceColor = 'g';
-    h4(2).FaceColor = 'm';
-    h4(3).FaceColor = 'b';
+    h4=area(t_area{j},[y_area_ft{j},y_area_above{j},y_area_below{j}]);
+    h4(1).FaceColor = 'k';
+    h4(2).FaceColor = 'c';
+    h4(3).FaceColor = 'w';
     
     %format plot
     xlim(xlims_sampleplot);
     ylim([0 12]);
     if j==1
-       text(27.5,11.8,'16 May 2015, 15:04-15:05','FontSize',PlotFont-4)
+       text(27.5,11.8,'27 May 2015, 12:45-12:46','FontSize',PlotFont-4)
     elseif j==2
-       text(27.5,11.8,'18 May 2015, 16:42-16:43','FontSize',PlotFont-4)
+       text(27.5,11.8,'16 May 2015, 16:47-16:48','FontSize',PlotFont-4)
        ylabel('predicted transport','Interpreter','Latex','Rotation',270,'Position',[135, 1.5, 0]);
     elseif j==3
-       text(27.5,11.8,'27 May 2015, 16:38-16:39','FontSize',PlotFont-4)
+       text(27.5,11.8,'24 May 2015, 15:35-15:36','FontSize',PlotFont-4)
        ylabel('occurrence','Interpreter','Latex','Rotation',270,'Position',[65, 1.5, 0]);
     end
     set(gca,'yticklabel','','ytick',[],'YMinorTick','On','Box','On','FontSize',PlotFont);
     
     if j==2
-        h_legend = legend([h1 h2 h3 h4(3) h4(2) h4(1)],...
-            'obs. wind','fluid thres., u_{ft}','impact thres., u_{it}',...
-            'fluid thres. pred.','dual thres. pred.','impact thres. pred.',...
+        h_legend = legend([h1 h2 h3 h4(1) h4(2) h4(3)],...
+            'observed wind','fluid thres., u_{ft}','impact thres., u_{it}',...
+            'u \geq u_{ft}','\downarrow u_{it} \leq u < u_{ft}','\uparrow u_{it} \leq u < u_{ft}',...
             'Location','NorthEast');
         set(h_legend,'FontSize',PlotFont)
     end
@@ -327,9 +386,83 @@ set(gcf,'PaperUnits','inches','PaperSize',[9 5],'PaperPosition',[0 0 9 5],'Paper
 print([folder_Plots,'fQpred_sampleplot.png'],'-dpng');
 print([folder_Plots,'fQpred_sampleplot.tif'],'-dtiff','-r600');
 
-% %%%%%%%%
-% % PLOT %
-% %%%%%%%%
+% %%%%%%%%%%%%%%
+% % PLOT - OLD %
+% %%%%%%%%%%%%%%
+% fig = figure(1); clf;
+% set(fig,'defaultAxesColorOrder',[0 0 0; 0 0 0]); 
+% paneltext = {'(a)','(b)','(c)'}; %panel labels
+% 
+% xlims_sampleplot = [0 seconds(Deltat_analysis)];
+% ylims_sampleplot = [floor(min(u_min_sampleplot))-1, ceil(max(u_max_sampleplot))];
+% 
+% for j = 1:N_sampleplot
+%         
+%     %initialize subplot
+%     subplot('Position',[-0.25+0.31*j 0.11 0.28 0.84]); hold on;
+%     
+%     %% left axis -- timeseries
+%     yyaxis left
+%     
+%     %plot fluid and impact threshold
+%     h2=plot(xlims_sampleplot,uft_sampleplot(j)*[1 1],'b-.','LineWidth',2);
+%     h3=plot(xlims_sampleplot,uit_sampleplot(j)*[1 1],'g--','LineWidth',2);
+%     
+%     %plot timeseries
+%     h1=plot(t_sampleplot{j},u_sampleplot{j},'k','LineWidth',1);
+% 
+%     %format plot
+%     text(2,ylims_sampleplot(2)-0.25,paneltext{1,j},'FontSize',PlotFont)
+%     xlim(xlims_sampleplot);
+%     ylim(ylims_sampleplot);
+%     xlabel('time (s)');
+%     if j==1
+%         ylabel('wind speed, $$u$$ (m/s)','Interpreter','Latex');
+%     end
+%     title(['$$f_{Q} = ',num2str(fQ_sampleplot(j),2),'$$'],'Interpreter','Latex');
+%     set(gca,'XMinorTick','On','YMinorTick','On','YTick',ylims_sampleplot(1)+1:ylims_sampleplot(2),'Box','On','FontSize',PlotFont);
+%     
+%     %% right axis - transport occurrence
+%     yyaxis right
+%     
+%     %plot transport expectation
+%     h4=area(t_area{j},[y_area_it{j},y_area_hyst{j},y_area_ft{j}]);
+%     h4(1).FaceColor = 'g';
+%     h4(2).FaceColor = 'm';
+%     h4(3).FaceColor = 'b';
+%     
+%     %format plot
+%     xlim(xlims_sampleplot);
+%     ylim([0 12]);
+%     if j==1
+%        text(27.5,11.8,'16 May 2015, 15:04-15:05','FontSize',PlotFont-4)
+%     elseif j==2
+%        text(27.5,11.8,'18 May 2015, 16:42-16:43','FontSize',PlotFont-4)
+%        ylabel('predicted transport','Interpreter','Latex','Rotation',270,'Position',[135, 1.5, 0]);
+%     elseif j==3
+%        text(27.5,11.8,'27 May 2015, 16:38-16:39','FontSize',PlotFont-4)
+%        ylabel('occurrence','Interpreter','Latex','Rotation',270,'Position',[65, 1.5, 0]);
+%     end
+%     set(gca,'yticklabel','','ytick',[],'YMinorTick','On','Box','On','FontSize',PlotFont);
+%     
+%     if j==2
+%         h_legend = legend([h1 h2 h3 h4(3) h4(2) h4(1)],...
+%             'observed wind','fluid thres., u_{ft}','impact thres., u_{it}',...
+%             'u > u_{ft} pred.','path-dep. pred.','u > u_{it} pred.',...
+%             'Location','NorthEast');
+%         set(h_legend,'FontSize',PlotFont)
+%     end
+% end
+% 
+% %print plot
+% set(gca, 'LooseInset', get(gca,'TightInset'));
+% set(gcf,'PaperUnits','inches','PaperSize',[9 5],'PaperPosition',[0 0 9 5],'PaperPositionMode','Manual');
+% print([folder_Plots,'fQpred_sampleplot.png'],'-dpng');
+% print([folder_Plots,'fQpred_sampleplot.tif'],'-dtiff','-r600');
+
+% %%%%%%%%%%%%%%%%
+% % PLOT - OLDER %
+% %%%%%%%%%%%%%%%%
 % figure(1); clf;
 % paneltext = {'(a)','(b)','(c)';'(d)','(e)','(f)'}; %panel labels
 % 
@@ -547,3 +680,34 @@ print([folder_Plots,'fQpred_sampleplot.tif'],'-dtiff','-r600');
 %     set(gcf,'PaperUnits','inches','PaperSize',[9 3.5],'PaperPosition',[0 0 9 3.5],'PaperPositionMode','Manual');
 %     print([folder_Plots,'fQpred_sampleplot_line.png'],'-dpng');
 % end
+
+%find optimal times
+fQ = fQ_subwindow_all{3}{ind_Deltat,ind_deltat};
+fQpred_ft = fQpred_ft_all{3};
+fQpred_it = fQpred_it_all{3};
+fQpred_hyst = fQpred_hyst_all{3};
+fbelow = fQpred_it - fQpred_hyst;
+fabove = fQpred_hyst - fQpred_ft;
+fratio = fabove./fbelow;
+fQ_diff = abs(fQ-fQpred_hyst);
+StartTime = StartTime_subwindow_all{3}{ind_Deltat,ind_deltat};
+
+ind_low = find(fQ>=0.2 & fQ<=0.3);
+ind_med = find(fQ>=0.45 & fQ<=0.55);
+ind_high = find(fQ>=0.7 & fQ<=0.8);
+ind_good = find(fQ_diff<=0.04 & fQpred_ft>0);
+ind_fratio_low = find(fratio>=0.1 & fratio<=0.33);
+ind_fratio_med = find(fratio>=0.9 & fratio<=1.11);
+ind_fratio_high = find(fratio>=3 & fratio<=10);
+
+ind_low_plot = intersect(ind_good,intersect(ind_low,ind_fratio_low));
+ind_med_plot = intersect(ind_good,intersect(ind_med,ind_fratio_med));
+ind_high_plot = intersect(ind_good,intersect(ind_high,ind_fratio_high));
+
+size(ind_low_plot)
+size(ind_med_plot)
+size(ind_high_plot)
+
+StartTime_low = StartTime(ind_low_plot(3));
+StartTime_med = StartTime(ind_med_plot(1));
+StartTime_high = StartTime(ind_high_plot(3));

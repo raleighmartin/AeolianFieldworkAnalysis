@@ -31,7 +31,7 @@ PlotColors_Sensitivity = {[0.6473 0.7456 0.4188],[0.2116 0.1898 0.5777],[0.8500 
 
 %% folders for loading and saving data
 folder_LoadFluxLawData = '../../AnalysisData/FluxLaw/'; %folder for loading 30 minute data
-folder_LoadRoughnessData = '../../AnalysisData/Roughness/'; %folder for loading roughness data
+folder_LoadRoughnessData = '../../AnalysisData/WindAnalysis/'; %folder for loading roughness data
 folder_LoadSubwindowData = '../../AnalysisData/Windowing/'; %folder for retrieving processed data
 folder_LoadWindowData = '../../AnalysisData/Windowing/'; %folder for loading 30 minute data
 folder_Functions = '../Functions/'; %folder with functions
@@ -121,6 +121,8 @@ sigma_tauit_all = zeros(N_Sites,1); %inferred impact threshold stress - uncertai
 ustitftratio_all = zeros(N_Sites,1); %ratio of impact and fluid threshold shear velocities - best fit
 sigma_ustitftratio_all = zeros(N_Sites,1); %ratio of impact and fluid threshold shear velocities - uncertainty
 Chi2nu_all = zeros(N_Sites,1); %normalized Chi2 for threshold versus fQ fit
+b_all = zeros(N_Sites,1); %slope for fit
+sigma_b_all = zeros(N_Sites,1); %uncertainty in slope for fit
 
 %% perform main analysis by site
 for i = 1:length(Sites)
@@ -138,7 +140,7 @@ for i = 1:length(Sites)
         tauft, sigma_tauft,...
         tauit, sigma_tauit,...
         ustitftratio, sigma_ustitftratio,...
-        Chi2nu] = ...
+        Chi2nu, sigma_b] = ...
     ThresholdBinning(rho,z0,sigma_z0,...
         Deltat_all,deltat_all,...
         Deltat_analysis, deltat_analysis,...
@@ -165,6 +167,8 @@ for i = 1:length(Sites)
     ustitftratio_all(i) = ustitftratio; %ratio of impact and fluid threshold shear velocities - best fit
     sigma_ustitftratio_all(i) = sigma_ustitftratio; %ratio of impact and fluid threshold shear velocities - uncertainty
     Chi2nu_all(i) = Chi2nu; %normalized Chi2 for threshold versus fQ fit
+    b_all(i) = tauit-tauft; %slope for fit
+    sigma_b_all(i) = sigma_b; %uncertainty in slope for fit
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

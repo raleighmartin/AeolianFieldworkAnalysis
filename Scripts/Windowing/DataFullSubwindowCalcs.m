@@ -4,8 +4,8 @@
 clearvars;
 
 %% parameter values
-Q_min = 0.05; %detection limit for Q, set to zero if below this value
-zq_Q_min = 0.10; %assumed saltation height for detection limit for exponential profile for detection limit for individual Wenglor
+%Q_min = 0.05; %detection limit for Q, set to zero if below this value
+%zq_Q_min = 0.10; %assumed saltation height for detection limit for exponential profile for detection limit for individual Wenglor
 zW_min = 3; %limit on number of unique Wenglor heights in profile
 
 %% folders for loading and saving data
@@ -23,6 +23,7 @@ addpath(folder_Functions); %point MATLAB to location of functions
 
 %% initialize flux arrays
 N_Wenglor_subwindow = cell(N_Sites,1); %number of Wenglors in subwindow
+N_z_subwindow = cell(N_Sites,1); %number of unique Wenglor heights for subwindow
 N_z_fit_subwindow = cell(N_Sites,1); %number of Wenglor heights for fitting in subwindow
 Qfit_subwindow = cell(N_Sites,1); %total flux by fitting for subwindow
 sigma_Qfit_subwindow = cell(N_Sites,1); %total flux by fitting uncertainty for subwindow
@@ -38,6 +39,7 @@ for i = 1:N_Sites
    
     %% initialize variable arrays
     N_Wenglor_subwindow{i} = cell(N_T_subwindow,1); %number of Wenglors in subwindow
+    N_z_subwindow{i} = cell(N_T_subwindow,1); %number of unique Wenglor heights for subwindow
     N_z_fit_subwindow{i} = cell(N_T_subwindow,1); %number of Wenglor heights for fitting in subwindow
     Qfit_subwindow{i} = cell(N_T_subwindow,1); %total flux by fitting for subwindow
     sigma_Qfit_subwindow{i} = cell(N_T_subwindow,1); %total flux by fitting uncertainty for subwindow
@@ -59,6 +61,7 @@ for i = 1:N_Sites
 
         %% initialize flux values
         N_Wenglor_subwindow{i}{m} = zeros(N_subwindows,1); %number of Wenglors in subwindow
+        N_z_subwindow{i}{m} = zeros(N_subwindows,1); %number of unique Wenglor heights for subwindow
         N_z_fit_subwindow{i}{m} = zeros(N_subwindows,1); %number of Wenglor heights for fitting in subwindow
         Qfit_subwindow{i}{m} = zeros(N_subwindows,1); %total flux by fitting for subwindow
         sigma_Qfit_subwindow{i}{m} = zeros(N_subwindows,1); %total flux by fitting uncertainty for subwindow
@@ -74,6 +77,7 @@ for i = 1:N_Sites
                                 
             %% get flux data in subwindow
             zq_BSNE = zq_BSNE_subwindow{i}{m}(k); %zq for BSNE
+            sigma_zq_BSNE = sigma_zq_BSNE_subwindow{i}{m}(k); %sigma_zq for BSNE
             zW = zW_subwindow{i}{m}{k}; %flux heights for subwindow
             sigma_zW = sigma_zW_subwindow{i}{m}{k}; %uncertainty on flux heights for subwindow
             qW = qbar_subwindow{i}{m}{k}; %partial fluxes
@@ -84,13 +88,15 @@ for i = 1:N_Sites
             sigma_Cqnbar = sigma_Cqnbar_subwindow{i}{m}{k}; %calibration coefficient
 
             %% perform exponential fit to get Q
-            [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,Chi2_Qfit,df_Qfit,qW_unique,zW_unique,sigma_qW_unique,sigma_zW_unique,N_z_fit] = qz_fit_Wenglor(qW, zW, sigma_qW, sigma_zW, Q_min, zq_Q_min, zW_min, zq_BSNE);
+            %[q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,Chi2_Qfit,df_Qfit,qW_unique,zW_unique,sigma_qW_unique,sigma_zW_unique,N_z_fit] = qz_fit_Wenglor(qW, zW, sigma_qW, sigma_zW, Q_min, zq_Q_min, zW_min, zq_BSNE);
+            [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,Chi2_Qfit,df_Qfit,qW_unique,zW_unique,sigma_qW_unique,sigma_zW_unique,N_z_fit] = qz_fit_Wenglor(qW, zW, sigma_qW, sigma_zW, zW_min, zq_BSNE);
             
             %% Perform summation to get Q
-            [Qsum,sigma_Qsum] = qz_summation_Wenglor(qW_unique, zW_unique, sigma_qW_unique, zq_BSNE);
+            [Qsum,sigma_Qsum] = qz_summation_Wenglor(qW_unique, zW_unique, sigma_qW_unique, zq_BSNE, sigma_zq_BSNE);
             
             %% add values to arrays
             N_Wenglor_subwindow{i}{m}(k) = length(zW); %number of Wenglors for calculation
+            N_z_subwindow{i}{m}(k) = length(zW_unique); %number of unique Wenglor heights for calculation
             N_z_fit_subwindow{i}{m}(k) = N_z_fit; %number of Wenglor heights for fit
             Qfit_subwindow{i}{m}(k) = Q; %total flux by fitting for subwindow
             sigma_Qfit_subwindow{i}{m}(k) = sigma_Q; %total flux by fitting uncertainty for subwindow
