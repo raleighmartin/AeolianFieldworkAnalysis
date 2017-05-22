@@ -1,20 +1,20 @@
 %% function to compute saltation flux profile assuming exponential
 
 %%INPUTS
-%z - observation heights (m)
 %qz - vertical fluxes (g/m^2/s)
-%sigma_z = height uncertainty
+%z - observation heights (m)
 %sigma_qz = flux uncertainty
+%sigma_z = height uncertainty
 %zq_estimated = value of zq for uncertainty estimation - set to 0.1 m if no value given
 
 %%OUTPUTS
 %q0 - profile fit (g/m^2/s)
 %zq - profile fit e-folding height (m)
 %Q - profile fit total flux (g/m/s)
-%qz_fit - predicted q from profile fit
 %sigma_q0 - uncertainty in q0
-%sigma_Q - uncertainty in Q
 %sigma_zq - uncertainty in zq
+%sigma_Q - uncertainty in Q
+%qz_fit - predicted q from profile fit
 %sigma_qz_fit - uncertainty in predictions of qz (varies with qz)
 %sigma_logqz_fit - uncertainty in predictions of log(qz)
 %sigma2_q0zq - covariance in q0 and zq
@@ -26,7 +26,7 @@
 % zq = -1/b
 
 %use method of bevington and robinson (p. 105)
-function [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_fit,sigma_qz_fit,sigma_logqz_fit,sigma2_q0zq] = qz_profilefit(qz, z, sigma_qz, sigma_z, zq_estimated)
+function [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_fit,sigma_qz_fit,sigma_logqz_fit,sigma2_q0zq] = qz_profilefit_exponential(qz, z, sigma_qz, sigma_z, zq_estimated)
 
 %set zq_estimated = 0.1 m if no value given
 if nargin <= 4

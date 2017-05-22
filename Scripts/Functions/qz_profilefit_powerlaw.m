@@ -1,22 +1,20 @@
 %% function to compute saltation flux profile assuming exponential
 
 %%INPUTS
+%qz - partial (height-specific) fluxes (g/m^2/s)
 %z - observation heights (m)
-%qz - vertical fluxes (g/m^2/s)
-%sigma_z = height uncertainty
 %sigma_qz = flux uncertainty
+%sigma_z = height uncertainty
 
 %%OUTPUTS
 %qp - profile fit (g/m^2/s)
 %kz - profile fit power
-%Q - profile fit total flux (g/m/s)
-%qz_fit - predicted q from profile fit
 %sigma_qp - uncertainty in qp
-%sigma_Q - uncertainty in Q
 %sigma_kz - uncertainty in kz
+%qz_fit - predicted q from profile fit
 %sigma_qz_fit - uncertainty in predictions of qz (varies with qz)
 %sigma_logqz_fit - uncertainty in predictions of log(qz)
-%sigma2_qpkz - covariance in q0 and zq
+%sigma2_qpkz - covariance in qp and kz
 
 %% FITTING TO:
 % q = qp*z.^-kz
@@ -26,12 +24,6 @@
 
 %use method of bevington and robinson (p. 105)
 function [qp,kz,sigma_qp,sigma_kz,qz_fit,sigma_qz_fit,sigma_logqz_fit,sigma2_qpkz] = qz_profilefit_powerlaw(qz, z, sigma_qz, sigma_z)
-
-% %set input error values arbitrarily as one if input is not given
-% if nargin == 2
-%     sigma_qz = ones(size(qz)); 
-%     sigma_z = ones(size(z));
-% end
 
 %compute log of flux
 logqz = log(qz); %[log(q)]

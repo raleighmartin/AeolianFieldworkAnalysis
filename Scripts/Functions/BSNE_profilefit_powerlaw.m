@@ -1,4 +1,27 @@
-%function to iteratively fit power law to BSNE profile and determine characteristic heights of BSNEs from this profile
+%% PURPOSE
+% function to iteratively fit power law to BSNE profile and determine
+% characteristic heights of BSNEs from this profile
+
+%% INPUT VALUES
+% qz_profile = partial flux values (vector)
+% z_bottom_profile = elevations of bottom of traps for partial flux values (vector)
+% z_trapheight_profile = heights of trap openings (vector)
+% sigma_qz_profile = uncertainties in qz values (vector)
+% sigma_z_profile = uncertainties in elevations (vector)
+
+%% OUTPUT VALUES
+% z_profile = optimized trap heights (vector)
+% qp - profile fit (g/m^2/s)
+% kz - profile fit power
+% sigma_qp = uncertainty in qp (scalar)
+% sigma_kz = uncertainty in kz (scalar)
+% qz_pred = predicted values of partial flux for power law fit (vector)
+% sigma_qz_pred = uncertainty in qz_pred values (vector)
+% sigma_logqz_pred = uncertainty in log(qz_pred) values (vector)
+% sigma2_qpkz = covariance of qp and kz uncertainties
+% z_profile_geomean = z_profile vector, but calculated as geometric mean height of each trap
+% qp_geomean = qp vector, but calculated from geometric mean height of each trap
+% kz_geomean = kz vector, but calculated from geometric mean height of each trap
 
 function [z_profile,qp,kz,sigma_qp,sigma_kz,qz_pred,sigma_qz_pred,sigma_logqz_pred,sigma2_qpkz,...
     z_profile_geomean,qp_geomean,kz_geomean] = ...

@@ -31,26 +31,66 @@ addpath(folder_Functions); %point MATLAB to location of functions
 %% figure on Wenglor heights with zeros
 figure(1); clf;
 
-% plot median fraction of unused Wenglor heights in analysis
+% boxplot of fraction of unused Wenglor heights in analysis
 subplot('Position',[0.07 0.15 0.5 0.8]); hold on;
+
+%plot symbols
 for i = 1:N_Sites
-%    plot(T_subwindow_s,median_f_zW_analysis{i},Markers_Field{i},'Color',Colors_Field{i})
-    errorbar(T_subwindow_s,1-median_f_zW_analysis{i},...
-        (upperquartile_f_zW_analysis{i}-median_f_zW_analysis{i}),...
-        (median_f_zW_analysis{i}-lowerquartile_f_zW_analysis{i}),...
-        Markers_Field{i},'Color',Colors_Field{i})
+    plot(T_subwindow_s,1-median_f_zW_analysis{i},Markers_Field{i},'Color',Colors_Field{i})
+end
+xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
+set(gca,'xscale','log');
+xTicks = get(gca, 'xtick');
+xTickLabels = get(gca, 'xticklabel');
+
+%generate and plot boxplot
+for i = 1:N_Sites
+    %create vector for boxplot
+    f_boxplot = [];
+    T_boxplot = [];
+    for j = 1:N_T_subwindow
+        ind_positive_Qsum = find(Qsum_all_analysis{i}{j}>0);
+        f = 1-f_zW_analysis{i}{j}(ind_positive_Qsum);
+        f_boxplot = [f_boxplot; f];
+        T_boxplot = [T_boxplot; T_subwindow_s(j)*ones(size(f))];
+    end
+        
+    %create boxplot
+    boxplot(f_boxplot,T_boxplot,'Colors',Colors_Field{i},'Symbol','','Positions',T_subwindow_s,'Widths',T_subwindow_s/4);
 end
 
 % format plot
 xlabel('sampling time scale, $$\Delta t$$ (s)','Interpreter','LaTeX');
 ylabel('frac. of HF sensor hts. with zero flux');
-set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+set(gca,'XTick',xTicks,'XTickLabel',{'1','10','100','1000'},'XMinorTick','On');
+set(gca,'YMinorTick','On','Box','On');
 set(gca,'xscale','log');
 set(gca,'FontSize',PlotFont);
 legend(SiteNames,'Location','NorthEast');
 ylim([0 1]);
 xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
 text(0.8*mean(T_subwindow_s(1:2)),0.95,'(a)','FontSize',PlotFont);
+
+% % plot median fraction of unused Wenglor heights in analysis
+% subplot('Position',[0.07 0.15 0.5 0.8]); hold on;
+% for i = 1:N_Sites
+% %    plot(T_subwindow_s,1-median_f_zW_analysis{i},Markers_Field{i},'Color',Colors_Field{i})
+%     errorbar(T_subwindow_s,1-median_f_zW_analysis{i},...
+%         (upperquartile_f_zW_analysis{i}-median_f_zW_analysis{i}),...
+%         (median_f_zW_analysis{i}-lowerquartile_f_zW_analysis{i}),...
+%         Markers_Field{i},'Color',Colors_Field{i})
+% end
+% 
+% % format plot
+% xlabel('sampling time scale, $$\Delta t$$ (s)','Interpreter','LaTeX');
+% ylabel('frac. of HF sensor hts. with zero flux');
+% set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+% set(gca,'xscale','log');
+% set(gca,'FontSize',PlotFont);
+% %legend(SiteNames,'Location','NorthEast');
+% ylim([0 1]);
+% xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
+% text(0.8*mean(T_subwindow_s(1:2)),0.95,'(a)','FontSize',PlotFont);
 
 % plot example of number of Wenglors with zeros
 subplot('Position',[0.65 0.15 0.34 0.8]); hold on;

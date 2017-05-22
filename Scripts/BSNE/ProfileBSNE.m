@@ -350,7 +350,7 @@ for i = 1:N_Sites
     if i==1
         h_legend = legend('exp fit','pwr fit','Location','NorthEast');
         set(h_legend,'FontSize',PlotFont);
-        ylabel('Quality of fit to LF saltation flux profile, $$\chi^2_{\nu}$$','Interpreter','Latex');
+        ylabel('Reduced chi-square for profile fit, $$\chi^2_{\nu}$$','Interpreter','Latex');
         text(2,1.5e2,'(a)','FontSize',PlotFont);
     elseif i==2
         text(2,1.5e2,'(b)','FontSize',PlotFont);

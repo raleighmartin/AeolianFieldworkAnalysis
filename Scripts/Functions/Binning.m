@@ -1,5 +1,8 @@
 %% FUNCTION TO GROUP VALUES TOGETHER INTO BINS
-% This function allows bins to have a range of possible sizes
+% Takes values in vector y and combines them into bins based on the
+% arguments y_bin_minrange, y_bin_maxrange, and bin_N_min. Outputs the
+% values and statistics of these binsThis function allows bins to have 
+% a range of possible sizes
 
 %% input values
 % y = raw values for binning
@@ -26,15 +29,15 @@ y_bin_list = []; %initialize list of y in bin
 for i = 1:N_y
     if isempty(y_bin_list) %if no y's in bin, create first value for bin
         y_bin_list = y(i); %add y value to list
-    elseif (y(i)-min(y_bin_list))<=y_bin_minrange; %if value of y is within min range, add to list
+    elseif (y(i)-min(y_bin_list))<=y_bin_minrange %if value of y is within min range, add to list
         y_bin_list = [y_bin_list; y(i)]; %add y value to list  
-    elseif (y(i)-min(y_bin_list))>y_bin_maxrange; %if value of y is outside max range, create new bin
+    elseif (y(i)-min(y_bin_list))>y_bin_maxrange %if value of y is outside max range, create new bin
         y_bin_values{ind_bin,1} = y_bin_list; %add current y list to cell array
         ind_bin = ind_bin+1; %increment to next y bin
         y_bin_list = y(i); %add y value to new list
-    elseif length(y_bin_list)<bin_N_min; %if next y is within min-max range, but have not reached minimum number of entries, add to list
+    elseif length(y_bin_list)<bin_N_min %if next y is within min-max range, but have not reached minimum number of entries, add to list
         y_bin_list = [y_bin_list; y(i)]; %add y value to list
-    elseif (N_y-i)<bin_N_min; %if new bin could be created, but there are few entries left at the end of the list, add to current list
+    elseif (N_y-i)<bin_N_min %if new bin could be created, but there are few entries left at the end of the list, add to current list
         y_bin_list = [y_bin_list; y(i)]; %add y value to list
     else %create new bin
         y_bin_values{ind_bin,1} = y_bin_list; %add current y list to cell array

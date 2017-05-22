@@ -258,7 +258,7 @@ end
 xlabel('HF calibration, $$C_{qn,i}$$ (gm$$^{-2}$$)','Interpreter','Latex');
 ylabel('height above bed surface, $$z$$','Interpreter','Latex');
 % title([Site_Demo,', ',datestr(StartTime_Demo_Wenglor,'yyyy-mm-dd HH:MM'),'-',datestr(EndTime_Demo_Wenglor,'HH:MM')])
-text(Cqn_lims(2)-0.7*(Cqn_lims(2)/Cqn_lims(1)),0.51,'(a)')
+text(Cqn_lims(2)-0.7*(Cqn_lims(2)/Cqn_lims(1)),0.51,'(a)','FontSize',plot_fontsize)
 %text(Cqn_lims(2)-0.7*(Cqn_lims(2)/Cqn_lims(1)),z_lims(1)+0.95*diff(z_lims),'(a)')
 
 %format plot
@@ -271,7 +271,7 @@ ylim([0 0.55]);
 subplot('Position',[0.35 0.17 0.25 0.76]); hold on;
 
 %predicted Wenglor fluxes with error bars
-plot(n_Wenglor,z_Wenglor,'bs','MarkerSize',plot_markersize*2);
+plot(n_Wenglor,z_Wenglor,'bs','MarkerSize',plot_markersize);
 for i = 1:length(z_Wenglor)
     plot(n_Wenglor(i)+sigma_n_Wenglor(i)*[-1 1],z_Wenglor(i)*[1 1],'b','LineWidth',1);
 end
@@ -280,7 +280,7 @@ end
 title([Site_Demo,', ',datestr(StartTime_Demo_Subwindow,'yyyy-mm-dd HH:MM:SS'),'-',datestr(EndTime_Demo_Subwindow,'HH:MM:SS')])
 xlabel('HF counts rate, $$n_{i}$$ (s$$^{-1}$$)','Interpreter','Latex');
 %text(n_lims(2)-0.7*(n_lims(2)/n_lims(1)),z_lims(1)+0.95*diff(z_lims),'(b)')
-text(n_lims(2)-0.7*(n_lims(2)/n_lims(1)),0.51,'(b)')
+text(n_lims(2)-0.7*(n_lims(2)/n_lims(1)),0.51,'(b)','FontSize',plot_fontsize)
 
 %format plot
 set(gca,'xscale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',plot_fontsize);
@@ -294,37 +294,32 @@ subplot('Position',[0.65 0.17 0.3 0.76]); hold on;
 %Wenglor weighted sum
 for i = 1:length(z_Wenglor)
     if i == 1
-        h3 = plot([0 q_Wenglor(i) q_Wenglor(i) 0],[0 0 z2_Qsum(i) z2_Qsum(i)],'r','LineWidth',2);
+        h3 = plot([0 q_Wenglor(i) q_Wenglor(i) 0],[0 0 z2_Qsum(i) z2_Qsum(i)],'g','LineWidth',2);
         %h3 = area([q_Wenglor(i) q_Wenglor(i)],[z2_Qsum(i)-deltaz(i) z2_Qsum(i)],'FaceColor','r');
     elseif i == length(z_Wenglor)
-        plot([0 q_Wenglor(i) q_Wenglor(i) 0],[z1_Qsum(i) z1_Qsum(i) z1_Qsum(i)+deltaz(i) z1_Qsum(i)+deltaz(i)],'r','LineWidth',2);
+        plot([0 q_Wenglor(i) q_Wenglor(i) 0],[z1_Qsum(i) z1_Qsum(i) z1_Qsum(i)+deltaz(i) z1_Qsum(i)+deltaz(i)],'g','LineWidth',2);
         %area([q_Wenglor(i) q_Wenglor(i)],[z1_Qsum(i) z1_Qsum(i)+deltaz(i)],'FaceColor','r');
     else
-        plot([0 q_Wenglor(i) q_Wenglor(i) 0],[z1_Qsum(i) z1_Qsum(i) z2_Qsum(i) z2_Qsum(i)],'r','LineWidth',2);
+        plot([0 q_Wenglor(i) q_Wenglor(i) 0],[z1_Qsum(i) z1_Qsum(i) z2_Qsum(i) z2_Qsum(i)],'g','LineWidth',2);
         %area([q_Wenglor(i) q_Wenglor(i)],[z1_Qsum(i) z2_Qsum(i)],'FaceColor','r');
     end
 end
 
 %predicted Wenglor fluxes with error bars
-h1 = plot(q_Wenglor,z_Wenglor,'bs','MarkerSize',plot_markersize*2,'LineWidth',1);
+h1 = plot(q_Wenglor,z_Wenglor,'k*','MarkerSize',plot_markersize,'LineWidth',1);
 for i = 1:length(z_Wenglor)
-    plot(q_Wenglor(i)+sigma_q_Wenglor(i)*[-1 1],z_Wenglor(i)*[1 1],'b','LineWidth',1);
+    plot(q_Wenglor(i)+sigma_q_Wenglor(i)*[-1 1],z_Wenglor(i)*[1 1],'k','LineWidth',1);
 end
 
 %Wenglor profile fit
 %h2 = plot(z_Wenglor,qpred_Wenglor,'b');
-h2 = plot(qpred_linearplot,z_linearplot,'k','LineWidth',2);
+h2 = plot(qpred_linearplot,z_linearplot,'m--.','LineWidth',2);
 
 %annotate plot
 xlabel('Calibrated HF flux, $$q_{i}$$ (gm$$^{-2}$$s$$^{-1}$$)','Interpreter','Latex');
 %text(q_lims(1)+0.9*diff(q_lims),z_lims(1)+0.95*diff(z_lims),'(c)')
-text(q_lims(1)+0.9*diff(q_lims),0.51,'(c)')
+text(q_lims(1)+0.9*diff(q_lims),0.51,'(c)','FontSize',plot_fontsize)
 legend([h1 h2 h3],'HF sensor cal. flux','HF profile fit','HF profile sum','Location','North');
-
-%plotting info
-plot_fontsize = 14;
-plot_xsize = 5;
-plot_ysize = 4;
 
 %format plot
 %set(gca,'yscale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',plot_fontsize);
