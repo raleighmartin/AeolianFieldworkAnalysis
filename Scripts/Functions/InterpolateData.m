@@ -46,7 +46,7 @@ for i = 1:N_InstrumentTypes
                 values_int(ind_repeat) = NaN; %set values associated with repeat times to NaN to indicate error point
                 error_ind = []; %initialize list of indices of points that do have an error value 
                 error_logicals = InstrumentVariables.ErrorLogicals{strcmp(InstrumentVariables.Instrument,Instrument)&strcmp(InstrumentVariables.VarNameGeneral,Variables{l})}; %get value(s) corresponding to error points
-                for m=1:length(error_logicals);
+                for m=1:length(error_logicals)
                     eval(['error_ind_here = find(values_int',error_logicals{m},');']); %find error values based on imported logical expression
                     error_ind = union(error_ind,error_ind_here); %add to list of all error indices
                 end
@@ -57,7 +57,7 @@ for i = 1:N_InstrumentTypes
                 %get previous indices for interpolation
                 prev_ind = error_ind-1; %take previous indices for interpolation to be error indices minus one
                 [prev_error_intersect, prev_error_intersect_i] = intersect(prev_ind,error_ind);
-                while(~isempty(prev_error_intersect)); %run loop if there is intersection
+                while(~isempty(prev_error_intersect)) %run loop if there is intersection
                     prev_ind(prev_error_intersect_i) = prev_ind(prev_error_intersect_i)-1;
                     [prev_error_intersect, prev_error_intersect_i] = intersect(prev_ind,error_ind);
                 end
@@ -66,7 +66,7 @@ for i = 1:N_InstrumentTypes
                 %get next indices for interpolation
                 next_ind = error_ind+1; %take next indices for interpolation to be error indices plus one
                 [next_error_intersect, next_error_intersect_i] = intersect(next_ind,error_ind);
-                while(~isempty(next_error_intersect)); %run loop if there is intersection
+                while(~isempty(next_error_intersect)) %run loop if there is intersection
                     next_ind(next_error_intersect_i) = next_ind(next_error_intersect_i)+1;
                     [next_error_intersect, next_error_intersect_i] = intersect(next_ind,error_ind);
                 end

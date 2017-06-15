@@ -1,0 +1,115 @@
+%%%%%%%%%%%%%%%%%%%%%%%%
+% INSTRUMENT POSITIONS %
+%%%%%%%%%%%%%%%%%%%%%%%%
+-- Coordinate scheme --
+x is streamwise (positive downwind)
+y is spanwise (positive according to right hand rule, to right if looking upwind)
+z is vertical (positive up)
+Orientation of setup (upwind direction) is ??? degrees (???)
+RM Young sonics set such that u is negative ???, v is negative to ???
+
+-- General notes --
+Heights for BSNEs are based entirely on measuring tape observations
+
+Heights of laser distance sensors, Wenglors, RM Young sonics, and weather station (for the most part) are heights relative to ??? distance sensor(s), which is automatically set to 0 m.  Script will then adjust these heights based on observations from laser distance sensor. (We may want to subtract 2 cm from this z, because there was a decent amount of scour even below this front distance sensor, which looked to be about 2 cm.)
+
+—- Distance Sensors —-
+L2 (???) distance sensor (x=???cm, y=???cm) is reference for ??? instrument heights.  z~???cm (varies dynamically in logger records).
+
+L1 (???) distance sensor (x=???cm,y=???cm) is reference for ??? instrument heights
+
+—- Wenglors —-
+Sensors mounted on fixed array, positions constant through whole deployment.  x,y,z positions (cm), relative to L1 distance sensor (z-positions relative to L2 for W5-W8), as follows:
+11/13-14
+W1 = 0, 0, -32.5 (abs z ~ ??? cm) (original “A1”)
+W2 = 0, 22.0, -28.5 (abs z ~ ??? cm) (original “A2”)
+W3 = 0, -16.0, -22.5 (abs z ~ ??? cm) (original “A3”)
+W4 = 0, 0, -15.5 (abs z ~ ??? cm) (original “A4”)
+W5 = 0, -74, -38.5 (abs z ~ ??? cm) (original “B1”)
+W6 = 0, -54, -33.5 (abs z ~ ??? cm) (original “B2”)
+W7 = 0, -90, -26.5 (abs z ~ ??? cm) (original “B3”)
+W8 = 0, -74, -15.5 (abs z ~ ??? cm) (original “B4”)
+11/18-20
+W1 = 0, 25.1, -15.5 (abs z ~ ??? cm) (original “A1”)
+W2 = 0, 8.2, -15.5 (abs z ~ ??? cm) (original “A2”)
+W3 = 0, -7.9, -15.5 (abs z ~ ??? cm) (original “A3”)
+W4 = 0, -7.9, -0.4 (abs z ~ ??? cm) (original “A4”)
+W5 = 0, -49.6, -9.7 (abs z ~ ??? cm) (original “B1”)
+W6 = 0, -66.5, -9.7 (abs z ~ ??? cm) (original “B2”)
+W7 = 0, -92.9, -9.7 (abs z ~ ??? cm) (original “B3”)
+W8 = 0, -92.9, 8.1 (abs z ~ ??? cm) (original “B4”)
+z-uncertainty in relative values due to measurement error and possible tilting of tower (1 cm).
+
+Allocation of instruments:
+11/13/2014: W1=R6, W2=R7, W3=R4, W4=R5, W5=9, W6=14, W7=21, W8=R8
+11/14/2014: W1=R6, W2=R7, W3=R4, W4=R5, W5=R9, W6=14, W7=21, W8=R8
+11/18/2014: W1=R9, W2=R8, W3=21, W4=14, W5=R6, W6=R4, W7=R7, W8=R5
+11/20/2014: W1=R9, W2=R8, W3=21, W4=14, W5=R6, W6=R4, W7=R7, W8=R5
+
+—- Weather station —-
+Mounted on ???.
+x,y,z (m) = ???,???,??? (abs z ~ ??? m)
+Position fixed for duration of deployment.
+
+—- Ultrasonic (RM Young) anemometers —-
+
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%% NOTES, DAY BY DAY %%
+%%%%%%%%%%%%%%%%%%%%%%%
+
+-- Jericoacoara 11/13/14 —-
+SALTATION
+Sporadic errors in U1 ultrasonic (~1 every 58 seconds), perhaps due to sand passing through sensor?
+
+-- Jericoacoara 11/14/14 —-
+SALTATION
+Sporadic errors in U1 ultrasonic (~1 every 15 seconds), perhaps due to sand passing through sensor?
+
+-- Jericoacoara 11/18/14 —-
+NO SALTATION - BUT SOME COUNTS PICKED UP DO TO SPARSE RAIN.  Therefore, exclude the Wenglor data for this day from analysis.
+Sporadic errors in U1 ultrasonic (~1 every 30 minutes), perhaps due to sand passing through sensor?
+Senix distance sensors work poorly, need to interpolate about 1/3 of all times
+
+-- Jericoacoara 11/20/14 —-
+SALTATION
+Insufficient number of Wenglors for decent saltation profiles after 11:20 AM, exclude these data
+Sporadic errors in U1 ultrasonic (~1 every 13 seconds), perhaps due to sand passing through sensor?
+Senix distance sensors work poorly, need to interpolate about 1/3 of all times
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% INSTRUMENT SERIAL NUMBERS %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Wenglors (NOTE: non-unique identifiers)
+9: 2707R/4500017061/C
+14: 2707R/4500017061/C
+21: 2707R/4500017061/C
+R4: 2614R/E/1108807
+R5: 2614R/E/1108807
+R6: 3114R/E/1110571
+R7: 3114R/E/1110571
+R8: 3114R/E/1110571
+R9: 2614R/E/1108807
+
+Distance Sensors (Sick)
+L1: 14020114
+L2: 13390344
+
+Distance Sensors (Senix)
+S1: ??? (use “S1”)
+S2: ??? (use “S2”)
+
+Ultrasonics (RM Young)
+U1: 02379
+U2: 02309
+U3: 02380
+U4: 02354
+
+Loggers
+loggerA (CR1000): 15689
+loggerB (CR1000): 22180
+loggerC (CR1000): 63275
+loggerD (CR1000): 22179
+
+Weather station
+SN: 43282163 / 123443 (other numbers on instrument: 43935/0506, on cable: MOK3-02-XX, SN: 40467)

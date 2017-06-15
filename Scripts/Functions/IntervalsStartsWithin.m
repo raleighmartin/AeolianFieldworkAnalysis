@@ -10,5 +10,3 @@ function [StartTimesWithin, EndTimesWithin, indices_StartsWithin] = IntervalsSta
 indices_StartsWithin = find(isbetween(StartTimesAll,StartTime,EndTime));
 StartTimesWithin = StartTimesAll(indices_StartsWithin);
 EndTimesWithin = EndTimesAll(indices_StartsWithin);
-
-end

@@ -12,5 +12,3 @@ indices_EndsWithin = find(isbetween(EndTimesAll,StartTime,EndTime));
 indices_Within = union(indices_StartsWithin,indices_EndsWithin);
 StartTimesWithin = StartTimesAll(indices_Within);
 EndTimesWithin = EndTimesAll(indices_Within);
-
-end

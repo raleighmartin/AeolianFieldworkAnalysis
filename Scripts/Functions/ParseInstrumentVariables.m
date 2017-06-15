@@ -28,7 +28,7 @@ ErrorLogicals = {raw(:,8)};
 ErrorLogicals_split = cell(size(ErrorLogicals{1}));
 for i = 1:length(ErrorLogicals{1})
     ErrorLogicals_split{i} = strsplit(ErrorLogicals{1}{i},',');
-end;
+end
 ErrorLogicals = {ErrorLogicals_split};
 
 %% Create structured array with spreadsheet information

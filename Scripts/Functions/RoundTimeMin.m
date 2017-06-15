@@ -7,7 +7,7 @@ function [NewTimes] = RoundTimeMin(OldTimes)
 N_Times = length(OldTimes);
 [Y,M,D,H,MN,S] = datevec(OldTimes);
 for i = 1:N_Times
-    if S(i)>30;
+    if S(i)>30
         MN(i)=MN(i)+1;
     end
 end

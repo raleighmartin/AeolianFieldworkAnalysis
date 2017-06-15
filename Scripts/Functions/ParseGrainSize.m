@@ -1,8 +1,8 @@
+%get grain-size values from raw Camsizer output file
 function [d_10, d_50, d_90, Q3_1mm, Q3_2mm, Q3_4mm, SPAN3, U3, ...
     Q3_SPHT0pt9, Q3_Symm0pt9, Q3_bl0pt9, SPHT3_bar, Symm3_bar, bl3_bar, ...
     Sizeclass_lower,Sizeclass_upper,retained,passing,...
     SPHT3,Symm3,bl3,particlesdetected] = ParseGrainSize(filename)
-%function [] = gsimport(filename)
 
 %%%%%%%%%%% SUMMARY DATA %%%%%%%%%%%%%
 %% Initialize variables.

@@ -1,8 +1,9 @@
 %% function to take info about BSNE trap weights ('WeightBSNE') and grain sizes ('GrainSize_BSNE')
 % and aggregate this into mass and grain-size profiles
-% Dependencies: IntervalsStartsWithin, qzCalc, qz_profilefit
+% Dependencies: IntervalsStartsWithin, qzCalc, BSNE_profilefit_exponential,
+% qz_profilefit_exponential.m
 
-function FluxBSNE = ProcessBSNEs(WeightBSNE,GrainSize_BSNE)
+function FluxBSNE = ProcessBSNEs(WeightBSNE,GrainSize_BSNE,zq_estimated_Site_m)
 
 %% assumed error values
 sigma_FluxSampling = 0.1; %flux sampling fractional error (Goossens et al., 2000)
@@ -144,12 +145,12 @@ for i = 1:N_Intervals
         %fit profile 1
         [z_profile_1,q0_1,zq_1,Q_1,sigma_q0_1,sigma_zq_1,sigma_Q_1,qz_pred_1,sigma_qz_pred_1,sigma_logqz_pred_1,sigma2_q0zq_1,...
             z_profile_geomean_1,q0_geomean_1,zq_geomean_1,Q_geomean_1] = ...
-            BSNE_profilefit(qz_profile_1, z_bottom_profile_1, z_trapheight_profile_1, sigma_qz_profile_1, sigma_z_profile_1);
+            BSNE_profilefit_exponential(qz_profile_1, z_bottom_profile_1, z_trapheight_profile_1, sigma_qz_profile_1, sigma_z_profile_1,zq_estimated_Site_m);
 
         %fit profile 2
         [z_profile_2,q0_2,zq_2,Q_2,sigma_q0_2,sigma_zq_2,sigma_Q_2,qz_pred_2,sigma_qz_pred_2,sigma_logqz_pred_2,sigma2_q0zq_2,...
             z_profile_geomean_2,q0_geomean_2,zq_geomean_2,Q_geomean_2] = ...
-            BSNE_profilefit(qz_profile_2, z_bottom_profile_2, z_trapheight_profile_2, sigma_qz_profile_2, sigma_z_profile_2);
+            BSNE_profilefit_exponential(qz_profile_2, z_bottom_profile_2, z_trapheight_profile_2, sigma_qz_profile_2, sigma_z_profile_2,zq_estimated_Site_m);
         
         %compute averaged values and their uncertainties
         if (~isnan(q0_1))&&(~isnan(q0_2))
@@ -258,7 +259,7 @@ for i = 1:N_Intervals
         %fit profile
         [z_profile,q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,qz_pred,sigma_qz_pred,sigma_logqz_pred,sigma2_q0zq,...
             z_profile_geomean,q0_geomean,zq_geomean,Q_geomean] = ...
-            BSNE_profilefit(qz_profile, z_bottom_profile, z_trapheight_profile, sigma_qz_profile, sigma_z_profile);
+            BSNE_profilefit_exponential(qz_profile, z_bottom_profile, z_trapheight_profile, sigma_qz_profile, sigma_z_profile, zq_estimated_Site_m);
 
         %add to structured array
         FluxBSNE(i).qz.q0 = q0;

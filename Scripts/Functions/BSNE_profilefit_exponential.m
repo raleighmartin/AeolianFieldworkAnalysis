@@ -43,7 +43,7 @@ end
 
 %now that we have zq, redo calculation of BSNE heights
 z_profile_old = z_profile; %document previous z-profile to see difference
-z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
+z_profile = z_profile_calc_exponential(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
 z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
 
 %iterate until the z_profile_difference is minutely small
@@ -54,7 +54,7 @@ while(z_profile_difference>1e-8)
         [~,zq] = qz_profilefit_exponential(qz_profile, z_profile, sigma_qz_profile, sigma_z_profile, zq_estimated);
     end
     z_profile_old = z_profile; %document previous z-profile to see difference
-    z_profile = z_profile_calc(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
+    z_profile = z_profile_calc_exponential(z_bottom_profile,z_trapheight_profile,zq); %calculate new BSNE midpoint heights based on zq
     z_profile_difference = mean(abs((z_profile-z_profile_old)./z_profile)); %get mean relative difference between profile heights
 end
 

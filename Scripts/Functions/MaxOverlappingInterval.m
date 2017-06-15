@@ -13,5 +13,3 @@ EndTimeMax = max(EndTimesWithin); %new end time is the latest of end times of th
 if length(StartTimesWithin)~=length(StartTimesAll)
     [StartTimeMax, EndTimeMax] = MaxOverlappingInterval(StartTimeMax, EndTimeMax, StartTimesWithin, EndTimesWithin);
 end
-
-end

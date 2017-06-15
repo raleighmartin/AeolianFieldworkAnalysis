@@ -7,7 +7,7 @@ function timestamp_datetime = ParseTimestamp(timestamp_list)
 
 timestamp_short = datetime(timestamp_list,'InputFormat','"yyyy-MM-dd HH:mm:ss"'); %get short format datetime
 
-if max(cellfun(@length,timestamp_list))==21; %if they are all short format, it's easy
+if max(cellfun(@length,timestamp_list))==21 %if they are all short format, it's easy
     timestamp_datetime = timestamp_short; 
 else %if some are long format, need to parse things out
     timestamp_long = datetime(timestamp_list,'InputFormat','"yyyy-MM-dd HH:mm:ss.SS"');

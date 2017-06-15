@@ -12,7 +12,7 @@ GrainSizeArray = GrainSizeMetadata;
 N_Samples = length(GrainSizeMetadata);
 
 %% go through each flux calculation time interval
-for i = 1:N_Samples;
+for i = 1:N_Samples
     
     %% Get file location
     filePath = strcat(folder_GrainSize,GrainSizeMetadata(i).Filename,'_xc_min_.xle')

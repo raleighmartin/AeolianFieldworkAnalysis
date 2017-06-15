@@ -76,7 +76,7 @@ for i=1:length(FluxBSNE);
             sigma_z_Wenglor = ProcessedWenglors.(WenglorNames{j})(PrimaryInterval_IntervalNumber).HeightErr_m; %use only relative error in Wenglor height
               
             %compute expected flux and uncertainty at Wenglor height
-            [qz_pred, sigma_qz_pred] = qz_prediction(z_Wenglor, q0_BSNE, zq_BSNE, sigma_q0_BSNE, sigma_zq_BSNE, sigma2_q0zq_BSNE);
+            [qz_pred, sigma_qz_pred] = qz_prediction_exponential(z_Wenglor, q0_BSNE, zq_BSNE, sigma_q0_BSNE, sigma_zq_BSNE, sigma2_q0zq_BSNE);
             
             %compute uncertainty due height uncertainty of Wenglor
             sigma_qz_z = abs((qz_pred/zq_BSNE)*sigma_z_Wenglor); %(g/m^2/s)
