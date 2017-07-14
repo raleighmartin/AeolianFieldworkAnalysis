@@ -6,30 +6,31 @@ clearvars;
 
 %% information about where to load/save data
 folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_SaveData = '../../../../Google Drive/Data/AeolianFieldwork/Export/Daily/'; %folder for storing outputs of this extraction
+folder_SaveData = '../../../../Google Drive/Data/AeolianFieldwork/Export/30 Minute - Oceano/'; %folder for storing outputs of this extraction
 
 %info about which data to use
 use_raw_wind = 1; %use raw (non-interpolated) wind data? 0 for no, 1 for yes
-use_calibrated_flux = 1; %use calibrated flux values? 0 for no (raw Wenglor counts), 1 for yes
-use_time_outside_BSNE = 1; %use times outside BSNE intervals (affects calibration)? 0 for no, 1 for yes
+use_calibrated_flux = 0; %use calibrated partial (height-specific) flux values? 0 for no (raw Wenglor counts), 1 for yes
+use_time_outside_BSNE = 0; %use times outside BSNE intervals (affects calibration)? 0 for no, 1 for yes
 
-%% information for full data extraction - Jericoacoara
-Site = 'Jericoacoara'; %name of field site
-Dates = [datetime(2014,11,13);...
-    datetime(2014,11,14);...
-    datetime(2014,11,18);...
-    datetime(2014,11,20)]; %dates for data extraction
-WindInstrumentType = 'Ultrasonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
-
+% %% information for full data extraction - Jericoacoara
+% Site_Export = 'Jericoacoara'; %name of field site
+% Dates = [datetime(2014,11,13);...
+%     datetime(2014,11,14);...
+%     datetime(2014,11,18);...
+%     datetime(2014,11,20)]; %dates for data extraction
+% WindInstrumentType = 'Ultrasonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
+% 
 % %% information for full data extraction - Rancho Guadalupe
-% Site = 'RanchoGuadalupe'; %name of field site
+% Site_Export = 'RanchoGuadalupe'; %name of field site
 % Dates = [datetime(2015,3,23);...
 %     datetime(2015,3,24)]; %dates for data extraction
 % WindInstrumentType = 'Ultrasonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
 
 % %% information for full data extraction - Oceano
-% Site = 'Oceano'; %name of field site
-% Dates = [datetime(2015,5,15);...
+% Site_Export = 'Oceano'; %name of field site
+% Dates = [ ... 
+%     datetime(2015,5,15);...
 %     datetime(2015,5,16);...
 %     datetime(2015,5,17);...
 %     datetime(2015,5,18);...
@@ -46,17 +47,39 @@ WindInstrumentType = 'Ultrasonic'; %choose instrument type for wind data ('Sonic
 %     datetime(2015,5,30);...
 %     datetime(2015,5,31);...
 %     datetime(2015,6,1);...
-%     datetime(2015,6,2);...
+%     datetime(2015,6,2)...
 %     datetime(2015,6,3);...
-%     datetime(2015,6,4)]; %dates for data extraction
+%     datetime(2015,6,4);...
+%     ]; %dates for data extraction
 % WindInstrumentType = 'Sonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
+% use_specific_times = 0; %no specific times for export set
+
+% %% information for limited data extraction
+% Site_Export = 'Oceano';
+% StartTimesExport = datetime(2015,6,2,14,28,0);
+% EndTimesExport = datetime(2015,6,2,15,28,0);
+% zq_Site = 0.055; %estimated saltation height for Site, in meters
+% sigma_zq_Site = 0.004; %estimated uncertainty in saltation height for Site, in meters
+% WindInstrumentType = 'Sonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
+% use_specific_times = 1; %specific times for export set
+
+%% information for extracting all 30-minute windows at Oceano
+Site_Export = 'Oceano';
+load('../../AnalysisData/Windowing/TimeWindows_30min_Restricted.mat');
+ind_Site = find(strcmp(Sites,Site_Export));
+StartTimesExport = StartTime_window{ind_Site}(hasfluxdata_window{ind_Site}==1);
+EndTimesExport = EndTime_window{ind_Site}(hasfluxdata_window{ind_Site}==1);
+zq_Site = 0.055; %estimated saltation height for Site, in meters
+sigma_zq_Site = 0.004; %estimated uncertainty in saltation height for Site, in meters
+WindInstrumentType = 'Sonic'; %choose instrument type for wind data ('Sonic' for Campbells, 'Ultrasonic' for RM Young)
+use_specific_times = 1; %specific times for export set
 
 %% load functions
 folder_Functions = '../Functions/'; %folder with functions
 addpath(folder_Functions); %point MATLAB to location of functions
 
 %% load processed data and extract relevant variables
-LoadData_Path = strcat(folder_LoadData,'ProcessedData_',Site);
+LoadData_Path = strcat(folder_LoadData,'ProcessedData_',Site_Export);
 load(LoadData_Path); %load processed data
 WenglorData = ProcessedData.FluxWenglor; %Wenglor flux data
 BSNEData = ProcessedData.FluxBSNE; %BSNE data
@@ -100,10 +123,12 @@ end
 DatesIntersecting = datetime(y,m,d); %create list of dates for intersecting time intervals
 
 %% get time intervals for export based on dates of interest
-ind_Export = find(ismember(DatesIntersecting,Dates)); %get indices of time intervals for export
-StartTimesExport = StartTimesIntersecting(ind_Export); %get list of start times for export
-EndTimesExport = EndTimesIntersecting(ind_Export); %get list of end times for export
-
+if use_specific_times~=1
+    ind_Export = find(ismember(DatesIntersecting,Dates)); %get indices of time intervals for export
+    StartTimesExport = StartTimesIntersecting(ind_Export); %get list of start times for export
+    EndTimesExport = EndTimesIntersecting(ind_Export); %get list of end times for export
+end
+    
 %% specify arguments for export depending on user choices
 
 %set argument for wind variables
@@ -124,11 +149,11 @@ else %if using particle counts
     flux_units = '(counts/interval)';
 end
 
-%% go through time intervals to extract and export data
-for i = 1:length(ind_Export)
+% go through time intervals to extract and export data
+for i = 1:length(StartTimesExport)
 
-    %set header name for exported data files
-    name_header = [Site,'_',datestr(StartTimesExport(i),'yyyymmdd_HHMM'),'_',datestr(EndTimesExport(i),'HHMM')];
+    % set header name for exported data files
+    name_header = [Site_Export,'_',datestr(StartTimesExport(i),'yyyymmdd_HHMM'),'_',datestr(EndTimesExport(i),'HHMM')];
     
     %% export wind variables
     
@@ -200,33 +225,61 @@ for i = 1:length(ind_Export)
     q = WenglorData(IntervalN).qz.(flux_arg)(IntervalInd,:); %get fluxes
     z = WenglorData(IntervalN).qz.z(IntervalInd,:); %get heights
 
+    %compute total fluxes
+    qz = WenglorData(IntervalN).qz.qz(IntervalInd,:); %get fluxes
+    n = WenglorData(IntervalN).qz.n(IntervalInd,:); %get counts
+    Cqn = WenglorData(IntervalN).qz.Cqn(IntervalInd,:); %calibration coefficients
+    sigma_Cqn = WenglorData(IntervalN).qz.sigma_Cqn(IntervalInd,:); %calibration coefficients uncertainty
+    sigma_n = sqrt(n); %get counts uncertainty
+    sigma_qz = sqrt(sigma_Cqn.^2.*n.^2 + sigma_n.^2.*Cqn.^2); %get flux uncertainty
+    [~,~,ind_BSNE] = IntervalsStartsWithin(StartTimesExport(i),EndTimesExport(i),[BSNEData.StartTime],[BSNEData.EndTime]); %get index of BSNE for zq
+    if ~isempty(ind_BSNE)
+        zq_BSNE = BSNEData(ind_BSNE).z.zq; %get zq for BSNE
+        sigma_zq_BSNE = BSNEData(ind_BSNE).z.sigma_zq; %get sigma_zq for BSNE
+    else
+        zq_BSNE = zq_Site;
+        sigma_zq_BSNE = sigma_zq_Site;
+    end
+        
+    N_qz = length(qz);
+    Qsum = zeros(N_qz,1);
+    sigma_Qsum = zeros(N_qz,1);
+    for j = 1:N_qz
+        [Qsum_j,sigma_Qsum_j] = qz_summation_Wenglor(qz(j,:), z(j,:), sigma_qz(j,:), zq_BSNE, sigma_zq_BSNE);
+        Qsum(j) = Qsum_j;
+        sigma_Qsum(j) = sigma_Qsum_j;
+    end
+    
     %get information for flux table
     N_q = size(q,2); %get number of fluxes in profile
-    variable_names = cell(1,N_q); %initialize list of variable names
-    table_names = cell(1,N_q); %initialize list of value name for creating table
+    variable_names_partialflux = cell(1,N_q); %initialize list of variable names
+    table_names_partialflux = cell(1,N_q); %initialize list of value name for creating table
     for j = 1:N_q
-        variable_names{j} = [flux_label,int2str(j)]; %get variable name
-        table_names{j} = ['q(:,',int2str(j),'),']; %get value name for creating table
+        variable_names_partialflux{j} = [flux_label,int2str(j)]; %get variable name
+        table_names_partialflux{j} = ['q(:,',int2str(j),'),']; %get value name for creating table
     end
-    VariableHeaders = [{'Hour','Minute','Second'},variable_names]; %create list of headers for table
+    VariableHeaders = [{'Hour','Minute','Second'},variable_names_partialflux]; %create list of headers for table
     
-    %create flux table
-    TableCreationString = ['flux_data_table = table(hour(t),minute(t),second(t),',[table_names{1,:}],'''VariableNames'',VariableHeaders);'];
+    %create and export partial flux table
+    TableCreationString = ['flux_data_table = table(hour(t),minute(t),second(t),',[table_names_partialflux{1,:}],'''VariableNames'',VariableHeaders);'];
     eval(TableCreationString);
-    
-    %export flux table
-    name_flux_data = [name_header,'_Flux.txt'];
+    name_flux_data = [name_header,'_PartialFlux.txt'];
     writetable(flux_data_table,[folder_SaveData,name_flux_data]);
+
+    %create and export total flux table
+    totalflux_data_table = table(hour(t),minute(t),second(t),Qsum, sigma_Qsum,'VariableNames',{'Hour', 'Minute', 'Second', 'Q', 'sigma_Q'});
+    name_flux_data = [name_header,'_TotalFlux.txt'];
+    writetable(totalflux_data_table,[folder_SaveData,name_flux_data]);
     
     %get information for flux height table
     for j = 1:N_q
-        variable_names{j} = ['z',int2str(j)]; %get variable name
-        table_names{j} = ['z(:,',int2str(j),'),']; %get value name for creating table
+        variable_names_partialflux{j} = ['z',int2str(j)]; %get variable name
+        table_names_partialflux{j} = ['z(:,',int2str(j),'),']; %get value name for creating table
     end
-    VariableHeaders = [{'Hour','Minute','Second'},variable_names]; %create list of headers for table
+    VariableHeaders = [{'Hour','Minute','Second'},variable_names_partialflux]; %create list of headers for table
     
     %create flux height table
-    TableCreationString = ['flux_height_table = table(hour(t),minute(t),second(t),',[table_names{1,:}],'''VariableNames'',VariableHeaders);'];
+    TableCreationString = ['flux_height_table = table(hour(t),minute(t),second(t),',[table_names_partialflux{1,:}],'''VariableNames'',VariableHeaders);'];
     eval(TableCreationString);
     
     %export flux height table
@@ -237,6 +290,8 @@ for i = 1:length(ind_Export)
     name_flux_metadata = [name_header,'_FluxMetadata.txt'];
     path_flux_metadata = [folder_SaveData,name_flux_metadata];
     fileID = fopen(path_flux_metadata,'w');
+    fprintf(fileID,'Q (g/m/s) \r'); %total flux
+    fprintf(fileID,'sigma_Q (g/m/s) \r'); %total flux uncertainty
     for j = 1:N_q
         metadata_text = [flux_label,int2str(j),'(z',int2str(j),') ',flux_units,'\r'];
         fprintf(fileID,metadata_text);

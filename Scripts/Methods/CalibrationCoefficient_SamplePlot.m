@@ -75,7 +75,8 @@ ylabel('HF sensor calibration factor, $$C_{qn,i}$$ (g m$$^{-2}$$)','Interpreter'
 
 legend_items = cell(N_zW,1);
 for i = 1:N_zW
-    legend_items{i} = ['z_{HF,',int2str(i),'} = ',num2str(round(zW_matrix(1,i)*100,1)),' cm'];
+    %legend_items{i} = ['z_{HF,',int2str(i),'} = ',num2str(round(zW_matrix(1,i)*100,1),3),' cm'];
+    legend_items{i} = ['z_{HF,',int2str(i),'} = ',num2str(zW_matrix(1,i)*100,'%10.1f'),' cm'];
 end
 legend(legend_items,'Location','NorthWest');
 text(StartTime_BSNE(2),8.5,'(a)','FontSize',PlotFont);

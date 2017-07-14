@@ -20,4 +20,4 @@ q0_Qsum = qW./(exp(-zW/zq_BSNE));
 deltaQ = q0_Qsum.*zq_BSNE.*(exp(-z1_Qsum/zq_BSNE)-exp(-z2_Qsum/zq_BSNE));
 sigma_deltaQ = deltaQ.*(sigma_qW./qW);
 Qsum = sum(deltaQ);
-sigma_Qsum = sqrt(sum(sigma_deltaQ.^2)+(Qsum*sigma_zq_BSNE/zq_BSNE)^2);
+sigma_Qsum = sqrt(sum(sigma_deltaQ(~isnan(sigma_deltaQ)).^2)+(Qsum*sigma_zq_BSNE/zq_BSNE)^2);

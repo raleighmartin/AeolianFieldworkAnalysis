@@ -26,8 +26,8 @@ daterange_enddate = [datetime(2015,5,19);datetime(2015,5,28);datetime(2015,6,4)]
 PlotFont = 12;
 PlotMarkers_Site = {'s','d','o'};
 PlotColors_Site = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250]};
-PlotMarkers_Sensitivity = {'s','d','o','<','>'};
-PlotColors_Sensitivity = {[0.6473 0.7456 0.4188],[0.2116 0.1898 0.5777],[0.8500 0.3250 0.0980],[0 0.4470 0.7410],[0.9290 0.6940 0.1250]};
+PlotMarkers_Sensitivity = {'s','d','o','<','>','^'};
+PlotColors_Sensitivity = {[0.6473 0.7456 0.4188],[0.2116 0.1898 0.5777],[0.8500 0.3250 0.0980],[0 0.4470 0.7410],[0.9290 0.6940 0.1250],[0.3010 0.7450 0.9330]};
 
 %% folders for loading and saving data
 folder_LoadFluxLawData = '../../AnalysisData/FluxLaw/'; %folder for loading 30 minute data
@@ -41,7 +41,7 @@ folder_Plots = '../../PlotOutput/Thresholds/'; %folder for plots
 %% paths for loading and saving data
 LoadFluxLawData_Path = strcat(folder_LoadFluxLawData,'FluxLawCalcs_30min_Restricted'); %path for 30 minute data
 LoadRoughnessData_Path = strcat(folder_LoadRoughnessData,'RoughnessCalcs_30min_Restricted'); %path for 30 minute data
-LoadSubwindowData_Path = strcat(folder_LoadSubwindowData,'DataSubwindowCalcs_30min_Unrestricted'); %path for loading time window data
+LoadSubwindowData_Path = strcat(folder_LoadSubwindowData,'DataIntervalAveragedSubwindowCalcs_30min_Unrestricted'); %path for loading time window data
 LoadWindowData_Path = strcat(folder_LoadWindowData,'DataWindowCalcs_30min_Unrestricted'); %path for 30 minute data
 SaveData_Path = strcat(folder_SaveData,'ThresholdAnalysisData'); %path for saving output data
 
@@ -76,7 +76,7 @@ zL_subwindow_all = cell(N_Sites,1);
 for i = 1:N_Sites
     zL_subwindow_all{i} = cell(N_Deltat,N_deltat);
     for m = 1:N_Deltat
-        for s = 1:N_Deltat
+        for s = 1:N_deltat
             zL_subwindow_all{i}{m,s} = zL_all{i}(ind_window_subwindow_all{i}{m,s});
         end
     end
@@ -87,7 +87,7 @@ theta_subwindow_adjusted_all = cell(N_Sites,1);
 for i = 1:N_Sites
     theta_subwindow_adjusted_all{i} = cell(N_Deltat,N_deltat);
     for m = 1:N_Deltat
-        for s = 1:N_Deltat
+        for s = 1:N_deltat
             theta_subwindow_adjusted_all{i}{m,s} = theta_subwindow_all{i}{m,s}-theta_Site(i);
         end
     end
@@ -95,8 +95,8 @@ end
 
 %% for Jeri, convert fQ NaN values to zeros, assuming that times with no flux data are fQ = 0 (not valid for RG and not necessary for Oceano)
 ind_Site = find(strcmp(SiteNames,'Jericoacoara'));
-for m = 1:length(Deltat_all)
-    for s = 1:length(deltat_all)
+for m = 1:N_Deltat
+    for s = 1:N_deltat
         fQ_subwindow_all{ind_Site}{m,s}(isnan(fQ_subwindow_all{ind_Site}{m,s}))=0;
     end
 end
@@ -498,7 +498,7 @@ set(gca,'FontSize',PlotFont);
 set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_activity.png'],'-dpng');
-print([folder_Plots,'threshold_activity.tif'],'-dtiff','-r600');
+% print([folder_Plots,'threshold_activity.tif'],'-dtiff','-r600');
 
 %% plot fQ versus fD
 
@@ -553,56 +553,16 @@ set(gca, 'LooseInset', get(gca,'TightInset'));
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[5 7],'PaperPosition',[0 0 5 7],'PaperPositionMode','Manual');
 print([folder_Plots,'detection_activity.png'],'-dpng');
-print([folder_Plots,'detection_activity.tif'],'-dtiff','-r600');
+% print([folder_Plots,'detection_activity.tif'],'-dtiff','-r600');
 
-%% plot tau_th versus fQ for measurement interval sensitivity analysis
-figure(12); clf; hold on; %initialize plot
-
-%plot average values
-for m = 1:N_Deltat
-    plot(fQ_bin_avg_Deltat{m},tauth_bin_avg_Deltat{m},PlotMarkers_Sensitivity{m},'Color',PlotColors_Sensitivity{m});
-end
-
-%plot SE values
-for m = 1:N_Deltat
-    N_fQ_bins = length(fQ_bin_avg_Deltat{m});
-    for k = 1:N_fQ_bins
-        plot(fQ_bin_avg_Deltat{m}(k)+fQ_bin_SE_Deltat{m}(k)*[-1 1],tauth_bin_avg_Deltat{m}(k)*[1 1],'Color',PlotColors_Sensitivity{m});
-        plot(fQ_bin_avg_Deltat{m}(k)*[1 1],tauth_bin_avg_Deltat{m}(k)+tauth_bin_SE_Deltat{m}(k)*[-1 1],'Color',PlotColors_Sensitivity{m});
-    end
-end
-
-%plot fit lines
-for m = 1:N_Deltat
-    plot([0 1],[tauft_Deltat(m) tauit_Deltat(m)],'Color',PlotColors_Sensitivity{m});
-end
-
-%plot fit intercept values
-for m = 1:N_Deltat
-    plot([0 0],tauft_Deltat(m)+sigma_tauft_Deltat(m)*[-1 1],'Color',PlotColors_Sensitivity{m},'LineWidth',2);
-    plot([0.999 0.999],tauit_Deltat(m)+sigma_tauit_Deltat(m)*[-1 1],'Color',PlotColors_Sensitivity{m},'LineWidth',2);
-end
-
-%annotate plot
-legend_items = cell(N_Deltat,1);
-for m = 1:N_Deltat
-    legend_items{m} = ['\Delta t = ',num2str(minutes(Deltat_all(m))),' min.'];
-end
-legend(legend_items,'Location','NorthEast');
-xlabel('transport activity, $$f_Q$$','interpreter','latex');
-ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
-title(Site_sensitivityanalysis);
-set(gca,'FontSize',PlotFont);
-set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-
-%print plot
-set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
-print([folder_Plots,'threshold_activity_measurementinterval.png'],'-dpng');
-print([folder_Plots,'threshold_activity_measurementinterval.tif'],'-dtiff','-r600');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% plot sensitivity analyses %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+figure(12); clf;
 
 %% plot tau_th versus fQ for sampling interval sensitivity analysis
-figure(13); clf; hold on; %initialize plot
+%subplot(2,2,1); hold on; %initialize plot
+subplot('Position',[0.09 0.54 0.43 0.45]); hold on;
 
 %plot average values
 for s = 1:N_deltat
@@ -629,26 +589,84 @@ for s = 1:N_deltat
     plot([0.999 0.999],tauit_deltat(s)+sigma_tauit_deltat(s)*[-1 1],'Color',PlotColors_Sensitivity{s},'LineWidth',2);
 end
 
-%annotate plot
+%annotate and format plot
+xlim([0 1]);
+ylim([0.08 0.135]);
 legend_items = cell(N_deltat,1);
 for s = 1:N_deltat
     legend_items{s} = ['\delta{t} = ',num2str(seconds(deltat_all(s)),2),' s'];
 end
 legend(legend_items,'Location','NorthEast');
-xlabel('transport activity, $$f_Q$$','interpreter','latex');
+text(0.03,0.133,'(a)','FontSize',PlotFont);
+% xlabel('transport activity, $$f_Q$$','interpreter','latex');
+set(gca,'XTickLabel',[]);
 ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
-title(Site_sensitivityanalysis);
+% title(Site_sensitivityanalysis);
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 
-%print plot
-set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
-print([folder_Plots,'threshold_activity_samplinginterval.png'],'-dpng');
-print([folder_Plots,'threshold_activity_samplinginterval.tif'],'-dtiff','-r600');
+% %print plot
+% set(gca, 'LooseInset', get(gca,'TightInset'));
+% set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
+% print([folder_Plots,'threshold_activity_samplinginterval.png'],'-dpng');
+% print([folder_Plots,'threshold_activity_samplinginterval.tif'],'-dtiff','-r600');
+
+%% plot tau_th versus fQ for measurement interval sensitivity analysis
+%subplot(2,2,2); hold on; %initialize plot
+subplot('Position',[0.56 0.54 0.43 0.45]); hold on;
+
+%plot average values
+for m = 1:N_Deltat
+    plot(fQ_bin_avg_Deltat{m},tauth_bin_avg_Deltat{m},PlotMarkers_Sensitivity{m},'Color',PlotColors_Sensitivity{m});
+end
+
+%plot SE values
+for m = 1:N_Deltat
+    N_fQ_bins = length(fQ_bin_avg_Deltat{m});
+    for k = 1:N_fQ_bins
+        plot(fQ_bin_avg_Deltat{m}(k)+fQ_bin_SE_Deltat{m}(k)*[-1 1],tauth_bin_avg_Deltat{m}(k)*[1 1],'Color',PlotColors_Sensitivity{m});
+        plot(fQ_bin_avg_Deltat{m}(k)*[1 1],tauth_bin_avg_Deltat{m}(k)+tauth_bin_SE_Deltat{m}(k)*[-1 1],'Color',PlotColors_Sensitivity{m});
+    end
+end
+
+%plot fit lines
+for m = 1:N_Deltat
+    plot([0 1],[tauft_Deltat(m) tauit_Deltat(m)],'Color',PlotColors_Sensitivity{m});
+end
+
+%plot fit intercept values
+for m = 1:N_Deltat
+    plot([0 0],tauft_Deltat(m)+sigma_tauft_Deltat(m)*[-1 1],'Color',PlotColors_Sensitivity{m},'LineWidth',2);
+    plot([0.999 0.999],tauit_Deltat(m)+sigma_tauit_Deltat(m)*[-1 1],'Color',PlotColors_Sensitivity{m},'LineWidth',2);
+end
+
+%annotate and format plot
+xlim([0 1]);
+ylim([0.08 0.135]);
+legend_items = cell(N_Deltat,1);
+for m = 1:N_Deltat
+    legend_items{m} = ['\Delta t = ',num2str(minutes(Deltat_all(m))),' min.'];
+end
+legend(legend_items,'Location','SouthWest');
+text(0.03,0.133,'(b)','FontSize',PlotFont);
+% xlabel('transport activity, $$f_Q$$','interpreter','latex');
+set(gca,'XTickLabel',[]);
+% ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
+set(gca,'YTickLabel',[]);
+% title(Site_sensitivityanalysis);
+set(gca,'FontSize',PlotFont);
+set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+
+% %print plot
+% set(gca, 'LooseInset', get(gca,'TightInset'));
+% set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
+% print([folder_Plots,'threshold_activity_measurementinterval.png'],'-dpng');
+% print([folder_Plots,'threshold_activity_measurementinterval.tif'],'-dtiff','-r600');
+
 
 %% plot tau_th versus fQ for diurnal period sensitivity analysis
-figure(14); clf; hold on; %initialize plot
+%subplot(2,2,3); hold on; %initialize plot
+subplot('Position',[0.09 0.07 0.43 0.45]); hold on;
 
 %plot average values
 for d = 1:N_diurnalrange
@@ -675,27 +693,30 @@ for d = 1:N_diurnalrange
     plot([0.999 0.999],tauit_diurnalrange(d)+sigma_tauit_diurnalrange(d)*[-1 1],'Color',PlotColors_Sensitivity{d},'LineWidth',2);
 end
 
-%annotate plot
+%annotate and format plot
+xlim([0 1]);
+ylim([0.08 0.135]);
 legend_items = cell(N_diurnalrange,1);
 for d = 1:N_diurnalrange
     legend_items{d} = [num2str(diurnalrange_starthour(d)),'-',num2str(diurnalrange_endhour(d)),'h'];
 end
-
 legend(legend_items,'Location','NorthEast');
+text(0.03,0.133,'(c)','FontSize',PlotFont);
 xlabel('transport activity, $$f_Q$$','interpreter','latex');
 ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
-title(Site_sensitivityanalysis);
+% title(Site_sensitivityanalysis);
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 
-%print plot
-set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
-print([folder_Plots,'threshold_activity_diurnalrange.png'],'-dpng');
-print([folder_Plots,'threshold_activity_diurnalrange.tif'],'-dtiff','-r600');
+% %print plot
+% set(gca, 'LooseInset', get(gca,'TightInset'));
+% set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
+% print([folder_Plots,'threshold_activity_diurnalrange.png'],'-dpng');
+% print([folder_Plots,'threshold_activity_diurnalrange.tif'],'-dtiff','-r600');
 
 %% plot tau_th versus fQ for date period sensitivity analysis
-figure(15); clf; hold on; %initialize plot
+%subplot(2,2,4); hold on; %initialize plot
+subplot('Position',[0.56 0.07 0.43 0.45]); hold on;
 
 %plot average values
 for d = 1:N_daterange
@@ -722,21 +743,30 @@ for d = 1:N_daterange
     plot([0.999 0.999],tauit_daterange(d)+sigma_tauit_daterange(d)*[-1 1],'Color',PlotColors_Sensitivity{d},'LineWidth',2);
 end
 
-%annotate plot
+%annotate and format plot
+xlim([0 1]);
+ylim([0.08 0.135]);
 legend_items = cell(N_daterange,1);
 for d = 1:N_daterange
     legend_items{d} = [datestr(daterange_startdate(d),'mmm dd'),'-',datestr(daterange_enddate(d),'dd')];
 end
-
 legend(legend_items,'Location','NorthEast');
+text(0.03,0.133,'(d)','FontSize',PlotFont);
 xlabel('transport activity, $$f_Q$$','interpreter','latex');
-ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
-title(Site_sensitivityanalysis);
+% ylabel('effective threshold stress, $$\tau_{th}$$ (Pa)','interpreter','latex');
+set(gca,'YTickLabel',[]);
+% title(Site_sensitivityanalysis);
 set(gca,'FontSize',PlotFont);
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 
+% %print plot
+% set(gca, 'LooseInset', get(gca,'TightInset'));
+% set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
+% print([folder_Plots,'threshold_activity_daterange.png'],'-dpng');
+% print([folder_Plots,'threshold_activity_daterange.tif'],'-dtiff','-r600');
+
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
-print([folder_Plots,'threshold_activity_daterange.png'],'-dpng');
-print([folder_Plots,'threshold_activity_daterange.tif'],'-dtiff','-r600');
+set(gcf,'PaperUnits','inches','PaperSize',[7 7],'PaperPosition',[0 0 7 7],'PaperPositionMode','Manual');
+print([folder_Plots,'threshold_activity_sensitivityanalyses.png'],'-dpng');
+% print([folder_Plots,'threshold_activity_sensitivityanalyses.tif'],'-dtiff','-r600');

@@ -54,7 +54,7 @@ fQ = fQ_all{ind_Site}{ind_Deltat,ind_deltat};
 uth = uth_all{ind_Site}{ind_Deltat,ind_deltat};
 zU = zU_all{ind_Site}{ind_Deltat,ind_deltat};
 theta = theta_all{ind_Site}{ind_Deltat};
-zL = zL_all{ind_Site}{ind_Deltat,ind_Deltat};
+zL = zL_all{ind_Site}{ind_Deltat,ind_deltat};
 
 %get indices for binning
 ind_fQ = intersect(find(fQ>=fQ_min),find(fQ<=fQ_max)); %get indices for fQ range

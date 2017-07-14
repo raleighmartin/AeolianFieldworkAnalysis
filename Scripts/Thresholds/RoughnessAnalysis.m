@@ -32,7 +32,7 @@ Q_bin_N_min = 3; %minimum number of entries for bin
 
 %% folders for loading and saving data
 folder_LoadData = '../../AnalysisData/Windowing/'; %folder for retrieving data for this analysis
-folder_SaveData = '../../AnalysisData/Roughness/'; %folder for outputs of this analysis
+folder_SaveData = '../../AnalysisData/WindAnalysis/'; %folder for outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
 folder_Plots = '../../PlotOutput/Roughness/'; %folder for plots
 
@@ -639,3 +639,99 @@ set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
 print([folder_Plots,'zs_Q.png'],'-dpng');
 %print([folder_Plots,'zs_Q.tif'],'-dtiff','-r600');
+
+
+%% combined roughness plot for paper - zs versus Q and zs versus fQ
+figure(4); clf; %initialize plot
+
+%set up subplot - zs versus Q
+subplot('Position',[0.08 0.1 0.43 0.88]); hold on;
+
+%plot z0 average values
+for i = 1:N_Sites
+    plot(0.01,exp(z0Re_ln_Q_bin_avg_all(i)),PlotMarkers_Site{i},'Color',PlotColors_Site{i});
+end
+
+%plot z0 SE values
+for i = 1:N_Sites
+    plot([0.01 0.01],exp(z0Re_ln_Q_bin_avg_all(i)+z0Re_ln_Q_bin_SE_all(i)*[-1 1]),'Color',PlotColors_Site{i});
+end
+
+%plot zs average values
+for i = 1:N_Sites
+    plot(Q_bin_avg_all{i},exp(zsRe_ln_Q_bin_avg_all{i}),PlotMarkers_Site{i},'Color',PlotColors_Site{i});
+end
+
+%plot zs SE values
+for i = 1:N_Sites
+    N_Q_bins = length(Q_bin_avg_all{i});
+    for k = 1:N_Q_bins
+        plot(Q_bin_avg_all{i}(k)+Q_bin_SE_all{i}(k)*[-1 1],exp(zsRe_ln_Q_bin_avg_all{i}(k)*[1 1]),'Color',PlotColors_Site{i});
+        plot(Q_bin_avg_all{i}(k)*[1 1],exp(zsRe_ln_Q_bin_avg_all{i}(k)+zsRe_ln_Q_bin_SE_all{i}(k)*[-1 1]),'Color',PlotColors_Site{i});
+    end
+end
+
+%plot fit line
+for i = 1:N_Sites
+    plot([0 Q_max_fit],exp(z0Re_ln_Q_fit(i)+dlnzsRe_dQ_fit(i)*[0 Q_max_fit]),'Color',PlotColors_Site{i});
+    plot([0 0],exp(z0Re_ln_Q_fit(i)+sigma_z0Re_ln_Q_fit(i)*[-1 1]),'Color',PlotColors_Site{i},'LineWidth',3);
+end
+
+%annotate and format
+legend(SiteNames,'Location','SouthEast');
+xlabel('saltation flux, $$Q$$ (gm$$^{-1}$$s$$^{-1}$$)','interpreter','latex');
+ylabel('effective roughness height, $$z_{s}$$ (m)','interpreter','latex');
+text(2.5,8e-3,'(a)');
+set(gca,'FontSize',PlotFont);
+set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+set(gca,'YScale','log');
+ylim([1e-5 1e-2]);
+
+%set up subplot - zs versus fQ
+subplot('Position',[0.56 0.1 0.43 0.88]); hold on;
+
+%plot z0 average values
+for i = 1:N_Sites
+    plot(0.01,exp(z0Re_ln_fQ_bin_avg_all(i)),PlotMarkers_Site{i},'Color',PlotColors_Site{i});
+end
+
+%plot z0 SE values
+for i = 1:N_Sites
+    plot([0.01 0.01],exp(z0Re_ln_fQ_bin_avg_all(i)+z0Re_ln_fQ_bin_SE_all(i)*[-1 1]),'Color',PlotColors_Site{i});
+end
+
+        
+%plot zs average values
+for i = 1:N_Sites
+    plot(fQ_bin_avg_all{i},exp(zsRe_ln_fQ_bin_avg_all{i}),PlotMarkers_Site{i},'Color',PlotColors_Site{i});
+end
+
+%plot zs SE values
+for i = 1:N_Sites
+    N_fQ_bins = length(fQ_bin_avg_all{i});
+    for k = 1:N_fQ_bins
+        plot(fQ_bin_avg_all{i}(k)+fQ_bin_SE_all{i}(k)*[-1 1],exp(zsRe_ln_fQ_bin_avg_all{i}(k)*[1 1]),'Color',PlotColors_Site{i});
+        plot(fQ_bin_avg_all{i}(k)*[1 1],exp(zsRe_ln_fQ_bin_avg_all{i}(k)+zsRe_ln_fQ_bin_SE_all{i}(k)*[-1 1]),'Color',PlotColors_Site{i});
+    end
+end
+
+%plot fit line
+for i = 1:N_Sites
+    plot([0 1],exp(z0Re_ln_fQ_fit(i)+dlnzsRe_dfQ_fit(i)*[0 1]),'Color',PlotColors_Site{i});
+    plot([0 0],exp(z0Re_ln_fQ_fit(i)+sigma_z0Re_ln_fQ_fit(i)*[-1 1]),'Color',PlotColors_Site{i},'LineWidth',3);
+end
+
+%annotate and format plot
+legend(SiteNames,'Location','SouthEast');
+xlabel('transport activity, $$f_Q$$','interpreter','latex');
+text(0.05,8e-3,'(b)');
+set(gca,'FontSize',PlotFont);
+set(gca,'XMinorTick','On','YMinorTick','On','Box','On','YTickLabel',[]);
+set(gca,'YScale','log');
+ylim([1e-5 1e-2]);
+
+%print plot
+set(gca, 'LooseInset', get(gca,'TightInset'));
+set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
+print([folder_Plots,'zs_Q_z0_fQ.png'],'-dpng');
+%print([folder_Plots,'zs_Q_z0_fQ.tif'],'-dtiff','-r600');
