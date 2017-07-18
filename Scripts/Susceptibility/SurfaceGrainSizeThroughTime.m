@@ -1,0 +1,88 @@
+%% initialize
+clearvars;
+close all;
+
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DATA SOURCES AND LOADING %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% information about where to load data and save plots
+folder_GrainSizeData = '../../AnalysisData/GrainSize/'; %folder for grain size data
+GrainSizeData_Path = strcat(folder_GrainSizeData,'GrainSizeData'); %path for loading mean grain size data
+folder_Plots = '../../PlotOutput/GrainSize/'; %folder for plots
+folder_Functions = '../Functions/'; %folder with functions
+
+%% load data and functions
+load(GrainSizeData_Path); %grain size data
+addpath(folder_Functions); %point MATLAB to location of functions
+
+%% get information about sites
+N_Sites = length(Sites);
+
+%% Cluster surface data by location
+Location_Cluster = {...
+    {{'BSNE_A','BSNE_B','Tower_A','Tower_B','U1','Upwind_X0m'},{'Upwind_X5m','Upwind_X10m','Upwind_X15m','Upwind_X20m'}},...
+    {{'A','B','C','Wenglor','A','B','C','Wenglor'}},...
+    {{'A','B','A1','A2','A3','A4'},{'Wenglor'},{'C','D','B1','B2_B3','B4'}},...
+    };
+Name_Cluster = {...
+    {{'0'},{'Upwind'}},...
+    {{'All'}},...
+    {{'A'},{'Wenglor'},{'B'}},...
+    };
+N_Cluster_Site = zeros(N_Sites,1);
+for i = 1:N_Sites
+    N_Cluster_Site(i) = length(Location_Cluster{i});
+end
+
+%% go through sites
+for i = 1:N_Sites
+    
+    %% load relevant information about surface samples
+    GrainSize_surface = GrainSizeData_all{i}.GrainSize_Surface; %surface sample array
+    Location_surface = {GrainSize_surface.Location}; %locations of surface samples
+    Time_surface = [GrainSize_surface.CollectionTime]; %times of surface samples
+    d10_surface = [GrainSize_surface.d_10_mm]; %d10 of surface samples
+    d50_surface = [GrainSize_surface.d_50_mm]; %d50 of surface samples
+    d90_surface = [GrainSize_surface.d_90_mm]; %d90 of surface samples 
+    
+    %% initialize plot
+    figure(i);
+    for j = 1:N_Cluster_Site(i)
+        
+        %get values for cluster
+        ind_Cluster = []; %inialize list of indices associated with cluster
+        for k = 1:length(Location_Cluster{i}{j})
+            ind_Cluster = [ind_Cluster, find(strcmp(Location_surface,Location_Cluster{i}{j}{k})==1)];
+        end
+        Time_Cluster = Time_surface(ind_Cluster); %get times for cluster
+        [Time_Cluster, ind_sort] = sort(Time_Cluster); %sort times for cluster
+        ind_Cluster = ind_Cluster(ind_sort); %sort associated cluster indices
+        d10_Cluster = d10_surface(ind_Cluster); %get d10 values for cluster
+        d50_Cluster = d50_surface(ind_Cluster); %get d50 values for cluster
+        d90_Cluster = d90_surface(ind_Cluster); %get d90 values for cluster
+        
+        %plot cluster values through time
+        subplot(1,N_Cluster_Site(i),j); hold on;
+        plot(Time_Cluster, d90_Cluster, '-^'); %plot d90
+        plot(Time_Cluster, d50_Cluster, '-o'); %plot d50
+        plot(Time_Cluster, d10_Cluster, '-v'); %plot d10
+        ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+        
+        %plot dividing line for Oceano
+        if i == 3
+            plot([datetime(2015,5,23),datetime(2015,5,23)],[0 1],'k--');
+        end
+            
+        %format plot
+        title(strcat(Sites{i},'-',Name_Cluster{i}{j}));
+        ylim([0 1]);
+        set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+        legend('d_{90,bed}','d_{50,bed}','d_{10,bed}','Location','SouthOutside');
+    end
+    
+    %print plot
+    set(gcf,'PaperUnits','inches','PaperSize',[3*N_Cluster_Site(i) 5],'PaperPosition',[0 0 3*N_Cluster_Site(i) 4],'PaperPositionMode','Manual');
+    print([folder_Plots,'SurfaceGrainSizeThroughTime_',Sites{i},'.png'],'-dpng');
+end
