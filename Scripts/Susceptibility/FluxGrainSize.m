@@ -15,6 +15,7 @@ dref_type = 'd50';
 %dref_type = 'dmodal';
 
 %% set range of trustworthy grain sizes
+%d_min = 0.06;
 d_min = 0.13; %minimum trustworthy grain size
 d_max = 1; %maximum trustworthy grain size
 
@@ -56,13 +57,13 @@ N_Cluster_Site = cellfun(@length,Cluster_StartDate); %number of surface grain si
 N_Cluster = sum(N_Cluster_Site); %total number of clusters
 
 %generate names of clusters
-ClusterNames = {'Jericoacoara','Rancho Guadalupe','Oceano - R1','Oceano - L1','Oceano - R2','Oceano - L2'};
+ClusterNames = {'Jericoacoara','Rancho Guadalupe','Oceano - N1','Oceano - S1','Oceano - N2','Oceano - S2'};
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % PARAMETERS FOR PROFILE AVERAGING %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-znorm_maxlower = 2; %max lower z/zq
+znorm_maxlower = 2.5; %max lower z/zq
 znorm_minupper = 4.5; %min upper z/zq
 N_min_profile = 3; %minimum number of values in profile
 
@@ -743,6 +744,8 @@ f_airborne_profilebar_Cluster = cell(N_Cluster,1); %fraction of airborne sample 
 f_airborne_bar_Cluster = cell(N_Cluster,1); %mean fraction of airborne sample in bin
 f_ratio_Cluster = cell(N_Cluster,1); %ratio of airborne and surface
 f_ratio_bar_Cluster = cell(N_Cluster,1); %mean ratio of airborne and surface
+f_ratio_sigma_Cluster = cell(N_Cluster,1); %uncertainty on ratio of airborne and surface
+f_ratio_sigmalog_Cluster = cell(N_Cluster,1); %uncertainty on log of ratio of airborne and surface
 d_f_lower_Cluster = cell(N_Cluster,1); %lower limit d for cluster
 d_f_upper_Cluster = cell(N_Cluster,1); %upper limit d for cluster
 d_f_mid_Cluster = cell(N_Cluster,1); %mid d for cluster
@@ -796,6 +799,12 @@ for i = 1:N_Cluster
     ind_usable = ind_usable_profile_Cluster{i}; %get indices of usable data
     f_airborne_bar_Cluster{i} = mean(f_airborne_profilebar_Cluster{i}(ind_usable,:));
     f_ratio_bar_Cluster{i} = mean(f_ratio_Cluster{i}(ind_usable,:));
+    f_ratio_sigma_Cluster{i} = std(f_ratio_Cluster{i}(ind_usable,:))./sqrt(length(ind_usable)); %uncertainty on ratio of airborne and surface
+    f_ratio_sigmalog_Cluster{i} = zeros(1,N_drange); %initialize list of log uncertainty
+    for k = 1:N_drange
+        f_ratio_k = f_ratio_Cluster{i}(ind_usable,k);
+        f_ratio_sigmalog_Cluster{i}(k) = std(log(f_ratio_k(f_ratio_k>0)))./sqrt(sum(f_ratio_k>0)); %uncertainty on log of ratio of airborne and surface
+    end
         
     %go through each sample in each profile to get size-selective partial fluxes
     qi_Cluster{i} = cell(N_profile_Cluster,1); %size-selective partial flux in cluster
@@ -852,121 +861,6 @@ for i = 1:N_Cluster
     end
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% DETERMINE BOUNDS OF BINS %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-d_bin_lower_Cluster = zeros(N_Cluster,N_bins); %lower edge diameter of bin (mm)
-d_bin_upper_Cluster = zeros(N_Cluster,N_bins); %upper edge diameter of bin (mm)
-d_bin_mid_Cluster = zeros(N_Cluster,N_bins); %midpoint diameter of bin (mm)
-dhat_bin_lower_Cluster = zeros(N_Cluster,N_bins); %lower edge d/dref of bin
-dhat_bin_upper_Cluster = zeros(N_Cluster,N_bins); %upper edge d/dref of bin
-dhat_bin_mid_Cluster = zeros(N_Cluster,N_bins); %midpoint d/dref of bin
-CDFa_bin_lower_Cluster = zeros(N_Cluster,N_bins); %airborne CDF values for size bins - lower limit
-CDFa_bin_upper_Cluster = zeros(N_Cluster,N_bins); %airborne CDF values for size bins - upper limit
-CDFa_bin_mid_Cluster = zeros(N_Cluster,N_bins); %airborne CDF values for size bins - midpoint
-CDFs_bin_lower_Cluster = zeros(N_Cluster,N_bins); %surface CDF values for size bins - lower limit
-CDFs_bin_upper_Cluster = zeros(N_Cluster,N_bins); %surface CDF values for size bins - upper limit
-CDFs_bin_mid_Cluster = zeros(N_Cluster,N_bins); %surface CDF values for size bins - midpoint
-
-if strcmp(binning_type,'fixed')==1
-    for i = 1:N_Cluster
-        d_bin_lower_Cluster(i,:) = d_bin_lower; %lower edge diameter of bin (mm)
-        d_bin_upper_Cluster(i,:) = d_bin_upper; %upper edge diameter of bin (mm)
-        d_bin_mid_Cluster(i,:) = d_bin_mid; %midpoint diameter of bin (mm)
-        if strcmp(dref_type,'d50')==1
-            dhat_bin_lower_Cluster(i,:) = d_bin_lower/d50_bar_surface_Cluster(i); %lower edge d/d50 of bin
-            dhat_bin_upper_Cluster(i,:) = d_bin_upper/d50_bar_surface_Cluster(i); %upper edge d/d50 of bin
-            dhat_bin_mid_Cluster(i,:) = d_bin_mid/d50_bar_surface_Cluster(i); %midpoint d/d50 of bin
-        elseif strcmp(dref_type,'dmodal')==1
-            dhat_bin_lower_Cluster(i,:) = d_bin_lower/dmodal_bar_surface_Cluster(i); %lower edge d/dmodal of bin
-            dhat_bin_upper_Cluster(i,:) = d_bin_upper/dmodal_bar_surface_Cluster(i); %upper edge d/dmodal of bin
-            dhat_bin_mid_Cluster(i,:) = d_bin_mid/dmodal_bar_surface_Cluster(i); %midpoint d/dmodal of bin
-        end
-        for j = 1:N_bins
-            CDFa_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_lower(j)); %airborne CDF values for size bins - lower limit
-            CDFa_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_upper(j)); %airborne CDF values for size bins - upper limit
-            CDFa_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_mid(j)); %airborne CDF values for size bins - midpoint
-            CDFs_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_lower(j)); %surface CDF values for size bins - lower limit
-            CDFs_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_upper(j)); %surface CDF values for size bins - upper limit
-            CDFs_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_mid(j)); %surface CDF values for size bins - midpoint
-        end
-    end
-elseif strcmp(binning_type,'dhat')==1
-    for i = 1:N_Cluster
-        if strcmp(dref_type,'d50')==1
-            d_bin_lower_Cluster(i,:) = dhat_bin_lower*d50_bar_surface_Cluster(i); %lower edge diameter of bin (mm)
-            d_bin_upper_Cluster(i,:) = dhat_bin_upper*d50_bar_surface_Cluster(i); %upper edge diameter of bin (mm)
-            d_bin_mid_Cluster(i,:) = dhat_bin_mid*d50_bar_surface_Cluster(i); %midpoint diameter of bin (mm)
-        elseif strcmp(dref_type,'dmodal')==1
-            d_bin_lower_Cluster(i,:) = dhat_bin_lower*dmodal_bar_surface_Cluster(i); %lower edge diameter of bin (mm)
-            d_bin_upper_Cluster(i,:) = dhat_bin_upper*dmodal_bar_surface_Cluster(i); %upper edge diameter of bin (mm)
-            d_bin_mid_Cluster(i,:) = dhat_bin_mid*dmodal_bar_surface_Cluster(i); %midpoint diameter of bin (mm)
-        end
-        dhat_bin_lower_Cluster(i,:) = dhat_bin_lower; %lower edge d/d50 of bin
-        dhat_bin_upper_Cluster(i,:) = dhat_bin_upper; %upper edge d/d50 of bin
-        dhat_bin_mid_Cluster(i,:) = dhat_bin_mid; %midpoint d/d50 of bin
-        for j = 1:N_bins
-            CDFa_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_lower_Cluster(i,j)); %airborne CDF values for size bins - lower limit
-            CDFa_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_upper_Cluster(i,j)); %airborne CDF values for size bins - upper limit
-            CDFa_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_mid_Cluster(i,j)); %airborne CDF values for size bins - midpoint
-            CDFs_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_lower_Cluster(i,j)); %surface CDF values for size bins - lower limit
-            CDFs_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_upper_Cluster(i,j)); %surface CDF values for size bins - upper limit
-            CDFs_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_mid_Cluster(i,j)); %surface CDF values for size bins - midpoint
-        end
-    end    
-elseif strcmp(binning_type,'CDFa')==1
-    for i = 1:N_Cluster
-        for j = 1:N_bins
-            d_bin_lower_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, CDFa_bin_lower(j)); %lower edge diameter of bin (mm)
-            d_bin_upper_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, CDFa_bin_upper(j)); %upper edge diameter of bin (mm)
-            d_bin_mid_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, CDFa_bin_mid(j)); %midpoint diameter of bin (mm)
-        end
-        if strcmp(dref_type,'d50')==1
-            dhat_bin_lower_Cluster(i,:) = d_bin_lower_Cluster(i,:)/d50_bar_surface_Cluster(i); %lower edge d/d50 of bin
-            dhat_bin_upper_Cluster(i,:) = d_bin_upper_Cluster(i,:)/d50_bar_surface_Cluster(i); %upper edge d/d50 of bin
-            dhat_bin_mid_Cluster(i,:) = d_bin_mid_Cluster(i,:)/d50_bar_surface_Cluster(i); %midpoint d/d50 of bin
-        elseif strcmp(dref_type,'dmodal')==1
-            dhat_bin_lower_Cluster(i,:) = d_bin_lower_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %lower edge d/dmodal of bin
-            dhat_bin_upper_Cluster(i,:) = d_bin_upper_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %upper edge d/dmodal of bin
-            dhat_bin_mid_Cluster(i,:) = d_bin_mid_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %midpoint d/dmodal of bin
-        end
-        CDFa_bin_lower_Cluster(i,:) = CDFa_bin_lower; %airborne CDF values for size bins - lower limit
-        CDFa_bin_upper_Cluster(i,:) = CDFa_bin_upper; %airborne CDF values for size bins - upper limit
-        CDFa_bin_mid_Cluster(i,:) = CDFa_bin_mid; %airborne CDF values for size bins - midpoint
-        for j = 1:N_bins
-            CDFs_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_lower_Cluster(i,j)); %surface CDF values for size bins - lower limit
-            CDFs_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_upper_Cluster(i,j)); %surface CDF values for size bins - upper limit
-            CDFs_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_mid_Cluster(i,j)); %surface CDF values for size bins - midpoint
-        end
-    end
-elseif strcmp(binning_type,'CDFs')==1
-    for i = 1:N_Cluster
-        for j = 1:N_bins
-            d_bin_lower_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, CDFs_bin_lower(j)); %lower edge diameter of bin (mm)
-            d_bin_upper_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, CDFs_bin_upper(j)); %upper edge diameter of bin (mm)
-            d_bin_mid_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, CDFs_bin_mid(j)); %midpoint diameter of bin (mm)
-        end
-        if strcmp(dref_type,'d50')==1
-            dhat_bin_lower_Cluster(i,:) = d_bin_lower_Cluster(i,:)/d50_bar_surface_Cluster(i); %lower edge d/d50 of bin
-            dhat_bin_upper_Cluster(i,:) = d_bin_upper_Cluster(i,:)/d50_bar_surface_Cluster(i); %upper edge d/d50 of bin
-            dhat_bin_mid_Cluster(i,:) = d_bin_mid_Cluster(i,:)/d50_bar_surface_Cluster(i); %midpoint d/d50 of bin
-        elseif strcmp(dref_type,'dmodal')==1
-            dhat_bin_lower_Cluster(i,:) = d_bin_lower_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %lower edge d/dmodal of bin
-            dhat_bin_upper_Cluster(i,:) = d_bin_upper_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %upper edge d/dmodal of bin
-            dhat_bin_mid_Cluster(i,:) = d_bin_mid_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %midpoint d/dmodal of bin
-        end
-        for j = 1:N_bins
-            CDFa_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_lower_Cluster(i,j)); %airborne CDF values for size bins - lower limit
-            CDFa_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_upper_Cluster(i,j)); %airborne CDF values for size bins - upper limit
-            CDFa_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_mid_Cluster(i,j)); %airborne CDF values for size bins - midpoint
-        end
-        CDFs_bin_lower_Cluster(i,:) = CDFs_bin_lower; %surface CDF values for size bins - lower limit
-        CDFs_bin_upper_Cluster(i,:) = CDFs_bin_upper; %surface CDF values for size bins - upper limit
-        CDFs_bin_mid_Cluster(i,:) = CDFs_bin_mid; %surface CDF values for size bins - midpoint
-    end
-end
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % GROUP SIZE DISTRIBUTIONS BY TAU/TAUTH BINS %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -975,7 +869,7 @@ d_taunormbar_airborne_mid_Cluster = cell(N_Cluster,1); %grain sizes for this ana
 dV_taunormbar_airborne_Cluster = cell(N_Cluster,1);
 dVdlogd_taunormbar_airborne_Cluster = cell(N_Cluster,1);
 for i = 1:N_Cluster
-    ind_drange = find(d_airborne_lower_Cluster{i} >= d_min & d_airborne_mid_Cluster{i}<=2); %include only grain size bins with d>d_min and d<2
+    ind_drange = find(d_airborne_lower_Cluster{i} >= d_min & d_airborne_upper_Cluster{i}<=2); %include only grain size bins with d>d_min and d<2
     N_d = length(ind_drange); %number of grain size bins
     d_taunormbar_airborne_mid_Cluster{i} = d_airborne_mid_Cluster{i}(ind_drange); %grain sizes for this analysis, include only grain size bins with d>d_min
     dV_taunormbar_airborne_Cluster{i} = zeros(N_taunorm_bins,N_d);
@@ -990,39 +884,72 @@ for i = 1:N_Cluster
     end
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% GROUP ZQNORM AND FRATIO BY DHAT BINS %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% GET ZQNORM ASSOCIATED WITH AIRBORNE D10, D50, AND D90 %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-zqinorm_bin_Cluster = cell(N_Cluster,1); %separate zq/d into bins
-taunorm_zqinorm_bin_Cluster = cell(N_Cluster,1); %get associated taunorm
+zqinorm_d10_Cluster = cell(N_Cluster,1); %zqi/d associated with d10
+sigma_zqinorm_d10_Cluster = cell(N_Cluster,1); %uncertainty in zqi/d associated with d10
+zqinorm_d50_Cluster = cell(N_Cluster,1); %zqi/d associated with d50
+sigma_zqinorm_d50_Cluster = cell(N_Cluster,1); %uncertainty in zqi/d associated with d50
+zqinorm_d90_Cluster = cell(N_Cluster,1); %zqi/d associated with d90
+sigma_zqinorm_d90_Cluster = cell(N_Cluster,1); %uncertainty in zqi/d associated with d90
+
 for i = 1:N_Cluster
-    ind_usable = ind_usable_profile_Cluster{i};
-    N_profiles = length(ind_usable);
-    zqinorm_bin_Cluster{i} = zeros(N_profiles,N_bins)*NaN;
-    taunorm_zqinorm_bin_Cluster{i} = taunorm_profile_Cluster{i}(ind_usable);
+    %get zqinorm for d10
+    d10_diff = abs(d_f_mid_Cluster{i}-d10_bar_airborne_Cluster(i));
+    ind_d10 = find(d10_diff==min(d10_diff));
+    zqinorm_d10_Cluster{i} = zqinorm_Cluster{i}(:,ind_d10);
+    sigma_zqinorm_d10_Cluster{i} = sigma_zqinorm_Cluster{i}(:,ind_d10);
     
-    %get normalized d
-    if strcmp(dref_type,'d50')==1
-        dhat = d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i);
-    elseif strcmp(dref_type,'dmodal')==1
-        dhat = d_f_mid_Cluster{i}./dmodal_bar_surface_Cluster(i);
-    end
-
-    %compute binned zqinorm
-    for j = 1:length(ind_usable)
-        for k = 1:N_bins
-            ind_drange = find(dhat >= dhat_bin_lower_Cluster(i,k) & dhat<=dhat_bin_upper_Cluster(i,k)); %include only grain size bins with d>d_min and d<2
-            zqinorm_bin = zqinorm_Cluster{i}(ind_usable(j),ind_drange); %get zqinorm values in bin
-            ind_mean = find(~isnan(zqinorm_bin)); %find the values that are defined
-            if length(ind_mean)>=3
-                zqinorm_bin_Cluster{i}(j,k) = mean(zqinorm_bin(ind_mean));
-            end
-        end        
-    end
+    %get zqinorm for d50
+    d50_diff = abs(d_f_mid_Cluster{i}-d50_bar_airborne_Cluster(i));
+    ind_d50 = find(d50_diff==min(d50_diff));
+    zqinorm_d50_Cluster{i} = zqinorm_Cluster{i}(:,ind_d50);
+    sigma_zqinorm_d50_Cluster{i} = sigma_zqinorm_Cluster{i}(:,ind_d50);
+    
+    %get zqinorm for d90
+    d90_diff = abs(d_f_mid_Cluster{i}-d90_bar_airborne_Cluster(i));
+    ind_d90 = find(d90_diff==min(d90_diff));
+    zqinorm_d90_Cluster{i} = zqinorm_Cluster{i}(:,ind_d90);
+    sigma_zqinorm_d90_Cluster{i} = sigma_zqinorm_Cluster{i}(:,ind_d90);
 end
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% GET ZQNORM ASSOCIATED WITH DHAT = FINE, MEDIUM, AND COARSE %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+zqinorm_dhat_fine_Cluster = cell(N_Cluster,1); %zqi/d associated with dhat_fine
+sigma_zqinorm_dhat_fine_Cluster = cell(N_Cluster,1); %uncertainty in zqi/d associated with dhat_fine
+zqinorm_dhat_medium_Cluster = cell(N_Cluster,1); %zqi/d associated with dhat_medium
+sigma_zqinorm_dhat_medium_Cluster = cell(N_Cluster,1); %uncertainty in zqi/d associated with dhat_medium
+zqinorm_dhat_coarse_Cluster = cell(N_Cluster,1); %zqi/d associated with dhat_coarse
+sigma_zqinorm_dhat_coarse_Cluster = cell(N_Cluster,1); %uncertainty in zqi/d associated with dhat_coarse
+
+dhat_fine = 0.6;
+dhat_medium = 0.9;
+dhat_coarse = 1.2;
+
+for i = 1:N_Cluster
+    %get zqinorm for dhat_fine
+    dhat_fine_diff = abs(d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i)-dhat_fine);
+    ind_dhat_fine = find(dhat_fine_diff==min(dhat_fine_diff));
+    zqinorm_dhat_fine_Cluster{i} = zqinorm_Cluster{i}(:,ind_dhat_fine);
+    sigma_zqinorm_dhat_fine_Cluster{i} = sigma_zqinorm_Cluster{i}(:,ind_dhat_fine);
+    
+    %get zqinorm for dhat_medium
+    dhat_medium_diff = abs(d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i)-dhat_medium);
+    ind_dhat_medium = find(dhat_medium_diff==min(dhat_medium_diff));
+    zqinorm_dhat_medium_Cluster{i} = zqinorm_Cluster{i}(:,ind_dhat_medium);
+    sigma_zqinorm_dhat_medium_Cluster{i} = sigma_zqinorm_Cluster{i}(:,ind_dhat_medium);
+    
+    %get zqinorm for dhat_coarse
+    dhat_coarse_diff = abs(d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i)-dhat_coarse);
+    ind_dhat_coarse = find(dhat_coarse_diff==min(dhat_coarse_diff));
+    zqinorm_dhat_coarse_Cluster{i} = zqinorm_Cluster{i}(:,ind_dhat_coarse);
+    sigma_zqinorm_dhat_coarse_Cluster{i} = sigma_zqinorm_Cluster{i}(:,ind_dhat_coarse);
+end
 
 
 %%%%%%%%%
@@ -1030,7 +957,7 @@ end
 %%%%%%%%%
 
 %% Plot taunorm-conditioned airborne versus surface size distributions
-figure(2); clf;
+figure(3); clf;
 
 %initialize subplots
 h_subplot = gobjects(N_Cluster,1);
@@ -1038,29 +965,19 @@ h_subplot = gobjects(N_Cluster,1);
 for i = 1:N_Cluster
 
     %initialize subplot
-    if N_Cluster == 4 %defined subplot sizes for four clusters
+    if N_Cluster == 6 %defined subplot sizes for six clusters
         if i == 1
-            h_subplot(1) = subplot('position',[0.10 0.56 0.4 0.4]); hold on;
+            h_subplot(1) = subplot('position',[0.12 0.7 0.38 0.24]); hold on;
         elseif i == 2
-            h_subplot(2) = subplot('position',[0.58 0.56 0.4 0.4]); hold on;
+            h_subplot(2) = subplot('position',[0.58 0.7 0.38 0.24]); hold on;
         elseif i == 3
-            h_subplot(3) = subplot('position',[0.10 0.08 0.4 0.4]); hold on;
-        else
-            h_subplot(4) = subplot('position',[0.58 0.08 0.4 0.4]); hold on;
-        end
-    elseif N_Cluster == 6 %defined subplot sizes for four clusters
-        if i == 1
-            h_subplot(1) = subplot('position',[0.12 0.72 0.38 0.26]); hold on;
-        elseif i == 2
-            h_subplot(2) = subplot('position',[0.58 0.72 0.38 0.26]); hold on;
-        elseif i == 3
-            h_subplot(3) = subplot('position',[0.12 0.39 0.38 0.26]); hold on;
+            h_subplot(3) = subplot('position',[0.12 0.38 0.38 0.24]); hold on;
         elseif i == 4
-            h_subplot(4) = subplot('position',[0.58 0.39 0.38 0.26]); hold on;
+            h_subplot(4) = subplot('position',[0.58 0.38 0.38 0.24]); hold on;
         elseif i == 5
-            h_subplot(5) = subplot('position',[0.12 0.06 0.38 0.26]); hold on;
+            h_subplot(5) = subplot('position',[0.12 0.06 0.38 0.24]); hold on;
         else
-            h_subplot(6) = subplot('position',[0.58 0.06 0.38 0.26]); hold on;
+            h_subplot(6) = subplot('position',[0.58 0.06 0.38 0.24]); hold on;
         end
     else %otherwise, automated subplot sizes
         h_subplot(i) = subplot(round((N_Cluster+1)/2),2,i); hold on;
@@ -1075,7 +992,8 @@ for i = 1:N_Cluster
     end
     
     %format plot
-    set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+    %set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+    set(gca,'XScale','log','YScale','log','YMinorTick','On');
     xlim([0.06, 2]);
     set(gca,'xtick',[0.06:0.01:0.1, 0.2:0.1:1, 2]);
     set(gca,'xticklabels',{'0.06','','','','0.1','0.2','','0.4','','0.6','','','','1','2'});
@@ -1083,22 +1001,31 @@ for i = 1:N_Cluster
     text(0.07, 6, Label_Cluster{i},'FontSize',12);
 
     %label plot
-    title(ClusterNames{i});
+    htitle = title(ClusterNames{i});
+    set(htitle,'Position',[0.35,3.5]); %set title below edge of box to accommodate second axis
     if i>=2*round(N_Cluster/2)-1
         xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
     end
     if mod(i,2) == 1
-        ylabel('Normalized volume, $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+        ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
     end
-        
+    
+%     %plot fine, medium, and coarse ranges
+%     ylims = ylim; %get y limits
+%     plot([0.4 0.4]*d50_bar_surface_Cluster(i),ylims,'k--','LineWidth',1);
+%     plot([0.8 0.8]*d50_bar_surface_Cluster(i),ylims,'k--','LineWidth',1);
+%     text(0.28*d50_bar_surface_Cluster(i),2*ylims(1),'Fine','HorizontalAlignment','Center');
+%     text(0.56*d50_bar_surface_Cluster(i),2*ylims(1),'Medium','HorizontalAlignment','Center');
+%     text(1.05*d50_bar_surface_Cluster(i),2*ylims(1),'Coarse','HorizontalAlignment','Center');    
+    
     %create legend
     legend_items = cell(N_taunorm_bins+N_bins+1,1);
     legend_items{1} = 'Surface';
     for j = 1:N_taunorm_bins
         if j == 1
-            legend_items{j+1} = ['\tau/\tau_{th} \leq ',num2str(taunorm_bin_max(j),'%10.2f')];       
+            legend_items{j+1} = ['\tau/\tau_{it} \leq ',num2str(taunorm_bin_max(j),'%10.1f')];       
         else
-            legend_items{j+1} = [num2str(taunorm_bin_min(j),'%10.1f'),' < \tau/\tau_{th} \leq ',num2str(taunorm_bin_max(j),'%10.1f')];
+            legend_items{j+1} = [num2str(taunorm_bin_min(j),'%10.1f'),' < \tau/\tau_{it} \leq ',num2str(taunorm_bin_max(j),'%10.1f')];
         end
     end
     for j = 1:N_bins
@@ -1107,7 +1034,36 @@ for i = 1:N_Cluster
     if i == 1
         h_legend = legend(legend_items,'Location','SouthWest');
         set(h_legend,'FontSize',8);
-    end   
+    end
+    
+    %add second axis
+    ax1 = gca; %get handle for first axis
+    set(ax1,'XColor','k','YColor','k');
+    ax2 = axes('Position',get(ax1,'Position'),...
+        'XAxisLocation','top',...
+        'YAxisLocation','right',...
+        'Color','none',...
+        'XColor','k',...
+        'YColor','k');
+    cla;
+    xmin = 0.06/d50_bar_surface_Cluster(i);
+    xmax = 2/d50_bar_surface_Cluster(i);
+    xmaxtick = floor(xmax);
+    line([xmin xmax],[0 0],'Color','k','Parent',ax2);
+    set(ax2,'XScale','log','XLim',[xmin xmax],'YLim',[1 2]);
+    set(ax2,'XTick',[0.2:0.1:0.9,1:xmaxtick]);
+    XTickLabels = cell(8+xmaxtick,1);
+    XTickLabels{1} = '0.2';
+    XTickLabels{3} = '0.4';
+    XTickLabels{7} = '0.8';
+    for j = 2:xmaxtick
+        XTickLabels{8+j} = int2str(j);
+    end
+    set(ax2,'XTickLabel',XTickLabels);
+    set(ax2,'YTick',[]);
+    if i<=2
+        xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+    end
 end
 
 %print plot
@@ -1115,7 +1071,7 @@ set(gcf,'PaperUnits','inches','PaperSize',[7 9],'PaperPosition',[0 0 7 9],'Paper
 print([folder_Plots,'GSD_taunorm.png'],'-dpng');
 
 %% PLOT mean fratio / fsurface - unbinned - limited dhat
-figure(3); clf; hold on;
+figure(4); clf; hold on;
 
 %plot fratio values
 for i = 1:N_Cluster   
@@ -1126,17 +1082,36 @@ for i = 1:N_Cluster
     end
 end
 
+%plot error bars
+for i = 1:N_Cluster
+    for k = 1:length(d_f_mid_Cluster{i})
+        if strcmp(dref_type,'d50')
+            plot(d_f_mid_Cluster{i}(k)./d50_bar_surface_Cluster(i)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
+        elseif strcmp(dref_type,'dmodal')
+            plot(d_f_mid_Cluster{i}(k)./dmodal_bar_surface_Cluster(i)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
+        end
+    end
+end
+
+%plot fine, medium, and coarse ranges
+text(0.32,7,'Fine','HorizontalAlignment','Center');
+text(0.56,7,'Medium','HorizontalAlignment','Center');
+text(1.0,7,'Coarse','HorizontalAlignment','Center');
+plot([0.4 0.4],[1e-4 1e1],'k--','LineWidth',1);
+plot([0.8 0.8],[1e-4 1e1],'k--','LineWidth',1);
+
 %format plot
 if strcmp(dref_type,'d50')==1
-    xlabel('Normalized grain size, $$d / d_{50,bed}$$','Interpreter','Latex');
+    xlabel('Normalized grain size, $$d_i / d_{50,bed}$$','Interpreter','Latex');
 elseif strcmp(dref_type,'dmodal')==1
-    xlabel('Normalized grain size, $$d / d_{modal,bed}$$','Interpreter','Latex');
+    xlabel('Normalized grain size, $$d_i / d_{modal,bed}$$','Interpreter','Latex');
 end
-ylabel('Mean airborne / bed fraction, $$\langle f_{air} \rangle/f_{bed}$$','Interpreter','Latex');
+ylabel('Ratio of mean airborne to bed surface volume fractions, $$\langle f_{i,air} \rangle/f_{i,bed}$$','Interpreter','Latex');
 h_legend = legend(ClusterNames,'Location','NorthEast');
 set(h_legend,'FontSize',8);
 set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On');
 ylim([1e-4 1e1]);
+text(0.26,7,'(a)');
 
 %inset plot with dimensional values
 axes('Position',[.25 .25 .35 .38]); hold on;
@@ -1146,11 +1121,23 @@ for i = 1:N_Cluster
     plot(d_f_mid_Cluster{i},f_ratio_bar_Cluster{i},Marker_Cluster{i},'Color',Color_Cluster{i}); %values
 end
 
-xlabel('Grain size, $$d$$ (mm)','Interpreter','Latex');
-ylabel('$$\langle f_{air} \rangle /f_{bed}$$','Interpreter','Latex');
+%plot error bars
+for i = 1:N_Cluster
+    for k = 1:length(d_f_mid_Cluster{i})
+        if strcmp(dref_type,'d50')
+            plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
+        elseif strcmp(dref_type,'dmodal')
+            plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
+        end
+    end
+end
+
+xlabel('Grain size, $$d_{i}$$ (mm)','Interpreter','Latex');
+ylabel('$$\langle f_{i,air} \rangle /f_{i,bed}$$','Interpreter','Latex');
 set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On');
 xlim([d_min d_max]);
 ylim([1e-4 1e1]);
+text(0.8,5,'(b)');
 
 %print plot
 %set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6 5],'PaperPositionMode','Manual');
@@ -1159,9 +1146,63 @@ print([folder_Plots,'fratiobar_dhat_unbinned_limited_',dref_type,'.png'],'-dpng'
 
 
 %% PLOT mean zqnorm VS dhat
-figure(4); clf; hold on;
+figure(5); clf;
 
-%plot fratio values
+%% plot zq values
+subplot('position',[0.08 0.56 0.9 0.42]); hold on;
+
+for i = 1:N_Cluster   
+    if strcmp(dref_type,'d50') 
+        plot(d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i),zqi_bar_Cluster{i},Marker_Cluster{i},'Color',Color_Cluster{i}); %values
+    elseif strcmp(dref_type,'dmodal')
+        plot(d_f_mid_Cluster{i}./dmodal_bar_surface_Cluster(i),zqi_bar_Cluster{i},Marker_Cluster{i},'Color',Color_Cluster{i}); %values
+    end
+end
+
+%plot error bars
+for i = 1:N_Cluster
+    for k = 1:length(d_f_mid_Cluster{i})
+        if strcmp(dref_type,'d50')
+            plot(d_f_mid_Cluster{i}(k)./d50_bar_surface_Cluster(i)*[1 1],zqi_bar_Cluster{i}(k)*[1 1]+zqi_sigma_Cluster{i}(k)*[-1 1],'Color',Color_Cluster{i});
+        elseif strcmp(dref_type,'dmodal')
+            plot(d_f_mid_Cluster{i}(k)./dmodal_bar_surface_Cluster(i)*[1 1],zqi_bar_Cluster{i}(k)*[1 1]+zqi_sigma_Cluster{i}(k)*[-1 1],'Color',Color_Cluster{i});
+        end
+    end
+end
+
+% %plot mean zq/d50
+% for i = 1:N_Cluster
+%     plot([0.28 2],(zq_bar_Cluster(i))*[1 1],'Color',Color_Cluster{i})
+% end
+
+%plot fine, medium, and coarse ranges
+text(0.32,0.01,'Fine','HorizontalAlignment','Center');
+text(0.56,0.01,'Medium','HorizontalAlignment','Center');
+text(1.0,0.01,'Coarse','HorizontalAlignment','Center');
+plot([0.4 0.4],[0 0.15],'k--','LineWidth',1);
+plot([0.8 0.8],[0 0.15],'k--','LineWidth',1);
+
+%format plot
+xlim([0.28 2]);
+ylim([0 0.15]);
+set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
+% set(gca,'XTick',[0.3:0.1:1,2],'XTickLabel',{'0.3','0.4','0.5','','0.7','','','1','2'});
+if strcmp(dref_type,'dmodal')
+    xlabel('Normalized grain size, $$d_{i} / d_{modal}$$','Interpreter','Latex');
+else
+    xlabel('Normalized grain size, $$d_{i} / d_{50,bed}$$','Interpreter','Latex');
+end
+ylabel('Mean size-selective saltation height, $$\langle z_{q,i} \rangle$$ (m)','Interpreter','Latex');
+text(1.8,0.14,'(a)');
+
+%create legend
+h_legend = legend(ClusterNames,'Location','NorthWest');
+set(h_legend,'FontSize',10);
+
+%% zqnorm
+subplot('position',[0.08 0.06 0.9 0.42]); hold on;
+
+%plot zqnorm values
 for i = 1:N_Cluster   
     if strcmp(dref_type,'d50') 
         plot(d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i),zqinorm_bar_Cluster{i},Marker_Cluster{i},'Color',Color_Cluster{i}); %values
@@ -1181,23 +1222,37 @@ for i = 1:N_Cluster
     end
 end
 
+%plot mean zq/d50
+for i = 1:N_Cluster
+    plot([0.28 2],(1000*zq_bar_Cluster(i)/d50_bar_airborne_Cluster(i))*[1 1],'Color',Color_Cluster{i})
+end
+
+%plot fine, medium, and coarse ranges
+% text(0.32,425,'Fine','HorizontalAlignment','Center');
+% text(0.56,425,'Medium','HorizontalAlignment','Center');
+% text(1.0,425,'Coarse','HorizontalAlignment','Center');
+plot([0.4 0.4],[0 450],'k--','LineWidth',1);
+plot([0.8 0.8],[0 450],'k--','LineWidth',1);
+
 %format plot
 xlim([0.28 2]);
+ylim([0 450]);
 set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
 % set(gca,'XTick',[0.3:0.1:1,2],'XTickLabel',{'0.3','0.4','0.5','','0.7','','','1','2'});
+text(0.3,425,'(b)');
 if strcmp(dref_type,'dmodal')
-    xlabel('Normalized grain size, $$d / d_{ref}$$','Interpreter','Latex');
+    xlabel('Normalized grain size, $$d_{i} / d_{modal}$$','Interpreter','Latex');
 else
-    xlabel('Normalized grain size, $$d / d_{50,bed}$$','Interpreter','Latex');
+    xlabel('Normalized grain size, $$d_{i} / d_{50,bed}$$','Interpreter','Latex');
 end
 ylabel('Mean normalized size-selective saltation height, $$\langle z_{q,i} \rangle/d_{i}$$','Interpreter','Latex');
 
-%create legend
-h_legend = legend(ClusterNames,'Location','SouthWest');
-set(h_legend,'FontSize',10);
 
-%inset plot with dimensional values
-axes('Position',[.58 .65 .3 .25]); hold on;
+%% inset plot with dimensional values
+%axes('Position',[.15 .45 .22 .25]); hold on;
+axes('Position',[.74 .325 .22 .20]); hold on;
+
+%axes('Position',[.17 .43 .25 .15]); hold on;
 
 %plot data
 for i = 1:N_Cluster
@@ -1211,52 +1266,357 @@ for i = 1:N_Cluster
     end
 end
 
+% %plot mean zq/d50
+% for i = 1:N_Cluster
+%     plot([0.12 1.0],zq_bar_Cluster(i)*[1 1],'Color',Color_Cluster{i})
+% end
+
 %format plot
 %ylim([-0.1 0.15]);
 xlim([0.12 1.0]);
-xlabel('$$d$$ (mm)','Interpreter','Latex');
-ylabel('$$\langle z_{q,i} \rangle$$ (m)','Interpreter','Latex');
-set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
+ylim([0 0.15]);
+set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont,'BoxStyle','Full');
+xlabel('Grain size, $$d_{i}$$ (mm)','Interpreter','Latex','FontSize',10);
+ylabel('$$\langle z_{q,i} \rangle$$ (m)','Interpreter','Latex','FontSize',10);
+text(0.15,0.13,'(c)');
 
 %print plot
-set(gcf,'PaperUnits','inches','PaperSize',[8 6],'PaperPosition',[0 0 8 6],'PaperPositionMode','Manual');
+set(gcf,'PaperUnits','inches','PaperSize',[8 10],'PaperPosition',[0 0 8 10],'PaperPositionMode','Manual');
 print([folder_Plots,'zqnorm_dhat_',dref_type,'.png'],'-dpng');
+% 
+% 
+% %% plot variation in reference grain sizes with saltation flux
+% figure(5); clf;
+% for i = 1:N_Cluster
+%     subplot(round(N_Cluster/2),2,i); hold on;
+%     ind_usable = ind_usable_profile_Cluster{i};
+%     h90_air = plot(taunorm_profile_Cluster{i}(ind_usable),d90_profilebar_airborne_Cluster{i}(ind_usable),'^');
+%     h50_air = plot(taunorm_profile_Cluster{i}(ind_usable),d50_profilebar_airborne_Cluster{i}(ind_usable),'o');
+%     h10_air = plot(taunorm_profile_Cluster{i}(ind_usable),d10_profilebar_airborne_Cluster{i}(ind_usable),'v');
+%     c90 = get(h90_air,'Color');
+%     c50 = get(h50_air,'Color');
+%     c10 = get(h10_air,'Color');
+%     h90_sfc = plot([1 4],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
+%     h50_sfc = plot([1 4],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
+%     h10_sfc = plot([1 4],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
+%     xlim([1 4]);
+%     ylim([0 0.9]);
+%     text(1.05, 0.8, Label_Cluster{i},'FontSize',12);
+%     if i==N_Cluster || i==N_Cluster-1
+%         xlabel('shear stress ratio, $$\tau/\tau_{it}$$','Interpreter','Latex')
+%     end
+%     if mod(i,2) == 1
+%         ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+%     end
+%     if i == N_Cluster - 1
+%         legend([h90_air, h50_air, h10_air], 'd_{90,air}','d_{50,air}','d_{10,air}');
+%     elseif i == N_Cluster
+%         legend([h90_sfc, h50_sfc, h10_sfc], 'd_{90,bed}','d_{50,bed}','d_{10,bed}');
+%     end
+%     title(ClusterNames{i});
+% 
+%     set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+% end
+% 
+% %print plot
+% set(gcf,'PaperUnits','inches','PaperSize',[7 9],'PaperPosition',[0 0 7 9],'PaperPositionMode','Manual');
+% print([folder_Plots,'IndexGrainSize_NormShearStress.png'],'-dpng');
+% 
+% 
+% %% plot variation in reference zqnorm with saltation flux - dref values
+% figure(6); clf;
+% for i = 1:N_Cluster
+%     subplot(round(N_Cluster/2),2,i); hold on;
+%     ind_usable = ind_usable_profile_Cluster{i};
+%     h10_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_d10_Cluster{i}(ind_usable),'v');
+%     h50_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_d50_Cluster{i}(ind_usable),'o');
+%     h90_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_d90_Cluster{i}(ind_usable),'^');
+%     c10 = get(h10_air,'Color');
+%     c50 = get(h50_air,'Color');
+%     c90 = get(h90_air,'Color');
+%     xlim([1 4]);
+%     ylim([0 400]);
+%     ylims = ylim;
+%     text(1.1, ylims(1)+range(ylims)*0.94, Label_Cluster{i},'FontSize',12);
+%     if i==N_Cluster || i==N_Cluster-1
+%         xlabel('Normalized shear stress, $$\tau/\tau_{it}$$','Interpreter','Latex')
+%     end
+%     if mod(i,2) == 1
+%         ylabel('Norm. size-sel. salt. ht., $$z_{q,i}/d_{i}$$','Interpreter','Latex');
+%     end
+%     if i == 2
+%         legend([h10_air, h50_air, h90_air], '<d_{10,air}>','<d_{50,air}>','<d_{90,air}>','Location','West');
+%     end
+%     title(ClusterNames{i});
+%     set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+% end
+% 
+% %print plot
+% set(gcf,'PaperUnits','inches','PaperSize',[8 9],'PaperPosition',[0 0 8 9],'PaperPositionMode','Manual');
+% print([folder_Plots,'SaltationHeight_IndexGrainSize_NormShearStress.png'],'-dpng');
+% 
+% 
+% %% plot variation in reference zqnorm with saltation flux - dhat values
+% figure(7); clf;
+% for i = 1:N_Cluster
+%     subplot(round(N_Cluster/2),2,i); hold on;
+%     ind_usable = ind_usable_profile_Cluster{i};
+%     h_fine_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_dhat_fine_Cluster{i}(ind_usable),'v');
+%     h_medium_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_dhat_medium_Cluster{i}(ind_usable),'o');
+%     h_coarse_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_dhat_coarse_Cluster{i}(ind_usable),'^');
+%     c_fine = get(h_fine_air,'Color');
+%     c_medium = get(h_medium_air,'Color');
+%     c_coarse = get(h_coarse_air,'Color');
+%         
+%     %plot error bars
+%     for k = 1:length(ind_usable)
+%         plot(taunorm_profile_Cluster{i}(ind_usable(k))*[1 1],zqinorm_dhat_fine_Cluster{i}(ind_usable(k))*[1 1]+sigma_zqinorm_dhat_fine_Cluster{i}(ind_usable(k))*[-1 1],'Color',c_fine);
+%         plot(taunorm_profile_Cluster{i}(ind_usable(k))*[1 1],zqinorm_dhat_medium_Cluster{i}(ind_usable(k))*[1 1]+sigma_zqinorm_dhat_medium_Cluster{i}(ind_usable(k))*[-1 1],'Color',c_medium);
+%         plot(taunorm_profile_Cluster{i}(ind_usable(k))*[1 1],zqinorm_dhat_coarse_Cluster{i}(ind_usable(k))*[1 1]+sigma_zqinorm_dhat_coarse_Cluster{i}(ind_usable(k))*[-1 1],'Color',c_coarse);
+%     end
+%     
+%     xlim([1 4]);
+%     ylim([0 400]);
+%     ylims = ylim;
+%     text(1.1, ylims(1)+range(ylims)*0.94, Label_Cluster{i},'FontSize',12);
+%     if i==N_Cluster || i==N_Cluster-1
+%         xlabel('Normalized shear stress, $$\tau/\tau_{it}$$','Interpreter','Latex')
+%     end
+%     if mod(i,2) == 1
+%         ylabel('Norm. size-sel. salt. ht., $$z_{q,i}/d_{i}$$','Interpreter','Latex');
+%     end
+%     if i == 2
+%         h_legend = legend([h_fine_air, h_medium_air, h_coarse_air], ['d_{i} /d_{50,bed}=',num2str(dhat_fine)],['d_{i} /d_{50,bed}=',num2str(dhat_medium)],['d_{i} /d_{50,bed}=',num2str(dhat_coarse)],'Location','West');
+%         set(h_legend,'FontSize',8);
+%     end
+%     title(ClusterNames{i});
+%     set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+% end
+% 
+% %print plot
+% set(gcf,'PaperUnits','inches','PaperSize',[8 9],'PaperPosition',[0 0 8 9],'PaperPositionMode','Manual');
+% print([folder_Plots,'SaltationHeight_IndexDHat_NormShearStress.png'],'-dpng');
+% 
+% 
+% %% plot variation in znorm of BSNEs
+% figure(12); clf;
+% for i = 1:N_Cluster
+%     %initialize subplot
+%     if N_Cluster == 6 %defined subplot sizes for four clusters
+%         if i == 1
+%             h_subplot(1) = subplot('position',[0.08 0.72 0.40 0.26]); hold on;
+%         elseif i == 2
+%             h_subplot(2) = subplot('position',[0.57 0.72 0.40 0.26]); hold on;
+%         elseif i == 3
+%             h_subplot(3) = subplot('position',[0.08 0.39 0.40 0.26]); hold on;
+%         elseif i == 4
+%             h_subplot(4) = subplot('position',[0.57 0.39 0.40 0.26]); hold on;
+%         elseif i == 5
+%             h_subplot(5) = subplot('position',[0.08 0.06 0.40 0.26]); hold on;
+%         else
+%             h_subplot(6) = subplot('position',[0.57 0.06 0.40 0.26]); hold on;
+%         end
+%     else %otherwise, automated subplot sizes
+%         h_subplot(i) = subplot(round((N_Cluster+1)/2),2,i); hold on;
+%     end   
+%     
+%     %plot znorm - usable profiles
+%     ind_usable = ind_usable_profile_Cluster{i};
+%     znorm_plot = znorm_profile_Cluster{i}(ind_usable);
+%     Time_plot = Time_profile_Cluster{i}(ind_usable);
+%     N_plot = length(znorm_plot);
+%     for j = 1:N_plot
+%         Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
+%         h1 = plot(Time_profile,znorm_plot{j},'bo-');
+%     end
+%     
+%     %plot znorm - unusable profiles
+%     ind_unusable = setdiff(1:length(znorm_profile_Cluster{i}),ind_usable);
+%     znorm_plot = znorm_profile_Cluster{i}(ind_unusable);
+%     Time_plot = Time_profile_Cluster{i}(ind_unusable);
+%     N_plot = length(znorm_plot);
+%     for j = 1:N_plot
+%         Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
+%         h2 = plot(Time_profile,znorm_plot{j},'rx-');
+%     end
+%     
+%     if mod(i,2) == 1
+%         ylabel('Normalized BSNE trap height, $$z/z_q$$','Interpreter','Latex');
+%     end
+% 
+%     if i == 1
+%         legend([h1 h2],{'usable','unusable'},'Location','North');
+%     end
+%     
+%     title(ClusterNames{i});
+%     ylim([0 7]);
+%     if i==1
+%         set(gca,'XTick',[datetime(2014,11,13):duration(48,0,0):datetime(2014,11,19),datetime(2014,11,21)])
+%     elseif i>=5
+%         set(gca,'XTick',[datetime(2015,5,23):duration(72,0,0):datetime(2015,6,2),datetime(2015,6,5)])
+%     elseif i>=3
+%         set(gca,'XTick',[datetime(2015,5,15):duration(48,0,0):datetime(2015,5,23)])
+%     end
+%     datetick('x','mmm dd','keepticks')
+%     set(gca,'YMinorTick','On','Box','On');
+%     xlims = xlim;
+%     text(xlims(1)+range(xlims)*0.03,6.5,Label_Cluster{i})
+%     
+%     %set(gca,'XTick',xlims(1):(floor(days(range(xlims))/3)*duration(24,0,0)):xlims(2))
+% end
+% 
+% %print plot
+% set(gcf,'PaperUnits','inches','PaperSize',[8 10],'PaperPosition',[0 0 8 10],'PaperPositionMode','Manual');
+% print([folder_Plots,'znorm_profile_BSNE.png'],'-dpng');
 
 
-%% plot variation in reference grain sizes with saltation flux
-figure(5); clf;
-for i = 1:N_Cluster
-    subplot(round(N_Cluster/2),2,i); hold on;
-    ind_usable = ind_usable_profile_Cluster{i};
-    h90_air = plot(Q_profile_Cluster{i}(ind_usable),d90_profilebar_airborne_Cluster{i}(ind_usable),'^');
-    h50_air = plot(Q_profile_Cluster{i}(ind_usable),d50_profilebar_airborne_Cluster{i}(ind_usable),'o');
-    h10_air = plot(Q_profile_Cluster{i}(ind_usable),d10_profilebar_airborne_Cluster{i}(ind_usable),'v');
-    c90 = get(h90_air,'Color');
-    c50 = get(h50_air,'Color');
-    c10 = get(h10_air,'Color');
-    h90_sfc = plot([0 60],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
-    h50_sfc = plot([0 60],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
-    h10_sfc = plot([0 60],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
-    xlim([0 60]);
-    ylim([0 0.9]);
-    if i==N_Cluster || i==N_Cluster-1
-        xlabel('saltation flux, $$Q$$ (g m$$^{-1}$$ s$$^{-1}$$)','Interpreter','Latex')
-    end
-    if mod(i,2) == 1
-        ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
-    end
-    if i == N_Cluster - 1
-        legend([h90_air, h50_air, h10_air], 'd_{90,air}','d_{50,air}','d_{10,air}');
-    elseif i == N_Cluster
-        legend([h90_sfc, h50_sfc, h10_sfc], 'd_{90,surface}','d_{50,surface}','d_{10,surface}');
-    end
-    title(ClusterNames{i});
-    set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-end
 
-%print plot
-set(gcf,'PaperUnits','inches','PaperSize',[6 8],'PaperPosition',[0 0 6 8],'PaperPositionMode','Manual');
-print([folder_Plots,'IndexGrainSize_SaltationFlux.png'],'-dpng');
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % DETERMINE BOUNDS OF BINS %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% d_bin_lower_Cluster = zeros(N_Cluster,N_bins); %lower edge diameter of bin (mm)
+% d_bin_upper_Cluster = zeros(N_Cluster,N_bins); %upper edge diameter of bin (mm)
+% d_bin_mid_Cluster = zeros(N_Cluster,N_bins); %midpoint diameter of bin (mm)
+% dhat_bin_lower_Cluster = zeros(N_Cluster,N_bins); %lower edge d/dref of bin
+% dhat_bin_upper_Cluster = zeros(N_Cluster,N_bins); %upper edge d/dref of bin
+% dhat_bin_mid_Cluster = zeros(N_Cluster,N_bins); %midpoint d/dref of bin
+% CDFa_bin_lower_Cluster = zeros(N_Cluster,N_bins); %airborne CDF values for size bins - lower limit
+% CDFa_bin_upper_Cluster = zeros(N_Cluster,N_bins); %airborne CDF values for size bins - upper limit
+% CDFa_bin_mid_Cluster = zeros(N_Cluster,N_bins); %airborne CDF values for size bins - midpoint
+% CDFs_bin_lower_Cluster = zeros(N_Cluster,N_bins); %surface CDF values for size bins - lower limit
+% CDFs_bin_upper_Cluster = zeros(N_Cluster,N_bins); %surface CDF values for size bins - upper limit
+% CDFs_bin_mid_Cluster = zeros(N_Cluster,N_bins); %surface CDF values for size bins - midpoint
+% 
+% if strcmp(binning_type,'fixed')==1
+%     for i = 1:N_Cluster
+%         d_bin_lower_Cluster(i,:) = d_bin_lower; %lower edge diameter of bin (mm)
+%         d_bin_upper_Cluster(i,:) = d_bin_upper; %upper edge diameter of bin (mm)
+%         d_bin_mid_Cluster(i,:) = d_bin_mid; %midpoint diameter of bin (mm)
+%         if strcmp(dref_type,'d50')==1
+%             dhat_bin_lower_Cluster(i,:) = d_bin_lower/d50_bar_surface_Cluster(i); %lower edge d/d50 of bin
+%             dhat_bin_upper_Cluster(i,:) = d_bin_upper/d50_bar_surface_Cluster(i); %upper edge d/d50 of bin
+%             dhat_bin_mid_Cluster(i,:) = d_bin_mid/d50_bar_surface_Cluster(i); %midpoint d/d50 of bin
+%         elseif strcmp(dref_type,'dmodal')==1
+%             dhat_bin_lower_Cluster(i,:) = d_bin_lower/dmodal_bar_surface_Cluster(i); %lower edge d/dmodal of bin
+%             dhat_bin_upper_Cluster(i,:) = d_bin_upper/dmodal_bar_surface_Cluster(i); %upper edge d/dmodal of bin
+%             dhat_bin_mid_Cluster(i,:) = d_bin_mid/dmodal_bar_surface_Cluster(i); %midpoint d/dmodal of bin
+%         end
+%         for j = 1:N_bins
+%             CDFa_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_lower(j)); %airborne CDF values for size bins - lower limit
+%             CDFa_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_upper(j)); %airborne CDF values for size bins - upper limit
+%             CDFa_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_mid(j)); %airborne CDF values for size bins - midpoint
+%             CDFs_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_lower(j)); %surface CDF values for size bins - lower limit
+%             CDFs_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_upper(j)); %surface CDF values for size bins - upper limit
+%             CDFs_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_mid(j)); %surface CDF values for size bins - midpoint
+%         end
+%     end
+% elseif strcmp(binning_type,'dhat')==1
+%     for i = 1:N_Cluster
+%         if strcmp(dref_type,'d50')==1
+%             d_bin_lower_Cluster(i,:) = dhat_bin_lower*d50_bar_surface_Cluster(i); %lower edge diameter of bin (mm)
+%             d_bin_upper_Cluster(i,:) = dhat_bin_upper*d50_bar_surface_Cluster(i); %upper edge diameter of bin (mm)
+%             d_bin_mid_Cluster(i,:) = dhat_bin_mid*d50_bar_surface_Cluster(i); %midpoint diameter of bin (mm)
+%         elseif strcmp(dref_type,'dmodal')==1
+%             d_bin_lower_Cluster(i,:) = dhat_bin_lower*dmodal_bar_surface_Cluster(i); %lower edge diameter of bin (mm)
+%             d_bin_upper_Cluster(i,:) = dhat_bin_upper*dmodal_bar_surface_Cluster(i); %upper edge diameter of bin (mm)
+%             d_bin_mid_Cluster(i,:) = dhat_bin_mid*dmodal_bar_surface_Cluster(i); %midpoint diameter of bin (mm)
+%         end
+%         dhat_bin_lower_Cluster(i,:) = dhat_bin_lower; %lower edge d/d50 of bin
+%         dhat_bin_upper_Cluster(i,:) = dhat_bin_upper; %upper edge d/d50 of bin
+%         dhat_bin_mid_Cluster(i,:) = dhat_bin_mid; %midpoint d/d50 of bin
+%         for j = 1:N_bins
+%             CDFa_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_lower_Cluster(i,j)); %airborne CDF values for size bins - lower limit
+%             CDFa_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_upper_Cluster(i,j)); %airborne CDF values for size bins - upper limit
+%             CDFa_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_mid_Cluster(i,j)); %airborne CDF values for size bins - midpoint
+%             CDFs_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_lower_Cluster(i,j)); %surface CDF values for size bins - lower limit
+%             CDFs_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_upper_Cluster(i,j)); %surface CDF values for size bins - upper limit
+%             CDFs_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_mid_Cluster(i,j)); %surface CDF values for size bins - midpoint
+%         end
+%     end    
+% elseif strcmp(binning_type,'CDFa')==1
+%     for i = 1:N_Cluster
+%         for j = 1:N_bins
+%             d_bin_lower_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, CDFa_bin_lower(j)); %lower edge diameter of bin (mm)
+%             d_bin_upper_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, CDFa_bin_upper(j)); %upper edge diameter of bin (mm)
+%             d_bin_mid_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, CDFa_bin_mid(j)); %midpoint diameter of bin (mm)
+%         end
+%         if strcmp(dref_type,'d50')==1
+%             dhat_bin_lower_Cluster(i,:) = d_bin_lower_Cluster(i,:)/d50_bar_surface_Cluster(i); %lower edge d/d50 of bin
+%             dhat_bin_upper_Cluster(i,:) = d_bin_upper_Cluster(i,:)/d50_bar_surface_Cluster(i); %upper edge d/d50 of bin
+%             dhat_bin_mid_Cluster(i,:) = d_bin_mid_Cluster(i,:)/d50_bar_surface_Cluster(i); %midpoint d/d50 of bin
+%         elseif strcmp(dref_type,'dmodal')==1
+%             dhat_bin_lower_Cluster(i,:) = d_bin_lower_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %lower edge d/dmodal of bin
+%             dhat_bin_upper_Cluster(i,:) = d_bin_upper_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %upper edge d/dmodal of bin
+%             dhat_bin_mid_Cluster(i,:) = d_bin_mid_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %midpoint d/dmodal of bin
+%         end
+%         CDFa_bin_lower_Cluster(i,:) = CDFa_bin_lower; %airborne CDF values for size bins - lower limit
+%         CDFa_bin_upper_Cluster(i,:) = CDFa_bin_upper; %airborne CDF values for size bins - upper limit
+%         CDFa_bin_mid_Cluster(i,:) = CDFa_bin_mid; %airborne CDF values for size bins - midpoint
+%         for j = 1:N_bins
+%             CDFs_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_lower_Cluster(i,j)); %surface CDF values for size bins - lower limit
+%             CDFs_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_upper_Cluster(i,j)); %surface CDF values for size bins - upper limit
+%             CDFs_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, d_bin_mid_Cluster(i,j)); %surface CDF values for size bins - midpoint
+%         end
+%     end
+% elseif strcmp(binning_type,'CDFs')==1
+%     for i = 1:N_Cluster
+%         for j = 1:N_bins
+%             d_bin_lower_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, CDFs_bin_lower(j)); %lower edge diameter of bin (mm)
+%             d_bin_upper_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, CDFs_bin_upper(j)); %upper edge diameter of bin (mm)
+%             d_bin_mid_Cluster(i,j) = ReferenceGrainSizes_arbitrary(dV_bar_surface_Cluster{i}, d_surface_lower_Cluster{i}, d_surface_upper_Cluster{i}, CDFs_bin_mid(j)); %midpoint diameter of bin (mm)
+%         end
+%         if strcmp(dref_type,'d50')==1
+%             dhat_bin_lower_Cluster(i,:) = d_bin_lower_Cluster(i,:)/d50_bar_surface_Cluster(i); %lower edge d/d50 of bin
+%             dhat_bin_upper_Cluster(i,:) = d_bin_upper_Cluster(i,:)/d50_bar_surface_Cluster(i); %upper edge d/d50 of bin
+%             dhat_bin_mid_Cluster(i,:) = d_bin_mid_Cluster(i,:)/d50_bar_surface_Cluster(i); %midpoint d/d50 of bin
+%         elseif strcmp(dref_type,'dmodal')==1
+%             dhat_bin_lower_Cluster(i,:) = d_bin_lower_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %lower edge d/dmodal of bin
+%             dhat_bin_upper_Cluster(i,:) = d_bin_upper_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %upper edge d/dmodal of bin
+%             dhat_bin_mid_Cluster(i,:) = d_bin_mid_Cluster(i,:)/dmodal_bar_surface_Cluster(i); %midpoint d/dmodal of bin
+%         end
+%         for j = 1:N_bins
+%             CDFa_bin_lower_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_lower_Cluster(i,j)); %airborne CDF values for size bins - lower limit
+%             CDFa_bin_upper_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_upper_Cluster(i,j)); %airborne CDF values for size bins - upper limit
+%             CDFa_bin_mid_Cluster(i,j) = CDF_GrainSize(dV_bar_airborne_Cluster{i}, d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}, d_bin_mid_Cluster(i,j)); %airborne CDF values for size bins - midpoint
+%         end
+%         CDFs_bin_lower_Cluster(i,:) = CDFs_bin_lower; %surface CDF values for size bins - lower limit
+%         CDFs_bin_upper_Cluster(i,:) = CDFs_bin_upper; %surface CDF values for size bins - upper limit
+%         CDFs_bin_mid_Cluster(i,:) = CDFs_bin_mid; %surface CDF values for size bins - midpoint
+%     end
+% end
+% 
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % GROUP ZQNORM AND FRATIO BY DHAT BINS %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% 
+% zqinorm_bin_Cluster = cell(N_Cluster,1); %separate zq/d into bins
+% taunorm_zqinorm_bin_Cluster = cell(N_Cluster,1); %get associated taunorm
+% for i = 1:N_Cluster
+%     ind_usable = ind_usable_profile_Cluster{i};
+%     N_profiles = length(ind_usable);
+%     zqinorm_bin_Cluster{i} = zeros(N_profiles,N_bins)*NaN;
+%     taunorm_zqinorm_bin_Cluster{i} = taunorm_profile_Cluster{i}(ind_usable);
+%     
+%     %get normalized d
+%     if strcmp(dref_type,'d50')==1
+%         dhat = d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i);
+%     elseif strcmp(dref_type,'dmodal')==1
+%         dhat = d_f_mid_Cluster{i}./dmodal_bar_surface_Cluster(i);
+%     end
+% 
+%     %compute binned zqinorm
+%     for j = 1:length(ind_usable)
+%         for k = 1:N_bins
+%             ind_drange = find(dhat >= dhat_bin_lower_Cluster(i,k) & dhat<=dhat_bin_upper_Cluster(i,k)); %include only grain size bins with d>d_min and d<2
+%             zqinorm_bin = zqinorm_Cluster{i}(ind_usable(j),ind_drange); %get zqinorm values in bin
+%             ind_mean = find(~isnan(zqinorm_bin)); %find the values that are defined
+%             if length(ind_mean)>=3
+%                 zqinorm_bin_Cluster{i}(j,k) = mean(zqinorm_bin(ind_mean));
+%             end
+%         end        
+%     end
+% end
 
 % %% PLOT normalized size-conditioned zq VS tau
 % figure(11); clf;
@@ -2529,47 +2889,3 @@ print([folder_Plots,'IndexGrainSize_SaltationFlux.png'],'-dpng');
 % print([folder_Plots,'z_profile_BSNE.png'],'-dpng');
 % 
 % 
-% %% plot variation in znorm of BSNEs
-% figure(19); clf;
-% for i = 1:N_Cluster
-%     subplot(2,round(N_Cluster/2),i); hold on;
-%     
-%     %plot znorm - usable profiles
-%     ind_usable = ind_usable_profile_Cluster{i};
-%     znorm_plot = znorm_profile_Cluster{i}(ind_usable);
-%     Time_plot = Time_profile_Cluster{i}(ind_usable);
-%     N_plot = length(znorm_plot);
-%     for j = 1:N_plot
-%         Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
-%         h1 = plot(Time_profile,znorm_plot{j},'bo-');
-%     end
-%     
-%     %plot znorm - unusable profiles
-%     ind_unusable = setdiff(1:length(znorm_profile_Cluster{i}),ind_usable);
-%     znorm_plot = znorm_profile_Cluster{i}(ind_unusable);
-%     Time_plot = Time_profile_Cluster{i}(ind_unusable);
-%     N_plot = length(znorm_plot);
-%     for j = 1:N_plot
-%         Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
-%         h2 = plot(Time_profile,znorm_plot{j},'rx-');
-%     end
-%         
-%     if i>round(N_Cluster/2)
-%         xlabel('number of profile','Interpreter','Latex')
-%     end
-%     
-%     if mod(i,round(N_Cluster/2)) == 1
-%         ylabel('BSNE $$z/z_q$$','Interpreter','Latex');
-%     end
-% 
-%     if i == 1
-%         legend([h1 h2],{'usable','unusable'},'Location','North');
-%     end
-%     
-%     title(ClusterNames{i});
-%     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-% end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[10 7],'PaperPosition',[0 0 10 7],'PaperPositionMode','Manual');
-% print([folder_Plots,'znorm_profile_BSNE.png'],'-dpng');

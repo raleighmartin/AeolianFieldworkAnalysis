@@ -21,36 +21,49 @@ addpath(folder_Functions); %point MATLAB to location of functions
 N_Sites = length(Sites);
 
 %% Cluster surface data by location
+% Location_Cluster = {...
+%     {{'BSNE_A','BSNE_B','Tower_A','Tower_B','U1','Upwind_X0m'},{'Upwind_X5m','Upwind_X10m','Upwind_X15m','Upwind_X20m'}},...
+%     {{'A','B','C','Wenglor','A','B','C','Wenglor'}},...
+%     {{'A','B','A1','A2','A3','A4'},{'Wenglor'},{'C','D','B1','B2_B3','B4'}},...
+%     };
+% Name_Cluster = {...
+%     {{'0'},{'Upwind'}},...
+%     {{'All'}},...
+%     {{'A'},{'Wenglor'},{'B'}},...
+%     };
 Location_Cluster = {...
-    {{'BSNE_A','BSNE_B','Tower_A','Tower_B','U1','Upwind_X0m'},{'Upwind_X5m','Upwind_X10m','Upwind_X15m','Upwind_X20m'}},...
+    {{'BSNE_A','BSNE_B','Tower_A','Tower_B','U1','Upwind_X0m','Upwind_X5m','Upwind_X10m','Upwind_X15m','Upwind_X20m'}},...
     {{'A','B','C','Wenglor','A','B','C','Wenglor'}},...
-    {{'A','B','A1','A2','A3','A4'},{'Wenglor'},{'C','D','B1','B2_B3','B4'}},...
+    {{'A','B','A1','A2','A3','A4'},{'C','D','B1','B2_B3','B4'}},...
     };
 Name_Cluster = {...
-    {{'0'},{'Upwind'}},...
-    {{'All'}},...
-    {{'A'},{'Wenglor'},{'B'}},...
+    {{'Jericoacoara'}},...
+    {{'Rancho Guadalupe'}},...
+    {{'Oceano N'},{'Oceano S'}},...
     };
 N_Cluster_Site = zeros(N_Sites,1);
 for i = 1:N_Sites
     N_Cluster_Site(i) = length(Location_Cluster{i});
 end
+Label_Cluster = {'(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)'}; %markers for Clusters
 
-%% go through sites
+%% go through sites, make figure
+figure(1);
+N_Cluster = sum(N_Cluster_Site);
+
 for i = 1:N_Sites
-    
+       
     %% load relevant information about surface samples
     GrainSize_surface = GrainSizeData_all{i}.GrainSize_Surface; %surface sample array
     Location_surface = {GrainSize_surface.Location}; %locations of surface samples
+    Date_surface = [GrainSize_surface.Date]; %dates of surface samples
     Time_surface = [GrainSize_surface.CollectionTime]; %times of surface samples
     d10_surface = [GrainSize_surface.d_10_mm]; %d10 of surface samples
     d50_surface = [GrainSize_surface.d_50_mm]; %d50 of surface samples
-    d90_surface = [GrainSize_surface.d_90_mm]; %d90 of surface samples 
+    d90_surface = [GrainSize_surface.d_90_mm]; %d90 of surface samples    
     
-    %% initialize plot
-    figure(i);
     for j = 1:N_Cluster_Site(i)
-        
+            
         %get values for cluster
         ind_Cluster = []; %inialize list of indices associated with cluster
         for k = 1:length(Location_Cluster{i}{j})
@@ -63,8 +76,11 @@ for i = 1:N_Sites
         d50_Cluster = d50_surface(ind_Cluster); %get d50 values for cluster
         d90_Cluster = d90_surface(ind_Cluster); %get d90 values for cluster
         
+        %% initialize subplot
+        ind_subplot = sum(N_Cluster_Site(1:i))-N_Cluster_Site(i)+j
+        subplot(ceil(N_Cluster/2),2,ind_subplot); hold on;
+        
         %plot cluster values through time
-        subplot(1,N_Cluster_Site(i),j); hold on;
         plot(Time_Cluster, d90_Cluster, '-^'); %plot d90
         plot(Time_Cluster, d50_Cluster, '-o'); %plot d50
         plot(Time_Cluster, d10_Cluster, '-v'); %plot d10
@@ -76,13 +92,19 @@ for i = 1:N_Sites
         end
             
         %format plot
-        title(strcat(Sites{i},'-',Name_Cluster{i}{j}));
+        title(Name_Cluster{i}{j});
         ylim([0 1]);
         set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-        legend('d_{90,bed}','d_{50,bed}','d_{10,bed}','Location','SouthOutside');
+        xlim([min(Date_surface),max(Date_surface)+duration(24,0,0)])
+        text(min(Date_surface)+range(xlim)*0.03,0.93,Label_Cluster{ind_subplot})
+
+        datetick('x','mmm dd','keeplimits','keepticks')
+        if ind_subplot == 1
+            legend('d_{90}','d_{50}','d_{10}','Location','North');
+        end
     end
-    
-    %print plot
-    set(gcf,'PaperUnits','inches','PaperSize',[3*N_Cluster_Site(i) 5],'PaperPosition',[0 0 3*N_Cluster_Site(i) 4],'PaperPositionMode','Manual');
-    print([folder_Plots,'SurfaceGrainSizeThroughTime_',Sites{i},'.png'],'-dpng');
 end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[10 6],'PaperPosition',[0 0 10 6],'PaperPositionMode','Manual');
+print([folder_Plots,'SurfaceGrainSizeThroughTime.png'],'-dpng');
