@@ -77,14 +77,30 @@ for i = 1:N_Sites
         d90_Cluster = d90_surface(ind_Cluster); %get d90 values for cluster
         
         %% initialize subplot
-        ind_subplot = sum(N_Cluster_Site(1:i))-N_Cluster_Site(i)+j
-        subplot(ceil(N_Cluster/2),2,ind_subplot); hold on;
+        ind_subplot = sum(N_Cluster_Site(1:i))-N_Cluster_Site(i)+j;
+        
+        if N_Cluster == 4 %defined subplot sizes for four clusters
+            if ind_subplot == 1
+                subplot('position',[0.07 0.57 0.4 0.39]); hold on;
+            elseif ind_subplot == 2
+                subplot('position',[0.56 0.57 0.4 0.39]); hold on;
+            elseif ind_subplot == 3
+                subplot('position',[0.07 0.07 0.4 0.39]); hold on;
+            else
+                subplot('position',[0.56 0.07 0.4 0.39]); hold on;
+            end
+        else %otherwise, automated subplot sizes
+            subplot(ceil(N_Cluster/2),2,ind_subplot); hold on;
+        end
+        
         
         %plot cluster values through time
         plot(Time_Cluster, d90_Cluster, '-^'); %plot d90
         plot(Time_Cluster, d50_Cluster, '-o'); %plot d50
         plot(Time_Cluster, d10_Cluster, '-v'); %plot d10
-        ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+        if mod(ind_subplot,2)==1
+            ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex','FontSize',12);
+        end
         
         %plot dividing line for Oceano
         if i == 3
@@ -92,19 +108,20 @@ for i = 1:N_Sites
         end
             
         %format plot
-        title(Name_Cluster{i}{j});
+        title(Name_Cluster{i}{j},'FontSize',12);
         ylim([0 1]);
-        set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+        set(gca,'XMinorTick','On','YMinorTick','On','Box','On','FontSize',12);
         xlim([min(Date_surface),max(Date_surface)+duration(24,0,0)])
-        text(min(Date_surface)+range(xlim)*0.03,0.93,Label_Cluster{ind_subplot})
+        text(min(Date_surface)+range(xlim)*0.03,0.93,Label_Cluster{ind_subplot},'FontSize',12)
 
         datetick('x','mmm dd','keeplimits','keepticks')
         if ind_subplot == 1
-            legend('d_{90}','d_{50}','d_{10}','Location','North');
+            h_legend = legend('d_{90}','d_{50}','d_{10}','Location','North');
+            set(h_legend,'FontSize',12);
         end
     end
 end
 
 %print plot
-set(gcf,'PaperUnits','inches','PaperSize',[10 6],'PaperPosition',[0 0 10 6],'PaperPositionMode','Manual');
+set(gcf,'PaperUnits','inches','PaperSize',[9 6],'PaperPosition',[0 0 9 6],'PaperPositionMode','Manual');
 print([folder_Plots,'SurfaceGrainSizeThroughTime.png'],'-dpng');

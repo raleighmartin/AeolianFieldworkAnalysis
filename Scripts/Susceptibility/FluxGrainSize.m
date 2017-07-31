@@ -165,7 +165,7 @@ folder_Functions = '../Functions/'; %folder with functions
 %%%%%%%%%%%%%%%%%
 
 %% plotting information
-PlotFont = 10; %font for labels
+PlotFont = 12; %font for labels
 LineWidth_Plot = 1; %width of lines
 Marker_Cluster = {'s','d','o','p','h','^','v','>'}; %markers for Clusters
 Color_Cluster = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250],[0.4940 0.1840 0.5560],[0.4660 0.6740 0.1880], [0.3010 0.7450 0.9330], [0.6350 0.0780 0.1840]}; %colors for sites / clusters
@@ -869,18 +869,24 @@ d_taunormbar_airborne_mid_Cluster = cell(N_Cluster,1); %grain sizes for this ana
 dV_taunormbar_airborne_Cluster = cell(N_Cluster,1);
 dVdlogd_taunormbar_airborne_Cluster = cell(N_Cluster,1);
 for i = 1:N_Cluster
-    ind_drange = find(d_airborne_lower_Cluster{i} >= d_min & d_airborne_upper_Cluster{i}<=2); %include only grain size bins with d>d_min and d<2
-    N_d = length(ind_drange); %number of grain size bins
-    d_taunormbar_airborne_mid_Cluster{i} = d_airborne_mid_Cluster{i}(ind_drange); %grain sizes for this analysis, include only grain size bins with d>d_min
+%     ind_drange = find(d_airborne_lower_Cluster{i} >= d_min & d_airborne_upper_Cluster{i}<=2); %include only grain size bins with d>d_min and d<2
+%     N_d = length(ind_drange); %number of grain size bins
+%     d_taunormbar_airborne_mid_Cluster{i} = d_airborne_mid_Cluster{i}(ind_drange); %grain sizes for this analysis, include only grain size bins with d>d_min
+%     dV_taunormbar_airborne_Cluster{i} = zeros(N_taunorm_bins,N_d);
+%     dVdlogd_taunormbar_airborne_Cluster{i} = zeros(N_taunorm_bins,N_d);
+    N_d = length(d_airborne_mid_Cluster{i}); %number of grain size bins
+    d_taunormbar_airborne_mid_Cluster{i} = d_airborne_mid_Cluster{i}; %grain sizes for this analysis, include only grain size bins with d>d_min
     dV_taunormbar_airborne_Cluster{i} = zeros(N_taunorm_bins,N_d);
     dVdlogd_taunormbar_airborne_Cluster{i} = zeros(N_taunorm_bins,N_d);
     ind_usable = ind_usable_profile_Cluster{i};
     for j = 1:N_taunorm_bins
         ind_taunorm = find(taunorm_profile_Cluster{i}>=taunorm_bin_min(j) & taunorm_profile_Cluster{i}<=taunorm_bin_max(j));
         ind_average = intersect(ind_taunorm,ind_usable);
-        dV_taunormbar_airborne_Cluster{i}(j,:) = mean(dV_profilebar_airborne_Cluster{i}(ind_average,ind_drange),1)...
-            /sum(mean(dV_profilebar_airborne_Cluster{i}(ind_average,ind_drange),1)); %normalize by volume fraction > d_min 
-        dVdlogd_taunormbar_airborne_Cluster{i}(j,:) = dV_taunormbar_airborne_Cluster{i}(j,:)./dlogd_airborne_Cluster{i}(ind_drange);
+%         dV_taunormbar_airborne_Cluster{i}(j,:) = mean(dV_profilebar_airborne_Cluster{i}(ind_average,ind_drange),1)...
+%             /sum(mean(dV_profilebar_airborne_Cluster{i}(ind_average,ind_drange),1)); %normalize by volume fraction > d_min
+%         dVdlogd_taunormbar_airborne_Cluster{i}(j,:) = dV_taunormbar_airborne_Cluster{i}(j,:)./dlogd_airborne_Cluster{i}(ind_drange);
+        dV_taunormbar_airborne_Cluster{i}(j,:) = mean(dV_profilebar_airborne_Cluster{i}(ind_average,:),1); %normalize by volume fraction > d_min        
+        dVdlogd_taunormbar_airborne_Cluster{i}(j,:) = dV_taunormbar_airborne_Cluster{i}(j,:)./dlogd_airborne_Cluster{i};
     end
 end
 
@@ -914,7 +920,6 @@ for i = 1:N_Cluster
     zqinorm_d90_Cluster{i} = zqinorm_Cluster{i}(:,ind_d90);
     sigma_zqinorm_d90_Cluster{i} = sigma_zqinorm_Cluster{i}(:,ind_d90);
 end
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % GET ZQNORM ASSOCIATED WITH DHAT = FINE, MEDIUM, AND COARSE %
@@ -950,6 +955,139 @@ for i = 1:N_Cluster
     zqinorm_dhat_coarse_Cluster{i} = zqinorm_Cluster{i}(:,ind_dhat_coarse);
     sigma_zqinorm_dhat_coarse_Cluster{i} = sigma_zqinorm_Cluster{i}(:,ind_dhat_coarse);
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% FIT TO ZQINORM VS TAUNORM %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% initialize values - fine
+a_zqinorm_taunorm_fine = zeros(N_Cluster,1); %fitting intercept
+b_zqinorm_taunorm_fine = zeros(N_Cluster,1); %fitting slope
+sigma_a_zqinorm_taunorm_fine = zeros(N_Cluster,1); %fitting intercept uncertainty
+sigma_b_zqinorm_taunorm_fine = zeros(N_Cluster,1); %fitting slope uncertainty
+taunorm_fit_zqinorm_fine = cell(N_Cluster,1); %taunorm values for fitting
+zqinorm_pred_fine = cell(N_Cluster,1); %predicted zqinorm values for fitting
+sigma_zqinorm_pred_fine = cell(N_Cluster,1); %uncertainty on predicted zqinorm values for fitting
+
+% initialize values - medium
+a_zqinorm_taunorm_medium = zeros(N_Cluster,1); %fitting intercept
+b_zqinorm_taunorm_medium = zeros(N_Cluster,1); %fitting slope
+sigma_a_zqinorm_taunorm_medium = zeros(N_Cluster,1); %fitting intercept uncertainty
+sigma_b_zqinorm_taunorm_medium = zeros(N_Cluster,1); %fitting slope uncertainty
+taunorm_fit_zqinorm_medium = cell(N_Cluster,1); %taunorm values for fitting
+zqinorm_pred_medium = cell(N_Cluster,1); %predicted zqinorm values for fitting
+sigma_zqinorm_pred_medium = cell(N_Cluster,1); %uncertainty on predicted zqinorm values for fitting
+
+% initialize values - coarse
+a_zqinorm_taunorm_coarse = zeros(N_Cluster,1); %fitting intercept
+b_zqinorm_taunorm_coarse = zeros(N_Cluster,1); %fitting slope
+sigma_a_zqinorm_taunorm_coarse = zeros(N_Cluster,1); %fitting intercept uncertainty
+sigma_b_zqinorm_taunorm_coarse = zeros(N_Cluster,1); %fitting slope uncertainty
+taunorm_fit_zqinorm_coarse = cell(N_Cluster,1); %taunorm values for fitting
+zqinorm_pred_coarse = cell(N_Cluster,1); %predicted zqinorm values for fitting
+sigma_zqinorm_pred_coarse = cell(N_Cluster,1); %uncertainty on predicted zqinorm values for fitting
+
+for i = 1:N_Cluster
+    
+    %get all values for fitting
+    ind_usable = ind_usable_profile_Cluster{i}; %get indices of all usable taunorm
+    taunorm_usable = taunorm_profile_Cluster{i}(ind_usable); %get these taunorm
+    ind_abovethreshold = find(taunorm_usable>=1); %determine which ones are above threshold
+    ind_usable = ind_usable(ind_abovethreshold); %replace ind_usable list with only those above threshold
+    taunorm_usable = taunorm_usable(ind_abovethreshold); %replace taunorm_usable list with only those above threshold
+    [taunorm_usable,ind_sort] = sort(taunorm_usable); %sort taunorm_usable list
+    ind_usable = ind_usable(ind_sort); %replace ind_usable list with list that is sorted by taunorm  
+    zqinorm_usable_fine = zqinorm_dhat_fine_Cluster{i}(ind_usable); %get zqinorm_usable_fine values associated with taunorm_usable 
+    sigma_zqinorm_usable_fine = sigma_zqinorm_dhat_fine_Cluster{i}(ind_usable); %get sigma_zqinorm_usable_fine values associated with taunorm_usable 
+    zqinorm_usable_medium = zqinorm_dhat_medium_Cluster{i}(ind_usable); %get zqinorm_usable_medium values associated with taunorm_usable 
+    sigma_zqinorm_usable_medium = sigma_zqinorm_dhat_medium_Cluster{i}(ind_usable); %get sigma_zqinorm_usable_medium values associated with taunorm_usable 
+    zqinorm_usable_coarse = zqinorm_dhat_coarse_Cluster{i}(ind_usable); %get zqinorm_usable_coarse values associated with taunorm_usable 
+    sigma_zqinorm_usable_coarse = sigma_zqinorm_dhat_coarse_Cluster{i}(ind_usable); %get sigma_zqinorm_usable_coarse values associated with taunorm_usable 
+    
+    %get indices of non-NaN values for fitting - fine
+    ind_fit = find(~isnan(zqinorm_usable_fine)); %get indices of only real zqinorm values for fitting
+    taunorm_fit_zqinorm_fine{i} = taunorm_usable(ind_fit);
+    zqinorm_fit_fine = zqinorm_usable_fine(ind_fit);
+    sigma_zqinorm_fit_fine = sigma_zqinorm_usable_fine(ind_fit);
+    
+    %get indices of non-NaN values for fitting - medium
+    ind_fit = find(~isnan(zqinorm_usable_medium)); %get indices of only real zqinorm values for fitting
+    taunorm_fit_zqinorm_medium{i} = taunorm_usable(ind_fit);
+    zqinorm_fit_medium = zqinorm_usable_medium(ind_fit);
+    sigma_zqinorm_fit_medium = sigma_zqinorm_usable_medium(ind_fit);
+
+    %get indices of non-NaN values for fitting - coarse
+    ind_fit = find(~isnan(zqinorm_usable_coarse)); %get indices of only real zqinorm values for fitting
+    taunorm_fit_zqinorm_coarse{i} = taunorm_usable(ind_fit);
+    zqinorm_fit_coarse = zqinorm_usable_coarse(ind_fit);
+    sigma_zqinorm_fit_coarse = sigma_zqinorm_usable_coarse(ind_fit);
+    
+    %perform fitting - fine
+    [a_fine, b_fine, sigma_a_fine, sigma_b_fine, zqinorm_pred_values_fine, sigma_zqinorm_pred_values_fine] = ...
+        linearfit(taunorm_fit_zqinorm_fine{i},zqinorm_fit_fine,sigma_zqinorm_fit_fine);
+
+    %perform fitting - medium
+    [a_medium, b_medium, sigma_a_medium, sigma_b_medium, zqinorm_pred_values_medium, sigma_zqinorm_pred_values_medium] = ...
+        linearfit(taunorm_fit_zqinorm_medium{i},zqinorm_fit_medium,sigma_zqinorm_fit_medium);
+    
+    %perform fitting - coarse
+    [a_coarse, b_coarse, sigma_a_coarse, sigma_b_coarse, zqinorm_pred_values_coarse, sigma_zqinorm_pred_values_coarse] = ...
+        linearfit(taunorm_fit_zqinorm_coarse{i},zqinorm_fit_coarse,sigma_zqinorm_fit_coarse);
+    
+    %assign values to lists - fine
+    a_zqinorm_taunorm_fine(i) = a_fine;
+    b_zqinorm_taunorm_fine(i) = b_fine;
+    sigma_a_zqinorm_taunorm_fine(i) = sigma_a_fine;
+    sigma_b_zqinorm_taunorm_fine(i) = sigma_b_fine;
+    zqinorm_pred_fine{i} = zqinorm_pred_values_fine;
+    sigma_zqinorm_pred_fine{i} = sigma_zqinorm_pred_values_fine;
+    
+    %assign values to lists - medium
+    a_zqinorm_taunorm_medium(i) = a_medium;
+    b_zqinorm_taunorm_medium(i) = b_medium;
+    sigma_a_zqinorm_taunorm_medium(i) = sigma_a_medium;
+    sigma_b_zqinorm_taunorm_medium(i) = sigma_b_medium;
+    zqinorm_pred_medium{i} = zqinorm_pred_values_medium;
+    sigma_zqinorm_pred_medium{i} = sigma_zqinorm_pred_values_medium;
+    
+    %assign values to lists - coarse
+    a_zqinorm_taunorm_coarse(i) = a_coarse;
+    b_zqinorm_taunorm_coarse(i) = b_coarse;
+    sigma_a_zqinorm_taunorm_coarse(i) = sigma_a_coarse;
+    sigma_b_zqinorm_taunorm_coarse(i) = sigma_b_coarse;
+    zqinorm_pred_coarse{i} = zqinorm_pred_values_coarse;
+    sigma_zqinorm_pred_coarse{i} = sigma_zqinorm_pred_values_coarse;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%
+% CREATE DATA TABLES %
+%%%%%%%%%%%%%%%%%%%%%%
+d_table = cell(N_Cluster,1);
+
+for i = 1:N_Cluster 
+    
+    N_d = length(d_surface_mid_Cluster{i});
+    ind_f = find(d_surface_mid_Cluster{i}==d_f_mid_Cluster{i}(1)):find(d_surface_mid_Cluster{i}==d_f_mid_Cluster{i}(end));
+    f_bed_table = zeros(N_d,1)*NaN; f_bed_table(ind_f) = round(f_surface_Cluster{i},5);
+    f_air_bar_table = zeros(N_d,1)*NaN; f_air_bar_table(ind_f) = round(f_airborne_bar_Cluster{i},5);
+    f_air_sigma_table = zeros(N_d,1)*NaN; f_air_sigma_table(ind_f) = round(f_ratio_sigma_Cluster{i}.*f_surface_Cluster{i},5);
+    zqi_bar_table = zeros(N_d,1)*NaN; zqi_bar_table(ind_f) = round(zqi_bar_Cluster{i},5);
+    zqi_sigma_table = zeros(N_d,1)*NaN; zqi_sigma_table(ind_f) = round(zqi_sigma_Cluster{i},5);
+    
+    d_table{i} = [d_surface_lower_Cluster{i}'...
+        round(d_surface_mid_Cluster{i}',3)...
+        d_surface_upper_Cluster{i}'...
+        round(dVdlogd_bar_surface_Cluster{i}',5)...
+        round(dVdlogd_bar_airborne_Cluster{i}',5)...
+        round(dVdlogd_taunormbar_airborne_Cluster{i}',5)...
+        f_bed_table...
+        f_air_bar_table f_air_sigma_table...
+        zqi_bar_table zqi_sigma_table];
+
+end
+
+
+
 
 
 %%%%%%%%%
@@ -987,16 +1125,20 @@ for i = 1:N_Cluster
     plot(d_surface_mid_Cluster{i},dVdlogd_bar_surface_Cluster{i},'k','LineWidth',2);
     
     %plot airborne distribution
+    ind_drange = find(d_airborne_lower_Cluster{i} >= d_min & d_airborne_upper_Cluster{i}<=2); %include only grain size bins with d>d_min and d<2
     for k = 1:N_taunorm_bins
-        plot(d_taunormbar_airborne_mid_Cluster{i},dVdlogd_taunormbar_airborne_Cluster{i}(k,:),['-',Marker_bin{k}],'MarkerSize',3,'Color',Color_taunorm_bin{k})
+        plot(d_taunormbar_airborne_mid_Cluster{i}(ind_drange),dVdlogd_taunormbar_airborne_Cluster{i}(k,ind_drange),['-',Marker_bin{k}],'MarkerSize',3,'Color',Color_taunorm_bin{k})
     end
     
     %format plot
     %set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On');
     set(gca,'XScale','log','YScale','log','YMinorTick','On');
     xlim([0.06, 2]);
-    set(gca,'xtick',[0.06:0.01:0.1, 0.2:0.1:1, 2]);
-    set(gca,'xticklabels',{'0.06','','','','0.1','0.2','','0.4','','0.6','','','','1','2'});
+%     set(gca,'xtick',[0.06:0.01:0.1, 0.2:0.1:1, 2]);
+%     set(gca,'xticklabels',{'0.06','','','','0.1','0.2','','0.4','','0.6','','','','1','2'});
+   set(gca,'xtick',[0.06:0.01:0.1,0.2:0.1:2]);
+   set(gca,'xticklabels',{'0.06','','','','0.1','0.2','','0.4','','','0.7','','','1','','','','','','','','','','2'});
+    %text(0.06,8e-5,'0.06','HorizontalAlignment','Center');
     ylim([1e-4 1e1]);
     text(0.07, 6, Label_Cluster{i},'FontSize',12);
 
@@ -1048,17 +1190,25 @@ for i = 1:N_Cluster
     cla;
     xmin = 0.06/d50_bar_surface_Cluster(i);
     xmax = 2/d50_bar_surface_Cluster(i);
-    xmaxtick = floor(xmax);
     line([xmin xmax],[0 0],'Color','k','Parent',ax2);
     set(ax2,'XScale','log','XLim',[xmin xmax],'YLim',[1 2]);
-    set(ax2,'XTick',[0.2:0.1:0.9,1:xmaxtick]);
-    XTickLabels = cell(8+xmaxtick,1);
+    xmaxtick = floor(xmax*10)/10;
+    set(ax2,'XTick',0.2:0.1:xmaxtick);
+    XTickLabels = cell(8+xmaxtick*10,1);
     XTickLabels{1} = '0.2';
     XTickLabels{3} = '0.4';
-    XTickLabels{7} = '0.8';
-    for j = 2:xmaxtick
-        XTickLabels{8+j} = int2str(j);
+    XTickLabels{6} = '0.7';
+    for j = 1:floor(xmaxtick)
+        XTickLabels{j*10-1} = int2str(j);
     end
+%     xmaxtick = floor(xmax);
+%     XTickLabels = cell(8+xmaxtick,1);
+%     XTickLabels{1} = '0.2';
+%     XTickLabels{3} = '0.4';
+%     XTickLabels{7} = '0.8';
+%     for j = 2:xmaxtick
+%         XTickLabels{8+j} = int2str(j);
+%     end
     set(ax2,'XTickLabel',XTickLabels);
     set(ax2,'YTick',[]);
     if i<=2
@@ -1094,9 +1244,9 @@ for i = 1:N_Cluster
 end
 
 %plot fine, medium, and coarse ranges
-text(0.32,7,'Fine','HorizontalAlignment','Center');
-text(0.56,7,'Medium','HorizontalAlignment','Center');
-text(1.0,7,'Coarse','HorizontalAlignment','Center');
+text(0.32,7,'Fine','HorizontalAlignment','Center','FontSize',PlotFont);
+text(0.56,7,'Medium','HorizontalAlignment','Center','FontSize',PlotFont);
+text(0.95,7,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
 plot([0.4 0.4],[1e-4 1e1],'k--','LineWidth',1);
 plot([0.8 0.8],[1e-4 1e1],'k--','LineWidth',1);
 
@@ -1106,12 +1256,12 @@ if strcmp(dref_type,'d50')==1
 elseif strcmp(dref_type,'dmodal')==1
     xlabel('Normalized grain size, $$d_i / d_{modal,bed}$$','Interpreter','Latex');
 end
-ylabel('Ratio of mean airborne to bed surface volume fractions, $$\langle f_{i,air} \rangle/f_{i,bed}$$','Interpreter','Latex');
+ylabel({'Ratio of mean airborne to bed surface volume fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center');
 h_legend = legend(ClusterNames,'Location','NorthEast');
-set(h_legend,'FontSize',8);
-set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+set(h_legend,'FontSize',10);
+set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
 ylim([1e-4 1e1]);
-text(0.26,7,'(a)');
+text(0.26,7,'(a)','FontSize',PlotFont);
 
 %inset plot with dimensional values
 axes('Position',[.25 .25 .35 .38]); hold on;
@@ -1134,14 +1284,14 @@ end
 
 xlabel('Grain size, $$d_{i}$$ (mm)','Interpreter','Latex');
 ylabel('$$\langle f_{i,air} \rangle /f_{i,bed}$$','Interpreter','Latex');
-set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
 xlim([d_min d_max]);
 ylim([1e-4 1e1]);
-text(0.8,5,'(b)');
+text(0.8,5,'(b)','FontSize',PlotFont);
 
 %print plot
 %set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6 5],'PaperPositionMode','Manual');
-set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
+set(gcf,'PaperUnits','inches','PaperSize',[8 6],'PaperPosition',[0 0 8 6],'PaperPositionMode','Manual');
 print([folder_Plots,'fratiobar_dhat_unbinned_limited_',dref_type,'.png'],'-dpng');
 
 
@@ -1176,9 +1326,9 @@ end
 % end
 
 %plot fine, medium, and coarse ranges
-text(0.32,0.01,'Fine','HorizontalAlignment','Center');
-text(0.56,0.01,'Medium','HorizontalAlignment','Center');
-text(1.0,0.01,'Coarse','HorizontalAlignment','Center');
+text(0.32,0.01,'Fine','HorizontalAlignment','Center','FontSize',PlotFont);
+text(0.56,0.01,'Medium','HorizontalAlignment','Center','FontSize',PlotFont);
+text(1.0,0.01,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
 plot([0.4 0.4],[0 0.15],'k--','LineWidth',1);
 plot([0.8 0.8],[0 0.15],'k--','LineWidth',1);
 
@@ -1193,11 +1343,11 @@ else
     xlabel('Normalized grain size, $$d_{i} / d_{50,bed}$$','Interpreter','Latex');
 end
 ylabel('Mean size-selective saltation height, $$\langle z_{q,i} \rangle$$ (m)','Interpreter','Latex');
-text(1.8,0.14,'(a)');
+text(1.8,0.14,'(a)','FontSize',PlotFont);
 
 %create legend
 h_legend = legend(ClusterNames,'Location','NorthWest');
-set(h_legend,'FontSize',10);
+set(h_legend,'FontSize',12);
 
 %% zqnorm
 subplot('position',[0.08 0.06 0.9 0.42]); hold on;
@@ -1239,7 +1389,7 @@ xlim([0.28 2]);
 ylim([0 450]);
 set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
 % set(gca,'XTick',[0.3:0.1:1,2],'XTickLabel',{'0.3','0.4','0.5','','0.7','','','1','2'});
-text(0.3,425,'(b)');
+text(0.29,425,'(b)','FontSize',PlotFont);
 if strcmp(dref_type,'dmodal')
     xlabel('Normalized grain size, $$d_{i} / d_{modal}$$','Interpreter','Latex');
 else
@@ -1250,7 +1400,7 @@ ylabel('Mean normalized size-selective saltation height, $$\langle z_{q,i} \rang
 
 %% inset plot with dimensional values
 %axes('Position',[.15 .45 .22 .25]); hold on;
-axes('Position',[.74 .325 .22 .20]); hold on;
+axes('Position',[.76 .328 .205 .18]); hold on;
 
 %axes('Position',[.17 .43 .25 .15]); hold on;
 
@@ -1276,9 +1426,11 @@ end
 xlim([0.12 1.0]);
 ylim([0 0.15]);
 set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont,'BoxStyle','Full');
+set(gca,'xtick',[0.2:0.1:1]);
+set(gca,'xticklabels',{'0.2','','0.4','','','0.7','','','1'});
 xlabel('Grain size, $$d_{i}$$ (mm)','Interpreter','Latex','FontSize',10);
 ylabel('$$\langle z_{q,i} \rangle$$ (m)','Interpreter','Latex','FontSize',10);
-text(0.15,0.13,'(c)');
+text(0.14,0.14,'(c)','FontSize',PlotFont);
 
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[8 10],'PaperPosition',[0 0 8 10],'PaperPositionMode','Manual');
@@ -1356,118 +1508,169 @@ print([folder_Plots,'zqnorm_dhat_',dref_type,'.png'],'-dpng');
 % print([folder_Plots,'SaltationHeight_IndexGrainSize_NormShearStress.png'],'-dpng');
 % 
 % 
-% %% plot variation in reference zqnorm with saltation flux - dhat values
-% figure(7); clf;
-% for i = 1:N_Cluster
-%     subplot(round(N_Cluster/2),2,i); hold on;
-%     ind_usable = ind_usable_profile_Cluster{i};
-%     h_fine_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_dhat_fine_Cluster{i}(ind_usable),'v');
-%     h_medium_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_dhat_medium_Cluster{i}(ind_usable),'o');
-%     h_coarse_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_dhat_coarse_Cluster{i}(ind_usable),'^');
-%     c_fine = get(h_fine_air,'Color');
-%     c_medium = get(h_medium_air,'Color');
-%     c_coarse = get(h_coarse_air,'Color');
-%         
-%     %plot error bars
-%     for k = 1:length(ind_usable)
-%         plot(taunorm_profile_Cluster{i}(ind_usable(k))*[1 1],zqinorm_dhat_fine_Cluster{i}(ind_usable(k))*[1 1]+sigma_zqinorm_dhat_fine_Cluster{i}(ind_usable(k))*[-1 1],'Color',c_fine);
-%         plot(taunorm_profile_Cluster{i}(ind_usable(k))*[1 1],zqinorm_dhat_medium_Cluster{i}(ind_usable(k))*[1 1]+sigma_zqinorm_dhat_medium_Cluster{i}(ind_usable(k))*[-1 1],'Color',c_medium);
-%         plot(taunorm_profile_Cluster{i}(ind_usable(k))*[1 1],zqinorm_dhat_coarse_Cluster{i}(ind_usable(k))*[1 1]+sigma_zqinorm_dhat_coarse_Cluster{i}(ind_usable(k))*[-1 1],'Color',c_coarse);
-%     end
-%     
-%     xlim([1 4]);
-%     ylim([0 400]);
-%     ylims = ylim;
-%     text(1.1, ylims(1)+range(ylims)*0.94, Label_Cluster{i},'FontSize',12);
-%     if i==N_Cluster || i==N_Cluster-1
-%         xlabel('Normalized shear stress, $$\tau/\tau_{it}$$','Interpreter','Latex')
-%     end
-%     if mod(i,2) == 1
-%         ylabel('Norm. size-sel. salt. ht., $$z_{q,i}/d_{i}$$','Interpreter','Latex');
-%     end
-%     if i == 2
-%         h_legend = legend([h_fine_air, h_medium_air, h_coarse_air], ['d_{i} /d_{50,bed}=',num2str(dhat_fine)],['d_{i} /d_{50,bed}=',num2str(dhat_medium)],['d_{i} /d_{50,bed}=',num2str(dhat_coarse)],'Location','West');
-%         set(h_legend,'FontSize',8);
-%     end
-%     title(ClusterNames{i});
-%     set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On');
-% end
+%% plot variation in reference zqnorm with saltation flux - dhat values
+figure(7); clf;
+
+%initialize subplots
+h_subplot = gobjects(N_Cluster,1);
+
+for i = 1:N_Cluster
+    %initialize subplot
+    if N_Cluster == 6 %defined subplot sizes for six clusters
+        if i == 1
+            h_subplot(1) = subplot('position',[0.10 0.71 0.395 0.25]); hold on;
+        elseif i == 2
+            h_subplot(2) = subplot('position',[0.58 0.71 0.395 0.25]); hold on;
+        elseif i == 3
+            h_subplot(3) = subplot('position',[0.10 0.385 0.395 0.25]); hold on;
+        elseif i == 4
+            h_subplot(4) = subplot('position',[0.58 0.385 0.395 0.25]); hold on;
+        elseif i == 5
+            h_subplot(5) = subplot('position',[0.10 0.06 0.395 0.25]); hold on;
+        else
+            h_subplot(6) = subplot('position',[0.58 0.06 0.395 0.25]); hold on;
+        end
+    else %otherwise, automated subplot sizes
+        h_subplot(i) = subplot(round((N_Cluster+1)/2),2,i); hold on;
+    end
+    
+    ind_usable = ind_usable_profile_Cluster{i};
+    h_fine_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_dhat_fine_Cluster{i}(ind_usable),'v');
+    h_medium_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_dhat_medium_Cluster{i}(ind_usable),'o');
+    h_coarse_air = plot(taunorm_profile_Cluster{i}(ind_usable),zqinorm_dhat_coarse_Cluster{i}(ind_usable),'^');
+    c_fine = get(h_fine_air,'Color');
+    c_medium = get(h_medium_air,'Color');
+    c_coarse = get(h_coarse_air,'Color');
+        
+    %plot error bars
+    for k = 1:length(ind_usable)
+        plot(taunorm_profile_Cluster{i}(ind_usable(k))*[1 1],zqinorm_dhat_fine_Cluster{i}(ind_usable(k))*[1 1]+sigma_zqinorm_dhat_fine_Cluster{i}(ind_usable(k))*[-1 1],'Color',c_fine);
+        plot(taunorm_profile_Cluster{i}(ind_usable(k))*[1 1],zqinorm_dhat_medium_Cluster{i}(ind_usable(k))*[1 1]+sigma_zqinorm_dhat_medium_Cluster{i}(ind_usable(k))*[-1 1],'Color',c_medium);
+        plot(taunorm_profile_Cluster{i}(ind_usable(k))*[1 1],zqinorm_dhat_coarse_Cluster{i}(ind_usable(k))*[1 1]+sigma_zqinorm_dhat_coarse_Cluster{i}(ind_usable(k))*[-1 1],'Color',c_coarse);
+    end
+    
+    %plot trends - fine
+    if abs(b_zqinorm_taunorm_fine(i)./sigma_b_zqinorm_taunorm_fine(i))>=2
+        plot(taunorm_fit_zqinorm_fine{i},zqinorm_pred_fine{i},'-','Color',c_fine,'LineWidth',1);
+    else
+        plot(taunorm_fit_zqinorm_fine{i},zqinorm_pred_fine{i},'-.','Color',c_fine,'LineWidth',1);
+    end
+    
+    %plot trends - medium
+    if abs(b_zqinorm_taunorm_medium(i)./sigma_b_zqinorm_taunorm_medium(i))>=2
+        plot(taunorm_fit_zqinorm_medium{i},zqinorm_pred_medium{i},'-','Color',c_medium,'LineWidth',1);
+    else
+        plot(taunorm_fit_zqinorm_medium{i},zqinorm_pred_medium{i},'-.','Color',c_medium,'LineWidth',1);
+    end
+    
+    %plot trends - coarse
+    if abs(b_zqinorm_taunorm_coarse(i)./sigma_b_zqinorm_taunorm_coarse(i))>=2
+        plot(taunorm_fit_zqinorm_coarse{i},zqinorm_pred_coarse{i},'-','Color',c_coarse,'LineWidth',1);
+    else
+        plot(taunorm_fit_zqinorm_coarse{i},zqinorm_pred_coarse{i},'-.','Color',c_coarse,'LineWidth',1);
+    end
+    
+    %format plot
+    xlim([1 4]);
+    ylim([0 400]);
+    ylims = ylim;
+    text(1.05, ylims(1)+range(ylims)*0.94, Label_Cluster{i},'FontSize',12);
+    if i==N_Cluster || i==N_Cluster-1
+        xlabel('Normalized shear stress, $$\tau/\tau_{it}$$','Interpreter','Latex')
+    end
+    if mod(i,2) == 1
+        ylabel('Norm. size-sel. salt. ht., $$z_{q,i}/d_{i}$$','Interpreter','Latex');
+    end
+    if i == 2
+        h_legend = legend([h_fine_air, h_medium_air, h_coarse_air],...
+            ['d_{i} /d_{50,bed}=',num2str(dhat_fine)],...
+            ['d_{i} /d_{50,bed}=',num2str(dhat_medium)],...
+            ['d_{i} /d_{50,bed}=',num2str(dhat_coarse)],...
+            'Location','SouthWest');
+        set(h_legend,'FontSize',10);
+    end
+    title(ClusterNames{i});
+    set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[8 9],'PaperPosition',[0 0 8 9],'PaperPositionMode','Manual');
+print([folder_Plots,'SaltationHeight_IndexDHat_NormShearStress.png'],'-dpng');
 % 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[8 9],'PaperPosition',[0 0 8 9],'PaperPositionMode','Manual');
-% print([folder_Plots,'SaltationHeight_IndexDHat_NormShearStress.png'],'-dpng');
 % 
-% 
-% %% plot variation in znorm of BSNEs
-% figure(12); clf;
-% for i = 1:N_Cluster
-%     %initialize subplot
-%     if N_Cluster == 6 %defined subplot sizes for four clusters
-%         if i == 1
-%             h_subplot(1) = subplot('position',[0.08 0.72 0.40 0.26]); hold on;
-%         elseif i == 2
-%             h_subplot(2) = subplot('position',[0.57 0.72 0.40 0.26]); hold on;
-%         elseif i == 3
-%             h_subplot(3) = subplot('position',[0.08 0.39 0.40 0.26]); hold on;
-%         elseif i == 4
-%             h_subplot(4) = subplot('position',[0.57 0.39 0.40 0.26]); hold on;
-%         elseif i == 5
-%             h_subplot(5) = subplot('position',[0.08 0.06 0.40 0.26]); hold on;
-%         else
-%             h_subplot(6) = subplot('position',[0.57 0.06 0.40 0.26]); hold on;
-%         end
-%     else %otherwise, automated subplot sizes
-%         h_subplot(i) = subplot(round((N_Cluster+1)/2),2,i); hold on;
-%     end   
-%     
-%     %plot znorm - usable profiles
-%     ind_usable = ind_usable_profile_Cluster{i};
-%     znorm_plot = znorm_profile_Cluster{i}(ind_usable);
-%     Time_plot = Time_profile_Cluster{i}(ind_usable);
-%     N_plot = length(znorm_plot);
-%     for j = 1:N_plot
-%         Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
-%         h1 = plot(Time_profile,znorm_plot{j},'bo-');
-%     end
-%     
-%     %plot znorm - unusable profiles
-%     ind_unusable = setdiff(1:length(znorm_profile_Cluster{i}),ind_usable);
-%     znorm_plot = znorm_profile_Cluster{i}(ind_unusable);
-%     Time_plot = Time_profile_Cluster{i}(ind_unusable);
-%     N_plot = length(znorm_plot);
-%     for j = 1:N_plot
-%         Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
-%         h2 = plot(Time_profile,znorm_plot{j},'rx-');
-%     end
-%     
-%     if mod(i,2) == 1
-%         ylabel('Normalized BSNE trap height, $$z/z_q$$','Interpreter','Latex');
-%     end
-% 
-%     if i == 1
-%         legend([h1 h2],{'usable','unusable'},'Location','North');
-%     end
-%     
-%     title(ClusterNames{i});
-%     ylim([0 7]);
-%     if i==1
-%         set(gca,'XTick',[datetime(2014,11,13):duration(48,0,0):datetime(2014,11,19),datetime(2014,11,21)])
-%     elseif i>=5
-%         set(gca,'XTick',[datetime(2015,5,23):duration(72,0,0):datetime(2015,6,2),datetime(2015,6,5)])
-%     elseif i>=3
-%         set(gca,'XTick',[datetime(2015,5,15):duration(48,0,0):datetime(2015,5,23)])
-%     end
-%     datetick('x','mmm dd','keepticks')
-%     set(gca,'YMinorTick','On','Box','On');
-%     xlims = xlim;
-%     text(xlims(1)+range(xlims)*0.03,6.5,Label_Cluster{i})
-%     
-%     %set(gca,'XTick',xlims(1):(floor(days(range(xlims))/3)*duration(24,0,0)):xlims(2))
-% end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[8 10],'PaperPosition',[0 0 8 10],'PaperPositionMode','Manual');
-% print([folder_Plots,'znorm_profile_BSNE.png'],'-dpng');
+%% plot variation in znorm of BSNEs
+figure(12); clf;
+for i = 1:N_Cluster
+    %initialize subplot
+    if N_Cluster == 6 %defined subplot sizes for four clusters
+        if i == 1
+            h_subplot(1) = subplot('position',[0.08 0.72 0.40 0.26]); hold on;
+        elseif i == 2
+            h_subplot(2) = subplot('position',[0.57 0.72 0.40 0.26]); hold on;
+        elseif i == 3
+            h_subplot(3) = subplot('position',[0.08 0.39 0.40 0.26]); hold on;
+        elseif i == 4
+            h_subplot(4) = subplot('position',[0.57 0.39 0.40 0.26]); hold on;
+        elseif i == 5
+            h_subplot(5) = subplot('position',[0.08 0.06 0.40 0.26]); hold on;
+        else
+            h_subplot(6) = subplot('position',[0.57 0.06 0.40 0.26]); hold on;
+        end
+    else %otherwise, automated subplot sizes
+        h_subplot(i) = subplot(round((N_Cluster+1)/2),2,i); hold on;
+    end   
+    
+    %plot znorm - usable profiles
+    ind_usable = ind_usable_profile_Cluster{i};
+    znorm_plot = znorm_profile_Cluster{i}(ind_usable);
+    Time_plot = Time_profile_Cluster{i}(ind_usable);
+    N_plot = length(znorm_plot);
+    for j = 1:N_plot
+        Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
+        h1 = plot(Time_profile,znorm_plot{j},'bo-');
+    end
+    
+    %plot znorm - unusable profiles
+    ind_unusable = setdiff(1:length(znorm_profile_Cluster{i}),ind_usable);
+    znorm_plot = znorm_profile_Cluster{i}(ind_unusable);
+    Time_plot = Time_profile_Cluster{i}(ind_unusable);
+    N_plot = length(znorm_plot);
+    for j = 1:N_plot
+        Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
+        h2 = plot(Time_profile,znorm_plot{j},'rx-');
+    end
+    
+    if mod(i,2) == 1
+        ylabel('Normalized BSNE trap height, $$z/z_q$$','Interpreter','Latex','FontSize',PlotFont);
+    end
+
+    if i == 1
+        h_legend = legend([h1 h2],{'usable','unusable'},'Location','North');
+        set(h_legend,'FontSize',PlotFont);
+    end
+    
+    title(ClusterNames{i},'FontSize',PlotFont);
+    ylim([0 7]);
+    if i==1
+        set(gca,'XTick',[datetime(2014,11,13):duration(48,0,0):datetime(2014,11,19),datetime(2014,11,21)]);
+    elseif i>=5
+        set(gca,'XTick',[datetime(2015,5,23):duration(72,0,0):datetime(2015,6,2),datetime(2015,6,5)]);
+    elseif i>=3
+        set(gca,'XTick',[datetime(2015,5,15):duration(48,0,0):datetime(2015,5,23)]);
+    elseif i>=2
+        set(gca,'XTick',[datetime(2015,3,23):duration(24,0,0):datetime(2015,3,25)]);
+    end
+    datetick('x','mmm dd','keepticks')
+    set(gca,'YMinorTick','On','Box','On','FontSize',PlotFont);
+    xlims = xlim;
+    text(xlims(1)+range(xlims)*0.03,6.5,Label_Cluster{i},'FontSize',PlotFont)
+    
+    %set(gca,'XTick',xlims(1):(floor(days(range(xlims))/3)*duration(24,0,0)):xlims(2))
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[8 10],'PaperPosition',[0 0 8 10],'PaperPositionMode','Manual');
+print([folder_Plots,'znorm_profile_BSNE.png'],'-dpng');
 
 
 

@@ -154,6 +154,7 @@ ind_sizefraction = unique([ind_fine, ind_medium, ind_coarse]);
 y_sizefraction = y_ejectionrate + y_saltationpromotion + y_length;
 
 %% information for plotting
+PlotFont = 12; %font for labels
 color_ejectionspeed = [0    0.4470    0.7410];
 marker_ejectionspeed = '+';
 color_ejectionrate = [0    0.4470    0.7410];
@@ -203,34 +204,34 @@ for i = 1:4
     plot([0.8 0.8],[-1 1],'k--','LineWidth',1);
     %if i==1 || i==4
     if i<=4
-        text(0.28,0.88,'Fine','HorizontalAlignment','Center');
-        text(0.56,0.88,'Medium','HorizontalAlignment','Center');
-        text(1.05,0.88,'Coarse','HorizontalAlignment','Center');
+        text(0.28,0.88,'Fine','HorizontalAlignment','Center','FontSize',PlotFont);
+        text(0.56,0.88,'Medium','HorizontalAlignment','Center','FontSize',PlotFont);
+        text(1.05,0.88,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
     else
-        text(0.28,-0.88,'Fine','HorizontalAlignment','Center');
-        text(0.56,-0.88,'Medium','HorizontalAlignment','Center');
-        text(1.05,-0.88,'Coarse','HorizontalAlignment','Center');
+        text(0.28,-0.88,'Fine','HorizontalAlignment','Center','FontSize',PlotFont);
+        text(0.56,-0.88,'Medium','HorizontalAlignment','Center','FontSize',PlotFont);
+        text(1.05,-0.88,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
     end
     xlim([0.2 1.5]);
     ylim([-1 1]);
-    set(gca,'XScale','log','YTick',[],'Box','On');
+    set(gca,'XScale','log','YTick',[],'Box','On','FontSize',PlotFont);
     set(gca,'xtick',[0.2:0.1:1, 1.1:0.1:1.5]);
     set(gca,'xticklabels',{'0.2','','0.4','','','','0.8','','','','','','','1.5'});
 
     %subplot for size fraction
     if i == 1
         scalingfactor = 2;
-        h1_1 = plot(x(ind_ejectionrate),y_ejectionrate(ind_ejectionrate)*scalingfactor,'Marker',marker_ejectionrate,'MarkerSize',3,'LineWidth',1.0,'Color',color_ejectionrate); %ejection rate
-        h1_2 = plot(x(ind_saltationpromotion),y_saltationpromotion(ind_saltationpromotion)*scalingfactor,'Marker',marker_saltationpromotion,'MarkerSize',3,'LineWidth',1.0,'Color',color_saltationpromotion); %promotion to saltation
-        h1_3 = plot(x(ind_length),y_length(ind_length)*scalingfactor,'Marker',marker_length,'MarkerSize',3,'LineWidth',1.0,'Color',color_length); %trajectory length
+        h1_1 = plot(x(ind_ejectionrate),y_ejectionrate(ind_ejectionrate)*scalingfactor,'Marker',marker_ejectionrate,'MarkerSize',5,'LineWidth',1.0,'Color',color_ejectionrate); %ejection rate
+        h1_2 = plot(x(ind_saltationpromotion),y_saltationpromotion(ind_saltationpromotion)*scalingfactor,'Marker',marker_saltationpromotion,'MarkerSize',5,'LineWidth',1.0,'Color',color_saltationpromotion); %promotion to saltation
+        h1_3 = plot(x(ind_length),y_length(ind_length)*scalingfactor,'Marker',marker_length,'MarkerSize',5,'LineWidth',1.0,'Color',color_length); %trajectory length
         h1_4 = plot(x(ind_sizefraction),y_sizefraction(ind_sizefraction)*scalingfactor,'LineWidth',2.0,'Color',color_sizefraction); %combined - size fraction
         %h1_4 = plot(x(ind_sizefraction),y_sizefraction(ind_sizefraction)*scalingfactor,'Marker',marker_sizefraction,'MarkerSize',4,'LineWidth',2.0,'Color',color_sizefraction); %combined - size fraction
                 
         h1_legend = legend([h1_1 h1_2 h1_3 h1_4],...
             'Ejection rate','Promotion to saltation','Travel length','Combined effect');
         
-        set(h1_legend,'Location','EastOutside','FontSize',8);       
-        text(0.175,0.9,'(a)');
+        set(h1_legend,'Location','EastOutside','FontSize',10);       
+        text(0.175,0.9,'(a)','FontSize',PlotFont);
 %         ylabel({'Enhance';'';'          $$\Uparrow$$';'';...
 %             '\textbf{Effect on}';'\textbf{size-sel.}';'\textbf{mobility}';...
 %             '';'          $$\Downarrow$$';'';'Reduce'},...
@@ -238,77 +239,77 @@ for i = 1:4
         ylabel({'Enhance';'          $$\Uparrow$$';...
             '\textbf{Effect on}';'\textbf{size-sel.}';'\textbf{mobility}';...
             '          $$\Downarrow$$';'Reduce'},...
-            'Interpreter','Latex');
+            'Interpreter','Latex','FontSize',PlotFont);
         set(get(gca,'YLabel'),'Rotation',0,'VerticalAlignment','Middle');
         set(get(gca,'YLabel'),'Position',get(get(gca,'YLabel'),'Position')+[-0.05 0 0])
     
     elseif i == 2
         scalingfactor = 2;
-        h2_1 = plot(x(ind_ejectionspeed),y_ejectionspeed(ind_ejectionspeed)*scalingfactor,'Marker',marker_ejectionspeed,'MarkerSize',3,'LineWidth',1.0,'Color',color_ejectionspeed); %ejection speed
-        h2_2 = plot(x(ind_windaccel),y_windaccel(ind_windaccel)*scalingfactor,'Marker',marker_windaccel,'MarkerSize',3,'LineWidth',1.0,'Color',color_windaccel); %wind-driven accel.       
-        h2_3 = plot(x(ind_restitution),y_restitution(ind_restitution)*scalingfactor,['-.',marker_restitution],'MarkerSize',3,'LineWidth',1.0,'Color',color_restitution); %restitution
+        h2_1 = plot(x(ind_ejectionspeed),y_ejectionspeed(ind_ejectionspeed)*scalingfactor,'Marker',marker_ejectionspeed,'MarkerSize',5,'LineWidth',1.0,'Color',color_ejectionspeed); %ejection speed
+        h2_2 = plot(x(ind_windaccel),y_windaccel(ind_windaccel)*scalingfactor,'Marker',marker_windaccel,'MarkerSize',5,'LineWidth',1.0,'Color',color_windaccel); %wind-driven accel.       
+        h2_3 = plot(x(ind_restitution),y_restitution(ind_restitution)*scalingfactor,['-.',marker_restitution],'MarkerSize',5,'LineWidth',1.0,'Color',color_restitution); %restitution
         h2_4 = plot(x(ind_saltationpromotion),y_saltationpromotion(ind_saltationpromotion)*scalingfactor,'LineWidth',2.0,'Color',color_saltationpromotion); %saltation promotion
         %h2_4 = plot(x(ind_saltationpromotion),y_saltationpromotion(ind_saltationpromotion)*scalingfactor,'Marker',marker_saltationpromotion,'MarkerSize',4,'LineWidth',2.0,'Color',color_saltationpromotion); %saltation promotion
         
         h2_legend = legend([h2_1 h2_2 h2_3 h2_4],...
             'Ejection speed','Wind-driven accel.','Restitution coef.','Combined effect');
         
-        set(h2_legend,'Location','SouthWest','FontSize',8);       
-        text(0.16,0.8,'(b)');
+        set(h2_legend,'Location','SouthWest','FontSize',10);       
+        text(0.16,0.8,'(b)','FontSize',PlotFont);
         ylabel({'Enhance';'          $$\Uparrow$$';...
             
             '\textbf{Effect on}';'\textbf{promotion}';'\textbf{to saltation}';...
             '          $$\Downarrow$$';'Reduce'},...
-            'Interpreter','Latex');
+            'Interpreter','Latex','FontSize',PlotFont);
         set(get(gca,'YLabel'),'Rotation',0,'VerticalAlignment','Middle');
         set(get(gca,'YLabel'),'Position',get(get(gca,'YLabel'),'Position')+[-0.07 0 0])
     
     elseif i == 3
         scalingfactor = 2;
-        h3_1 = plot(x(ind_height),y_height(ind_height)*scalingfactor,'Marker',marker_height,'MarkerSize',3,'LineWidth',1.0,'Color',color_height);
-        h3_2 = plot(x(ind_bedcapture),y_bedcapture(ind_bedcapture)*scalingfactor,['-.',marker_bedcapture],'MarkerSize',3,'LineWidth',1.0,'Color',color_bedcapture);
+        h3_1 = plot(x(ind_height),y_height(ind_height)*scalingfactor,'Marker',marker_height,'MarkerSize',5,'LineWidth',1.0,'Color',color_height);
+        h3_2 = plot(x(ind_bedcapture),y_bedcapture(ind_bedcapture)*scalingfactor,['-.',marker_bedcapture],'MarkerSize',5,'LineWidth',1.0,'Color',color_bedcapture);
         h3_3 = plot(x(ind_length),y_length(ind_length)*scalingfactor,'LineWidth',2.0,'Color',color_length);
         %h3_3 = plot(x(ind_length),y_length(ind_length)*scalingfactor,'Marker',marker_length,'MarkerSize',4,'LineWidth',2.0,'Color',color_length);
         
         h3_legend = legend([h3_1 h3_2 h3_3],...
             'Saltation height','Bed capture prob.','Combined effect');
     
-        set(h3_legend,'Location','SouthEast','FontSize',8);
-        text(0.16,0.8,'(c)');
+        set(h3_legend,'Location','SouthEast','FontSize',10);
+        text(0.16,0.8,'(c)','FontSize',PlotFont);
         ylabel({'Enhance';'          $$\Uparrow$$';...
             '\textbf{Effect on}';'\textbf{travel}';'\textbf{length}';...
             '          $$\Downarrow$$';'Reduce'},...
-            'Interpreter','Latex');
+            'Interpreter','Latex','FontSize',PlotFont);
         set(get(gca,'YLabel'),'Rotation',0,'VerticalAlignment','Middle');
         set(get(gca,'YLabel'),'Position',get(get(gca,'YLabel'),'Position')+[-0.07 0 0])
    
     elseif i == 4
         scalingfactor = 1.5;
-        h4_1 = plot(x(ind_verticaldrag),y_verticaldrag(ind_verticaldrag)*scalingfactor,'Marker',marker_verticaldrag,'MarkerSize',3,'LineWidth',1.0,'Color',color_verticaldrag);
-        h4_2 = plot(x(ind_restitution),y_restitution(ind_restitution)*scalingfactor,['-.',marker_restitution],'MarkerSize',3,'LineWidth',1.0,'Color',color_restitution);
-        h4_3 = plot(x(ind_responsetime),y_responsetime(ind_responsetime)*scalingfactor,'Marker',marker_responsetime,'MarkerSize',3,'LineWidth',1.0,'Color',color_responsetime);
-        h4_4 = plot(x(ind_turbulence),y_turbulence(ind_turbulence)*scalingfactor,'Marker',marker_turbulence,'MarkerSize',3,'LineWidth',1.0,'Color',color_turbulence);
+        h4_1 = plot(x(ind_verticaldrag),y_verticaldrag(ind_verticaldrag)*scalingfactor,'Marker',marker_verticaldrag,'MarkerSize',5,'LineWidth',1.0,'Color',color_verticaldrag);
+        h4_2 = plot(x(ind_restitution),y_restitution(ind_restitution)*scalingfactor,['-.',marker_restitution],'MarkerSize',5,'LineWidth',1.0,'Color',color_restitution);
+        h4_3 = plot(x(ind_responsetime),y_responsetime(ind_responsetime)*scalingfactor,'Marker',marker_responsetime,'MarkerSize',5,'LineWidth',1.0,'Color',color_responsetime);
+        h4_4 = plot(x(ind_turbulence),y_turbulence(ind_turbulence)*scalingfactor,'Marker',marker_turbulence,'MarkerSize',5,'LineWidth',1.0,'Color',color_turbulence);
         h4_5 = plot(x(ind_height),y_height(ind_height),'LineWidth',2.0,'Color',color_height);
         %h4_5 = plot(x(ind_height),y_height(ind_height),'Marker',marker_height,'MarkerSize',4,'LineWidth',2.0,'Color',color_height);
 
         h4_legend = legend([h4_1 h4_3 h4_2 h4_4 h4_5],...
             'Vertical drag','Response time','Restitution coeff.','Turbulence effects','Combined effect');
         
-        set(h4_legend,'Location','EastOutside','FontSize',8);
-        text(0.175,0.9,'(d)');
+        set(h4_legend,'Location','EastOutside','FontSize',10);
+        text(0.175,0.9,'(d)','FontSize',PlotFont);
 %         ylabel({'Enhance';'';'          $$\Uparrow$$';'';...
 %             '\textbf{Effect on}';'\textbf{saltation}';'\textbf{height}';...
 %             '';'          $$\Downarrow$$';'';'Reduce'},...
-%             'Interpreter','Latex');
+%             'Interpreter','Latex','FontSize',PlotFont);
         ylabel({'Enhance';'          $$\Uparrow$$';...
             '\textbf{Effect on}';'\textbf{saltation}';'\textbf{height}';...
             '          $$\Downarrow$$';'Reduce'},...
-            'Interpreter','Latex');
+            'Interpreter','Latex','FontSize',PlotFont);
         set(get(gca,'YLabel'),'Rotation',0,'VerticalAlignment','Middle');
         set(get(gca,'YLabel'),'Position',get(get(gca,'YLabel'),'Position')+[-0.05 0 0])
     end   
 
-    xlabel('Normalized grain size, $$d_i / d_{50,bed}$$','Interpreter','Latex');
+    xlabel('Normalized grain size, $$d_i / d_{50,bed}$$','Interpreter','Latex','FontSize',PlotFont);
 end
 
 set(gcf,'PaperUnits','inches','PaperSize',[7 9],'PaperPosition',[0 0 7 9],'PaperPositionMode','Manual');
