@@ -152,11 +152,11 @@ taunorm_max_Qhat_tau_fit = 2; %maximum normalized shear stress for fitting Qhat 
 
 %% information about where to load data and save plots
 folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_GrainSizeData = '../../AnalysisData/GrainSize/'; %folder for grain size data
+folder_GrainSizeData = '../../AnalysisData/SizeSelective/'; %folder for grain size data
 folder_SaltationData = '../../AnalysisData/Windowing/'; %folder for saltation flux data
 GrainSizeData_Path = strcat(folder_GrainSizeData,'GrainSizeData'); %path for loading mean grain size data
 SaltationFluxData_Path = strcat(folder_SaltationData,'DataWindowCalcs_30min_Restricted'); %path for loading saltation data
-folder_Plots = '../../PlotOutput/GrainSize/'; %folder for plots
+folder_Plots = '../../PlotOutput/SizeSelective/'; %folder for plots
 folder_Functions = '../Functions/'; %folder with functions
 
 %%
