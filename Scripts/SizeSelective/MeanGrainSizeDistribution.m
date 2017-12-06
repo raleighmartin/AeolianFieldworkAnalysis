@@ -3,9 +3,10 @@ clearvars;
 
 %% information about where to load data and save plots
 folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_AnalysisData = '../../AnalysisData/GrainSize/'; %folder for outputs
+folder_AnalysisData = '../../AnalysisData/SizeSelective/'; %folder for outputs
 SaveData_Path = strcat(folder_AnalysisData,'GrainSizeData'); %path for saving output data
-folder_Plots = '../../PlotOutput/GrainSize/'; %folder for plots
+folder_Plots = '../../PlotOutput/SizeSelective/'; %folder for plots
+folder_Functions = '../Functions/'; %folder with functions
 
 %% Information about sites
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
@@ -36,6 +37,8 @@ for i = 1:N_Sites
     FluxBSNE_all{i} = FluxBSNE;
 end
 
+%load functions
+addpath(folder_Functions); %point MATLAB to location of functions
 
 %% initialize combined surface samples
 d_surface_site = cell(N_Sites,1);

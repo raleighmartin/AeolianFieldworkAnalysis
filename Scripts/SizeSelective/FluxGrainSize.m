@@ -1102,20 +1102,39 @@ h_subplot = gobjects(N_Cluster,1);
 
 for i = 1:N_Cluster
 
+%     %initialize subplot
+%     if N_Cluster == 6 %defined subplot sizes for six clusters
+%         if i == 1
+%             h_subplot(1) = subplot('position',[0.12 0.7 0.38 0.24]); hold on;
+%         elseif i == 2
+%             h_subplot(2) = subplot('position',[0.58 0.7 0.38 0.24]); hold on;
+%         elseif i == 3
+%             h_subplot(3) = subplot('position',[0.12 0.38 0.38 0.24]); hold on;
+%         elseif i == 4
+%             h_subplot(4) = subplot('position',[0.58 0.38 0.38 0.24]); hold on;
+%         elseif i == 5
+%             h_subplot(5) = subplot('position',[0.12 0.06 0.38 0.24]); hold on;
+%         else
+%             h_subplot(6) = subplot('position',[0.58 0.06 0.38 0.24]); hold on;
+%         end
+%     else %otherwise, automated subplot sizes
+%         h_subplot(i) = subplot(round((N_Cluster+1)/2),2,i); hold on;
+%     end
+    
     %initialize subplot
-    if N_Cluster == 6 %defined subplot sizes for six clusters
+    if N_Cluster == 6 %defined subplot sizes for six clusters - landscape
         if i == 1
-            h_subplot(1) = subplot('position',[0.12 0.7 0.38 0.24]); hold on;
+            h_subplot(1) = subplot('position',[0.1 0.54 0.25 0.40]); hold on;
         elseif i == 2
-            h_subplot(2) = subplot('position',[0.58 0.7 0.38 0.24]); hold on;
+            h_subplot(2) = subplot('position',[0.41 0.54 0.25 0.40]); hold on;
         elseif i == 3
-            h_subplot(3) = subplot('position',[0.12 0.38 0.38 0.24]); hold on;
+            h_subplot(3) = subplot('position',[0.72 0.54 0.25 0.40]); hold on;
         elseif i == 4
-            h_subplot(4) = subplot('position',[0.58 0.38 0.38 0.24]); hold on;
+            h_subplot(4) = subplot('position',[0.1 0.06 0.25 0.40]); hold on;
         elseif i == 5
-            h_subplot(5) = subplot('position',[0.12 0.06 0.38 0.24]); hold on;
+            h_subplot(5) = subplot('position',[0.41 0.06 0.25 0.40]); hold on;
         else
-            h_subplot(6) = subplot('position',[0.58 0.06 0.38 0.24]); hold on;
+            h_subplot(6) = subplot('position',[0.72 0.06 0.25 0.40]); hold on;
         end
     else %otherwise, automated subplot sizes
         h_subplot(i) = subplot(round((N_Cluster+1)/2),2,i); hold on;
@@ -1140,15 +1159,25 @@ for i = 1:N_Cluster
    set(gca,'xticklabels',{'0.06','','','','0.1','0.2','','0.4','','','0.7','','','1','','','','','','','','','','2'});
     %text(0.06,8e-5,'0.06','HorizontalAlignment','Center');
     ylim([1e-4 1e1]);
-    text(0.07, 6, Label_Cluster{i},'FontSize',12);
+%    text(0.07, 6, Label_Cluster{i},'FontSize',12);
 
     %label plot
     htitle = title(ClusterNames{i});
     set(htitle,'Position',[0.35,3.5]); %set title below edge of box to accommodate second axis
-    if i>=2*round(N_Cluster/2)-1
+%     %xlabel
+%     if i>=2*round(N_Cluster/2)-1
+%         xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
+%     end
+    %xlabel - landscape
+    if i>=2*round(N_Cluster/2)-2
         xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
     end
-    if mod(i,2) == 1
+%     %ylabel
+%     if mod(i,2) == 1
+%         ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+%     end
+    %ylabel - landscape
+    if mod(i,3) == 1
         ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
     end
     
@@ -1211,14 +1240,24 @@ for i = 1:N_Cluster
 %     end
     set(ax2,'XTickLabel',XTickLabels);
     set(ax2,'YTick',[]);
-    if i<=2
+%     %xlabel
+%     if i<=2
+%         xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+%     end
+    %xlabel - landscape
+    if i<=3
         xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
     end
 end
 
-%print plot
-set(gcf,'PaperUnits','inches','PaperSize',[7 9],'PaperPosition',[0 0 7 9],'PaperPositionMode','Manual');
-print([folder_Plots,'GSD_taunorm.png'],'-dpng');
+% %print plot
+% set(gcf,'PaperUnits','inches','PaperSize',[7 9],'PaperPosition',[0 0 7 9],'PaperPositionMode','Manual');
+% print([folder_Plots,'GSD_taunorm.png'],'-dpng');
+
+%print plot - landscape
+set(gcf,'PaperUnits','inches','PaperSize',[8 7],'PaperPosition',[0 0 8 7],'PaperPositionMode','Manual');
+print([folder_Plots,'GSD_taunorm_landscape.png'],'-dpng');
+
 
 %% PLOT mean fratio / fsurface - unbinned - limited dhat
 figure(4); clf; hold on;
@@ -1256,44 +1295,47 @@ if strcmp(dref_type,'d50')==1
 elseif strcmp(dref_type,'dmodal')==1
     xlabel('Normalized grain size, $$d_i / d_{modal,bed}$$','Interpreter','Latex');
 end
-ylabel({'Ratio of mean airborne to bed surface volume fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center');
-h_legend = legend(ClusterNames,'Location','NorthEast');
+ylabel({'Ratio of airborne to bed fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %no inset plot
+%ylabel({'Ratio of mean airborne to bed surface volume fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %original plot
+h_legend = legend(ClusterNames,'Location','SouthWest'); %no inset plot
+%h_legend = legend(ClusterNames,'Location','NorthEast'); %original plot
 set(h_legend,'FontSize',10);
 set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
 ylim([1e-4 1e1]);
-text(0.26,7,'(a)','FontSize',PlotFont);
+%text(0.26,7,'(a)','FontSize',PlotFont);
 
-%inset plot with dimensional values
-axes('Position',[.25 .25 .35 .38]); hold on;
-
-%plot fratio values
-for i = 1:N_Cluster   
-    plot(d_f_mid_Cluster{i},f_ratio_bar_Cluster{i},Marker_Cluster{i},'Color',Color_Cluster{i}); %values
-end
-
-%plot error bars
-for i = 1:N_Cluster
-    for k = 1:length(d_f_mid_Cluster{i})
-        if strcmp(dref_type,'d50')
-            plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
-        elseif strcmp(dref_type,'dmodal')
-            plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
-        end
-    end
-end
-
-xlabel('Grain size, $$d_{i}$$ (mm)','Interpreter','Latex');
-ylabel('$$\langle f_{i,air} \rangle /f_{i,bed}$$','Interpreter','Latex');
-set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
-xlim([d_min d_max]);
-ylim([1e-4 1e1]);
-text(0.8,5,'(b)','FontSize',PlotFont);
+% %inset plot with dimensional values
+% axes('Position',[.25 .25 .35 .38]); hold on;
+% 
+% %plot fratio values
+% for i = 1:N_Cluster   
+%     plot(d_f_mid_Cluster{i},f_ratio_bar_Cluster{i},Marker_Cluster{i},'Color',Color_Cluster{i}); %values
+% end
+% 
+% %plot error bars
+% for i = 1:N_Cluster
+%     for k = 1:length(d_f_mid_Cluster{i})
+%         if strcmp(dref_type,'d50')
+%             plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
+%         elseif strcmp(dref_type,'dmodal')
+%             plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
+%         end
+%     end
+% end
+% 
+% xlabel('Grain size, $$d_{i}$$ (mm)','Interpreter','Latex');
+% ylabel('$$\langle f_{i,air} \rangle /f_{i,bed}$$','Interpreter','Latex');
+% set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
+% xlim([d_min d_max]);
+% ylim([1e-4 1e1]);
+% text(0.8,5,'(b)','FontSize',PlotFont);
 
 %print plot
 %set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6 5],'PaperPositionMode','Manual');
-set(gcf,'PaperUnits','inches','PaperSize',[8 6],'PaperPosition',[0 0 8 6],'PaperPositionMode','Manual');
+set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual'); %no inset plot
+% set(gcf,'PaperUnits','inches','PaperSize',[8 6],'PaperPosition',[0 0 8 6],'PaperPositionMode','Manual'); %original plot
 print([folder_Plots,'fratiobar_dhat_unbinned_limited_',dref_type,'.png'],'-dpng');
-
+ 
 
 %% PLOT mean zqnorm VS dhat
 figure(5); clf;

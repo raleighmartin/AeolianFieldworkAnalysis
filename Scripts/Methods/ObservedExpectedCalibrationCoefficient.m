@@ -121,35 +121,63 @@ for i = 1:N_Sites
     end
 end
 
-%% perform fit to calibration factor versus counts rate
+%% perform fit to calibration factor versus counts rate and wind direction
 %initialize values
 nbar_combined = cell(N_Sites,1);
 Cqnbar_combined = cell(N_Sites,1);
-Cqnbar_pred = cell(N_Sites,1);
+theta_combined = cell(N_Sites,1);
+std_theta_combined = cell(N_Sites,1);
+Cqnbar_pred_nbar = cell(N_Sites,1);
+Cqnbar_pred_theta = cell(N_Sites,1);
+Cqnbar_pred_std_theta = cell(N_Sites,1);
 sigma_Cqnbar_combined = cell(N_Sites,1);
 slope_Cqnbar_nbar = zeros(N_Sites,1);
+slope_Cqnbar_theta = zeros(N_Sites,1);
+slope_Cqnbar_std_theta = zeros(N_Sites,1);
 sigma_slope_Cqnbar_nbar = zeros(N_Sites,1);
+sigma_slope_Cqnbar_theta = zeros(N_Sites,1);
+sigma_slope_Cqnbar_std_theta = zeros(N_Sites,1);
 for i = 1:N_Sites
     %combine values
-    for j = 1:length(nbar_all{i})
-        nbar_combined{i} = [nbar_combined{i} nbar_all{i}{j}];
-        Cqnbar_combined{i} = [Cqnbar_combined{i} Cqnbar_all{i}{j}];
-        sigma_Cqnbar_combined{i} = [sigma_Cqnbar_combined{i} sigma_Cqnbar_all{i}{j}];
+    ind_flux = find(Q_all{i}>0);
+    for j = 1:length(ind_flux)
+        nbar_combined{i} = [nbar_combined{i} nbar_all{i}{ind_flux(j)}];
+        Cqnbar_combined{i} = [Cqnbar_combined{i} Cqnbar_all{i}{ind_flux(j)}];
+        sigma_Cqnbar_combined{i} = [sigma_Cqnbar_combined{i} sigma_Cqnbar_all{i}{ind_flux(j)}];
+        theta_combined{i} = [theta_combined{i} abs(theta_all{i}(ind_flux(j)))*ones(size(nbar_all{i}{ind_flux(j)}))];
+        %std_theta_combined{i} = [std_theta_combined{i} std_theta_all{i}(ind_flux(j))*ones(size(nbar_all{i}{ind_flux(j)}))];
+        std_theta_combined{i} = [std_theta_combined{i} sigma_theta_all{i}(ind_flux(j))*ones(size(nbar_all{i}{ind_flux(j)}))];
     end
     %remove zero values
     ind_nonzero = find(nbar_combined{i}~=0);
     nbar_combined{i} = nbar_combined{i}(ind_nonzero);
     Cqnbar_combined{i} = Cqnbar_combined{i}(ind_nonzero);
     sigma_Cqnbar_combined{i} = sigma_Cqnbar_combined{i}(ind_nonzero);  
+    theta_combined{i} = theta_combined{i}(ind_nonzero);
+    std_theta_combined{i} = std_theta_combined{i}(ind_nonzero);
     
-    %perform linear fit to log of values
+    %perform linear fit to log of nbar versus log of Cqnbar
     [a, b, sigma_a, sigma_b, yfit, sigma_yfit, sigma2_ab, da_dy, db_dy] = ...
         linearfit(log10(nbar_combined{i}), log10(Cqnbar_combined{i}), log10(sigma_Cqnbar_combined{i}));
-    Cqnbar_pred{i} = 10.^yfit;
+    Cqnbar_pred_nbar{i} = 10.^yfit;
     slope_Cqnbar_nbar(i) = b;
     sigma_slope_Cqnbar_nbar(i) = sigma_b;
-end
     
+    %perform linear fit to log of Cqnbar versus theta
+    [a, b, sigma_a, sigma_b, yfit, sigma_yfit, sigma2_ab, da_dy, db_dy] = ...
+        linearfit(theta_combined{i}, log10(Cqnbar_combined{i}), log10(sigma_Cqnbar_combined{i}));
+    Cqnbar_pred_theta{i} = 10.^yfit;
+    slope_Cqnbar_theta(i) = b;
+    sigma_slope_Cqnbar_theta(i) = sigma_b;
+    
+    %perform linear fit to log of Cqnbar versus std_theta
+    [a, b, sigma_a, sigma_b, yfit, sigma_yfit, sigma2_ab, da_dy, db_dy] = ...
+        linearfit(std_theta_combined{i}, log10(Cqnbar_combined{i}), log10(sigma_Cqnbar_combined{i}));
+    Cqnbar_pred_std_theta{i} = 10.^yfit;
+    slope_Cqnbar_std_theta(i) = b;
+    sigma_slope_Cqnbar_std_theta(i) = sigma_b;    
+end
+
 %%%%%%%%%
 %% PLOT %
 %%%%%%%%%
@@ -222,7 +250,7 @@ end
 
 %plot fit lines
 for i = 1:N_Sites
-    plot(nbar_combined{i},Cqnbar_pred{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot*2);
+    plot(nbar_combined{i},Cqnbar_pred_nbar{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot*2);
 end
 
 xlabel('HF sensor counts rate over calibration interval, $$n_{cal,HF,i}$$ (s $$^{-1}$$)','Interpreter','Latex')
@@ -235,8 +263,58 @@ set(gca,'LooseInset',get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperSize',[6 4.5],'PaperPosition',[0 0 6 4.5],'PaperPositionMode','Manual');
 print([folder_Plots,'Calibration_CountsRate.png'],'-dpng');
 
-%% plot observed calibration factor versus saltation flux
+%% plot observed calibration factor versus wind direction
+
 figure(3); clf; hold on;
+
+%% subplot versus mean wind direction
+subplot('Position',[0.08 0.12 0.42 0.86]); hold on;
+
+%plot values
+for i = 1:N_Sites
+    plot(theta_combined{i},Cqnbar_combined{i},Marker_Site{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot);
+end
+
+%plot fit lines
+for i = 1:N_Sites
+    plot(theta_combined{i},Cqnbar_pred_theta{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot*2);
+end
+
+xlabel('Mean absolute wind direction, $$|\theta|$$ ($$^{\circ}$$)','Interpreter','Latex');
+ylabel('Observed calibration factor, $$C_{qn,i}$$ (g m$$^{-2}$$)','Interpreter','Latex');
+set(gca,'xscale','linear','yscale','log','box','on','FontSize',PlotFont);
+set(gca,'LooseInset',get(gca,'TightInset'));
+ylims = ylim;
+text(1.7,ylims(1)+0.85*range(ylims),'(a)','FontSize',PlotFont);
+
+%% subplot versus std of wind variation
+subplot('Position',[0.56 0.12 0.42 0.86]); hold on;
+
+%plot values
+for i = 1:N_Sites
+    plot(std_theta_combined{i},Cqnbar_combined{i},Marker_Site{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot);
+end
+
+%plot fit lines
+for i = 1:N_Sites
+    plot(std_theta_combined{i},Cqnbar_pred_std_theta{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot*2);
+end
+
+xlabel('Std. dev. of 2-second wind dir., $$\sigma_{\theta,2s}$$ ($$^{\circ}$$)','Interpreter','Latex');
+legend(SiteNames,'Location','NorthEast');
+set(gca,'xscale','linear','yscale','log','box','on','FontSize',PlotFont);
+set(gca,'LooseInset',get(gca,'TightInset'));
+ylims = ylim;
+text(4.5,ylims(1)+0.85*range(ylims),'(b)','FontSize',PlotFont);
+
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[8 4],'PaperPosition',[0 0 8 4],'PaperPositionMode','Manual');
+print([folder_Plots,'Calibration_WindDirection.png'],'-dpng');
+
+
+%% plot observed calibration factor versus saltation flux
+figure(5); clf; hold on;
 for i = 1:N_Sites
     plot(Q_all{i}(1)*ones(size(Cqnbar_all{i}{1})),Cqnbar_all{i}{1},Marker_Site{i},'Color',Color_Site{i},'LineWidth',LineWidth_Plot);
 end

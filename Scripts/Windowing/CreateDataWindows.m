@@ -15,18 +15,18 @@ folder_TimeseriesPlot = '../../PlotOutput/Timeseries/'; %folder for sample times
 folder_Functions = '../Functions/'; %folder with functions
 addpath(folder_Functions); %point MATLAB to location of functions
 
-% %% Specific information for windowing data - restricted windows
-% LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Restricted'); %path for loading time windows
-% SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Restricted'); %path for saving output data
+%% Specific information for windowing data - restricted windows
+LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Restricted'); %path for loading time windows
+SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Restricted'); %path for saving output data
 
 % %% Specific information for windowing data - restricted windows - with alternate base anemometer
 % LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Restricted'); %path for loading time windows
 % AnemometerName_base_alt = {'U2';'U2';'S2'}; %provide alternative anemometers for analysis
 % SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Restricted_alt'); %path for saving output data
 
-%% Specific information for windowing data - unrestricted windows
-LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Unrestricted'); %path for loading time windows
-SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Unrestricted'); %path for saving output data
+% %% Specific information for windowing data - unrestricted windows
+% LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_30min_Unrestricted'); %path for loading time windows
+% SaveDataWindows_Path = strcat(folder_ProcessedData,'DataWindows_30min_Unrestricted'); %path for saving output data
 
 %% Specific information for windowing data - Yue's windows
 % LoadTimeData_Path = strcat(folder_TimeData,'TimeWindows_Oceano_Yue_1'); %path for loading time windows
@@ -48,6 +48,7 @@ end
 
 %% load processed data for each site, add to cell arrays of all sites 
 FluxData = cell(N_Sites,1);
+BSNEData = cell(N_Sites,1);
 WeatherData = cell(N_Sites,1);
 WindData_base = cell(N_Sites,1);
 
@@ -55,8 +56,12 @@ for i = 1:N_Sites
     ProcessedData_Path = strcat(folder_ProcessedData,'ProcessedData_',Sites{i});
     load(ProcessedData_Path); %load processed data
     
+    BSNEData_Path = strcat(folder_ProcessedData,'FluxBSNE_',Sites{i});
+    load(BSNEData_Path); %load BSNE data
+    
     %get flux and weather data
     FluxData{i} = ProcessedData.FluxWenglor; %Wenglor flux data
+    BSNEData{i} = FluxBSNE; %BSNE data
     WeatherData{i} = ProcessedData.Weather.WS; %all weather station data
     
     %get wind data
@@ -64,6 +69,7 @@ for i = 1:N_Sites
     WindData_base{i} = WindData.(AnemometerName_base{i}); %data only for base anemometer
         
     clear ProcessedData; %remove 'ProcessedData' to clear up memory
+    clear FluxBSNE; %remove 'FluxBSNE' to clear up memory
     clear WindData; %remove 'WindData' to clear up memory
 end
 
@@ -93,9 +99,13 @@ sigma_Cqn_int_window = cell(N_Sites,1); %interpolated calibration factor uncerta
 ind_flux_err_window = cell(N_Sites,1); %times for flux error points
 N_flux_err_window = cell(N_Sites,1); %number of flux error points
 
+%initialize list of contextual BSNE values
+zq_BSNE_window = cell(N_Sites,1); %zq from BSNE fit for window
+
 %initialize lists of wind values for lowest anemometer (excluding error points)
 t_wind_window = cell(N_Sites,1); %times for wind
 theta_window = cell(N_Sites,1); %wind angle for time window
+std_theta_2s_window = cell(N_Sites,1); %variability in 2s wind direction for time window 
 u_window = cell(N_Sites,1); %rotated streamwise wind for time window
 v_window = cell(N_Sites,1); %rotated transverse wind for time window
 w_window = cell(N_Sites,1); %rotated vertical wind for time window
@@ -143,9 +153,13 @@ for i = 1:N_Sites
     ind_flux_err_window{i} = cell(N_Windows,1); %times for flux error points
     N_flux_err_window{i} = zeros(N_Windows,1); %number of flux error points
     
+    %initialize list of contextual BSNE values
+    zq_BSNE_window{i} = zeros(N_Windows,1)*NaN; %zq from BSNE fit for window
+    
     %wind values (excluding error points)
     t_wind_window{i} = cell(N_Windows,1); %times for wind
     theta_window{i} = zeros(N_Windows,1)*NaN; %wind angles for anemometer
+    std_theta_2s_window{i} = zeros(N_Windows,1)*NaN; %variability in 2s wind direction for time window 
     u_window{i} = cell(N_Windows,1); %rotated streamwise wind for time window
     v_window{i} = cell(N_Windows,1); %rotated streamwise wind for time window
     w_window{i} = cell(N_Windows,1); %rotated vertical wind for time window
@@ -240,6 +254,10 @@ for i = 1:N_Sites
             ind_flux_err_window{i}{j} = ind_flux_err; %record list of error time indices
             N_flux_err_window{i}(j) = length(ind_flux_err); %record number of error times
         
+            %get contextual BSNE values
+            ind_BSNE = find([BSNEData{i}.StartTime] <= t_flux(1), 1, 'last');
+            zq_BSNE_window{i}(j) = BSNEData{i}(ind_BSNE).z.zq; %zq from BSNE fit for window
+            
         %otherwise set all values as NaN if no flux data exist
         else
             %non-error values
@@ -264,6 +282,8 @@ for i = 1:N_Sites
             sigma_Cqn_int_window{i}{j} = NaN; %interpolated calibration factor uncertainty list
             ind_flux_err_window{i}{j} = NaN; %record list of error time indices
             N_flux_err_window{i}(j) = NaN; %record number of error times
+            %contextual BSNE values
+            zq_BSNE_window{i}(j) = NaN; %zq from BSNE fit for window
         end
             
         %% WIND DATA FOR INTERVAL - BASE ANEMOMETER
@@ -332,12 +352,19 @@ for i = 1:N_Sites
         u_total = sqrt(u_int.^2+v_int.^2+w_int.^2); %total wind
         ind_bad_wind = find(u_total>u_total_max); %get indices of points with total wind above upper limit
         ind_wind_err = union(ind_wind_err,ind_bad_wind); %combine these indices with existing error points
-                
+        
         %add to window lists
         t_wind_int_window{i}{j} = t_wind; %interpolated wind times
         u_int_window{i}{j} = u_rot_int; %rotated interpolated streamwise velocities
         v_int_window{i}{j} = v_rot_int; %rotated interpolated transverse velocities
         w_int_window{i}{j} = w_rot_int; %rotated interpolated vertical velocities
+        
+        %compute variability in 2 second wind, add to list
+        u_2s = window_average(u_int, t_wind, duration(0,0,2)); %get 2s streamwise wind
+        v_2s = window_average(v_int, t_wind, duration(0,0,2)); %get 2s transverse wind
+        theta_2s = atan(v./u)*180/pi; %2s wind angle
+        std_theta_2s = std(theta_2s(~isnan(theta_2s))); %std deviation of 2s wind angle
+        std_theta_2s_window{i}(j) = std_theta_2s; %variability in 2s wind direction for time window 
         
         %add number of errors to list
         ind_wind_err_window{i}{j} = ind_wind_err; %record list of error time indices

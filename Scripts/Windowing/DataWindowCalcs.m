@@ -77,7 +77,7 @@ sigma_tauRe_all = cell(N_Sites,1); %uncertainty in tau
 zsRe_all = cell(N_Sites,1); %observed roughness height from Reynolds stress
 ubar_all = cell(N_Sites,1); %mean wind velocity from lowest anemometer
 uwbar_all = cell(N_Sites,1); %mean wind product from lowest anemometer
-  
+
 %initiate lists of activity values
 fD_all = cell(N_Sites,1); %Wenglor detection frequency list
 fQ_all = cell(N_Sites,1); %Wenglor transport frequency matrix
@@ -133,6 +133,9 @@ for i = 1:N_Sites
 
         %get duration of interval in seconds
         T_interval = seconds(EndTime-StartTime);
+        
+        %get zq value for fitting
+        zq_fit = zq_BSNE_window{i}(j);
         
         %% FLUX CALCULATIONS FOR INTERVAL
 
@@ -195,10 +198,10 @@ for i = 1:N_Sites
             zW_fit = zW_unique(ind_fit);
             sigma_qbar_fit = sigma_qbar_unique(ind_fit);
             sigma_zW_fit = zeros(1,N_fit); %neglect uncertainty in Wenglor height, which is already accounted for by calibration
-
+            
             %Perform profile fit to get q0, zq, and Q if sufficient points for fitting
             if N_fit>=zW_limit
-                [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,q_pred,sigma_q_pred] = qz_profilefit(qbar_fit,zW_fit,sigma_qbar_fit,sigma_zW_fit);
+                [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,q_pred,sigma_q_pred] = qz_profilefit_exponential(qbar_fit,zW_fit,sigma_qbar_fit,sigma_zW_fit,zq_fit);
                 q_residuals = q_pred - qbar_fit; %residuals between observed and predicted q
                 Chi2_Qfit = sum((q_residuals./sigma_q_pred).^2); %compute Chi2 (Bevington and Robinson, Eq. 8.4)
                 df_Qfit = N_fit-2; %compute degrees of freedom for Qfit
@@ -315,6 +318,7 @@ theta_all = theta_window; %rename variable for wind angles
 for i = 1:N_Sites
     theta_adjusted_all{i}=theta_all{i}-mean(theta_all{i}(Q_all{i}>0));
 end
+std_theta_all = std_theta_2s_window; %rename variable for wind direction variability
 
 %%RENAME ADDITIONAL VALUES NEEDED FOR FLUX LAW ANALYSIS
 W_ID_all = W_ID_window; %Wenglor IDs
