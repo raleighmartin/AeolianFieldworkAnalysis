@@ -3,7 +3,7 @@ clearvars;
 
 %% information about where to load data and save plots
 folder_DataBSNE = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder containing BSNE data
-folder_Plots = '../../PlotOutput/BSNE/'; %folder for plots
+folder_Plots = '../../PlotOutput/SizeSelective/'; %folder for plots
 folder_Functions = '../Functions/'; %folder with functions
 
 %load functions
@@ -227,12 +227,13 @@ for i = 1:N_Sites
             %format plot
             legend('+y data','-y data','+y exp fit','-y exp fit','Location','SouthWest');
             %legend('+y data','-y data','+y fit exp','-y fit exp','+y fit pwr','-y fit pwr','Location','SouthWest');
-            title([SiteNames{i},', ',datestr(FluxInterval.StartTime, 'yyyy-mm-dd HH:MM'),' - ',datestr(FluxInterval.EndTime, 'HH:MM')]);
+            %title([SiteNames{i},', ',datestr(FluxInterval.StartTime, 'yyyy-mm-dd HH:MM'),' - ',datestr(FluxInterval.EndTime, 'HH:MM')]);
 
             %print plot
             set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6 5]);
             print([folder_Plots,'BSNE_FluxProfile_',Sites{i},'_',int2str(j),'.png'],'-dpng');
-            
+            print([folder_Plots,'BSNE_FluxProfile_',Sites{i},'_',int2str(j),'.tif'],'-dtiff');
+
         %% for other sites, one profile
         else
             % Get data for profile
@@ -295,6 +296,7 @@ for i = 1:N_Sites
             %print plot - power law
             set(gcf,'PaperUnits','inches','PaperPosition',[0 0 6 5]);
             print([folder_Plots,'BSNE_FluxProfile_',Sites{i},'_',int2str(j),'.png'],'-dpng');
+            print([folder_Plots,'BSNE_FluxProfile_',Sites{i},'_',int2str(j),'.tif'],'-dtiff');
         end
     end
 end
@@ -368,6 +370,8 @@ end
 set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperPosition',[0 0 9 4.5]);
 print([folder_Plots,'Chi2_BSNE_profilefit.png'],'-dpng');
+print([folder_Plots,'Chi2_BSNE_profilefit.tif'],'-dtiff');
+
 
 %% DETERMINE DIFFERENCE IN Z ESTIMATES FOR GEOMEAN AND OPTIMIZATION METHODS
 zq = 0.1; 
@@ -389,4 +393,5 @@ ylabel('Calculated LF trap height, $$z_{LF,i}$$ (m)','Interpreter','Latex');
 legend('iterative calculation','geometric mean calculation','Location','SouthEast');
 set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperSize',[6 4],'PaperPosition',[0 0 6 4],'PaperPositionMode','Manual');
-print([folder_Plots,'profile_z_calc.png'],'-dpng');
+print([folder_Plots,'profile_z_calc.tif'],'-dtiff');
+print([folder_Plots,'profile_z_calc.tif'],'-dtif');

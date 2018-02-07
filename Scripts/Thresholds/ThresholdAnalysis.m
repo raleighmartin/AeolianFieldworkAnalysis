@@ -31,7 +31,7 @@ PlotColors_Sensitivity = {[0.6473 0.7456 0.4188],[0.2116 0.1898 0.5777],[0.8500 
 
 %% folders for loading and saving data
 folder_LoadFluxLawData = '../../AnalysisData/FluxLaw/'; %folder for loading 30 minute data
-folder_LoadRoughnessData = '../../AnalysisData/WindAnalysis/'; %folder for loading roughness data
+folder_LoadRoughnessData = '../../AnalysisData/Misc/'; %folder for loading roughness data
 folder_LoadSubwindowData = '../../AnalysisData/Windowing/'; %folder for retrieving processed data
 folder_LoadWindowData = '../../AnalysisData/Windowing/'; %folder for loading 30 minute data
 folder_Functions = '../Functions/'; %folder with functions
@@ -118,6 +118,12 @@ tauft_all = zeros(N_Sites,1); %inferred fluid threshold stress - best fit
 sigma_tauft_all = zeros(N_Sites,1); %inferred fluid threshold stress - uncertainty
 tauit_all = zeros(N_Sites,1); %inferred impact threshold stress - best fit
 sigma_tauit_all = zeros(N_Sites,1); %inferred impact threshold stress - uncertainty
+tauitftratio_all = zeros(N_Sites,1); %ratio of impact and fluid threshold stresses - best fit
+sigma_tauitftratio_all = zeros(N_Sites,1); %ratio of impact and fluid threshold stresses - uncertainty
+ustft_all = zeros(N_Sites,1); %inferred fluid threshold shear velocity - best fit
+sigma_ustft_all = zeros(N_Sites,1); %inferred fluid threshold shear velocity - uncertainty
+ustit_all = zeros(N_Sites,1); %inferred impact threshold shear velociy - best fit
+sigma_ustit_all = zeros(N_Sites,1); %inferred impact threshold shear velocity - uncertainty
 ustitftratio_all = zeros(N_Sites,1); %ratio of impact and fluid threshold shear velocities - best fit
 sigma_ustitftratio_all = zeros(N_Sites,1); %ratio of impact and fluid threshold shear velocities - uncertainty
 Chi2nu_all = zeros(N_Sites,1); %normalized Chi2 for threshold versus fQ fit
@@ -150,7 +156,14 @@ for i = 1:length(Sites)
         StartTime_subwindow_all,timeofday_subwindow_all);%,...
         %starthour_analysis,endhour_analysis,...
         %startdate_analysis,enddate_analysis);
-        
+    
+    %get equivalent shear velocities and their uncertainties
+    ustft = sqrt(tauft/rho);
+    sigma_ustft = (sigma_tauft/2)*sqrt(rho/tauft);
+    ustit = sqrt(tauit/rho);
+    sigma_ustit = (sigma_tauit/2)*sqrt(rho/tauit);
+
+    
     %% assign values by site
     fQ_bin_avg_all{i} = fQ_bin_avg; %transport activity - average
     fQ_bin_SE_all{i} = fQ_bin_SE; %transport activity - standard error
@@ -164,6 +177,12 @@ for i = 1:length(Sites)
     sigma_tauft_all(i) = sigma_tauft; %inferred fluid threshold stress - uncertainty
     tauit_all(i) = tauit; %inferred impact threshold stress - best fit
     sigma_tauit_all(i) = sigma_tauit; %inferred impact threshold stress - uncertainty
+    tauitftratio_all(i) = tauit/tauft; %ratio of impact and fluid threshold shear stresses - best fit
+    sigma_tauitftratio_all(i) = sqrt((sigma_tauit/tauft)^2+(sigma_tauft*tauit/tauft^2)^2); %ratio of impact and fluid threshold shear stresses - uncertainty
+    ustft_all(i) = ustft; %inferred fluid threshold shear velocity - best fit
+    sigma_ustft_all(i) = sigma_ustft; %inferred fluid threshold shear velocity - uncertainty
+    ustit_all(i) = ustit; %inferred impact threshold shear velocity - best fit
+    sigma_ustit_all(i) = sigma_ustit; %inferred impact threshold shear velocity - uncertainty
     ustitftratio_all(i) = ustitftratio; %ratio of impact and fluid threshold shear velocities - best fit
     sigma_ustitftratio_all(i) = sigma_ustitftratio; %ratio of impact and fluid threshold shear velocities - uncertainty
     Chi2nu_all(i) = Chi2nu; %normalized Chi2 for threshold versus fQ fit
@@ -770,3 +789,86 @@ set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperSize',[7 7],'PaperPosition',[0 0 7 7],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_activity_sensitivityanalyses.png'],'-dpng');
 % print([folder_Plots,'threshold_activity_sensitivityanalyses.tif'],'-dtiff','-r600');
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% plot thresholds versus known relationships %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+d_min_plot = 0.1; %mm
+d_max_plot = 1.0; %mm
+d_plot = logspace(log10(d_min_plot),log10(d_max_plot),100);
+rho_p = 2650; %kg/m^3
+g = 9.8; %m/s^2
+c1 = 5.5e-3; %m/s
+c2 = 49; %um
+c3 = 0.29; %um^-1/2
+c4 = 3.84e-3; %um^-1
+P = 1e5; %Pa
+T = 290; %K
+rho_a = 1.2; %kg/m^3
+
+%fluid threshold predictions
+tauft_Bagnold1941 = 0.1^2*rho_p*g*(d_plot/1000); %Pa (Kok et al. 2012, Eq. 2.5)
+tauft_ShaoLu2000 = 0.111^2*(rho_p*g*(d_plot/1000) + 0.29./(d_plot*rho_a)); %Pa (Kok et al., 2012, Eq. 2.8)
+%tauft_ShaoLu2000 = 0.111^2*(rho_p*g*(d_plot/1000)); %Pa (Kok et al., 2012, Eq. 2.8)
+
+
+%impact threshold predictions
+tauit_Bagnold1941 = 0.082^2*rho_p*g*(d_plot/1000); %Pa (Kok et al. 2012, Eq. 2.5)
+%ustit_Kok2010 = c1*(700/P)^(1/6)*(220/T)^(2/5)*exp((c2./(1e3*d_plot)).^3+c3*sqrt(1e3*d_plot)-c4*(1e3*d_plot)); %m/s (Kok 2010, Eq. 25)
+%tauit_Kok2010 = rho_a*ustit_Kok2010.^2; %Pa (Kok 2010, Eq. 25)
+%ustit_LapotreEtAl2016 = exp((0.04081*log(d_plot*1e-3).^4)+(1.237*log(d_plot*1e-3).^3)+(13.98*log(d_plot*1e-3).^2)+(70.35*log(d_plot*1e-3))+132.6); %m/s (Lapotre et al. 2016, Eq. S1)
+%tauit_LapotreEtAl2016 = rho_a*ustit_LapotreEtAl2016.^2; %Pa (Lapotre et al. 2016, Eq. S1)
+d_KokEtAl2012 = 1e-3*[50;57;65;80;100;125;150;200;250;325;400;500;650;800;1000;1150;1350;1650;2000]; %mm (Kok et al. 2012, Fig 21a)
+ustit_KokEtAl2012 = [0.1914325;0.1587225;0.139529375;0.13898875;0.14131125;0.1490075;0.156135;0.178005;0.19810625;0.22675;0.25335375;0.28567;0.326585625;0.36428125;0.40729875;0.436010625;0.47370875;0.521250625;0.5729775]; %m/s (Kok et al. 2012, Fig 21a)
+tauit_KokEtAl2012 = rho_a.*ustit_KokEtAl2012.^2; %Pa (Kok et al. 2012, Fig 21a)
+
+% initialize plot 
+figure(13); clf; hold on;
+
+% observations - fluid threshold
+for i = 1:N_Sites
+    plot(d50_Site(i),tauft_all(i),['b',PlotMarkers_Site{i}],'MarkerSize',8); %fluid threshold
+end
+
+% predictions - fluid threshold
+plot(d_plot,tauft_Bagnold1941,'b--','LineWidth',1);
+plot(d_plot,tauft_ShaoLu2000,'b-.','LineWidth',1);
+
+% observations - impact threshold
+for i = 1:N_Sites
+    plot(d50_Site(i),tauit_all(i),['g',PlotMarkers_Site{i}],'MarkerSize',8); %impact threshold
+end
+
+% predictions - impact threshold
+plot(d_plot,tauit_Bagnold1941,'g--','LineWidth',1);
+%plot(d_plot,tauit_Kok2010,'g-.','LineWidth',1);
+plot(d_KokEtAl2012,tauit_KokEtAl2012,'g-','LineWidth',1);
+%plot(d_plot,tauit_LapotreEtAl2016,'g-','LineWidth',1);
+
+% observations - error bars
+for i = 1:N_Sites
+    plot(d50_Site(i)*[1 1],tauft_all(i)+sigma_tauft_all(i)*[-1 1],'b','LineWidth',1); %sigma ft
+    plot(d50_Site(i)*[1 1],tauit_all(i)+sigma_tauit_all(i)*[-1 1],'g','LineWidth',1); %sigma it
+end
+
+%create legend
+legend('\tau_{ft,Rancho Guad.}','\tau_{ft,Jericoacoara}','\tau_{ft,Oceano}',...
+    '\tau_{ft,Bagnold (1941)}','\tau_{ft,Shao & Lu (2000)}',...
+    '\tau_{it,Jericoacoara}','\tau_{it,Rancho Guad.}','\tau_{it,Oceano}',...
+    '\tau_{it,Bagnold (1941)}','\tau_{it,Kok et al. (2012)}',...
+    'Location','NorthWest')
+
+% annotate plot
+xlabel('particle diameter, $$d$$ (mm)','interpreter','latex');
+ylabel('shear stress, $$\tau$$ (Pa)','interpreter','latex');
+set(gca,'FontSize',PlotFont);
+set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+xlim([0.1 1.0]);
+ylim([0 0.3]);
+
+%print plot
+set(gca, 'LooseInset', get(gca,'TightInset'));
+set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
+print([folder_Plots,'threshold_prediction.png'],'-dpng');

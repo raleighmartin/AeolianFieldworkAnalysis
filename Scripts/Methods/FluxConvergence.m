@@ -257,7 +257,7 @@ for i = 1:N_Sites
 
                 %Perform profile fit to get q0, zq, and Q if sufficient points for fitting
                 if N_fit>=zW_limit
-                    [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,q_pred,sigma_q_pred] = qz_profilefit(qbar_fit,zW_fit,sigma_qbar_fit,sigma_zW_fit);
+                    [q0,zq,Q,sigma_q0,sigma_zq,sigma_Q,q_pred,sigma_q_pred] = qz_profilefit_exponential(qbar_fit,zW_fit,sigma_qbar_fit,sigma_zW_fit,zq_BSNE);
                     q_residuals = q_pred - qbar_fit; %residuals between observed and predicted q
                     Chi2_Qfit = sum((q_residuals./sigma_q_pred).^2); %compute Chi2 (Bevington and Robinson, Eq. 8.4)
                     df_Qfit = N_fit-2; %compute degrees of freedom for Qfit

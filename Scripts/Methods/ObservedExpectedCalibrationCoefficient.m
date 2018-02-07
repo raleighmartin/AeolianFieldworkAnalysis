@@ -238,7 +238,7 @@ legend(legend_items,'Location','NorthEast');
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[8.5 3.5],'PaperPosition',[0 0 8.5 3.5],'PaperPositionMode','Manual');
 print([folder_Plots,'CalibrationObservedPredicted.png'],'-dpng');
-
+print([folder_Plots,'CalibrationObservedPredicted.tif'],'-dtiff');
 
 %% plot observed calibration factor versus number counts rate
 figure(2); clf; hold on;
@@ -262,6 +262,7 @@ set(gca,'LooseInset',get(gca,'TightInset'));
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[6 4.5],'PaperPosition',[0 0 6 4.5],'PaperPositionMode','Manual');
 print([folder_Plots,'Calibration_CountsRate.png'],'-dpng');
+print([folder_Plots,'Calibration_CountsRate.tif'],'-dtiff');
 
 %% plot observed calibration factor versus wind direction
 
@@ -311,7 +312,7 @@ text(4.5,ylims(1)+0.85*range(ylims),'(b)','FontSize',PlotFont);
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[8 4],'PaperPosition',[0 0 8 4],'PaperPositionMode','Manual');
 print([folder_Plots,'Calibration_WindDirection.png'],'-dpng');
-
+print([folder_Plots,'Calibration_WindDirection.tif'],'-dtiff');
 
 %% plot observed calibration factor versus saltation flux
 figure(5); clf; hold on;
@@ -335,3 +336,4 @@ set(gca,'LooseInset',get(gca,'TightInset'));
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[6 4.5],'PaperPosition',[0 0 6 4.5],'PaperPositionMode','Manual');
 print([folder_Plots,'Calibration_SaltationFlux.png'],'-dpng');
+print([folder_Plots,'Calibration_SaltationFlux.tif'],'-dtiff');

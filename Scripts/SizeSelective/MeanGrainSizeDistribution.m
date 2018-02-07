@@ -7,6 +7,7 @@ folder_AnalysisData = '../../AnalysisData/SizeSelective/'; %folder for outputs
 SaveData_Path = strcat(folder_AnalysisData,'GrainSizeData'); %path for saving output data
 folder_Plots = '../../PlotOutput/SizeSelective/'; %folder for plots
 folder_Functions = '../Functions/'; %folder with functions
+folder_SaveData = '../../../../Google Drive/Work/Projects/AeolianTurbulence/Publications/Saltation methods paper/Aeolian methods - scripts and data/'; %folder for data
 
 %% Information about sites
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};
@@ -284,7 +285,7 @@ for i = 1:N_Sites
     
 end
 
-%plot just surface GSD for each site
+%plot just surface GSD for each site - FIG. 1 in "High-frequency measurements of aeolian saltation flux: Field-based methodology and applications"
 figure(1); clf; hold on;
 for i = 1:N_Sites
     plot(d_surface_site{i},dVdlogd_surface_site{i},'LineWidth',LineWidth_Plot);
@@ -303,11 +304,22 @@ ylabel('Normalized surface grain size distribution, $$\frac{dV}{d\ln(d)}$$','Int
 set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 set(gca,'FontSize',PlotFont);
 
-%print plot for draft
+%print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperSize',[6 5],'PaperPosition',[0 0 6 5],'PaperPositionMode','Manual');
 print([folder_Plots,'MeanGSD_Surface.png'],'-dpng');
+print([folder_Plots,'MeanGSD_Surface.tif'],'-dtiff');
 
+%export data from plot
+for i = 1:N_Sites
+    %generate table
+    GrainSizeTable = table(round(d_surface_site{i}',3), d_surface_lower_site{i},...
+        d_surface_upper_site{i}, round(dVdlogd_surface_site{i}',3),...
+        'VariableNames',{'d_mid_mm','d_bottom_mm','d_top_mm','dVdlogd'});
+    
+    %write table
+    writetable(GrainSizeTable,[folder_SaveData,'SurfaceGrainSize_',Sites{i},'.txt']);
+end
 
 %plot mean GSD for each site - surface and airborne
 figure(2); clf;

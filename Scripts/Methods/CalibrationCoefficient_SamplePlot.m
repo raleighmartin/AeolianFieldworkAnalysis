@@ -97,3 +97,4 @@ set(gca,'box','on','FontSize',PlotFont);
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[5 7],'PaperPosition',[0 0 5 7],'PaperPositionMode','Manual');
 print([folder_Plots,'CalibrationCoefficient_SamplePlot.png'],'-dpng');
+print([folder_Plots,'CalibrationCoefficient_SamplePlot.tif'],'-dtiff');

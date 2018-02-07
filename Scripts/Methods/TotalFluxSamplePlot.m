@@ -1,44 +1,54 @@
-% %% INITIALIZATION
-% %initialize
-% clearvars;
-% close all;
-% 
-% %% PARAMETERS AND INPUTS
-% Site_SamplePlot = 'Oceano';
-% StartTime_SamplePlot = datetime(2015,5,16,12,40,0);
-% EndTime_SamplePlot = datetime(2015,5,16,12,45,0);
-% T_subwindow_SamplePlot = duration(0,0,1);
-% 
-% %% INFO FOR PLOTTING
-% PlotFont = 14;
-% 
-% %% LOAD DATA AND FUNCTIONS
-% %folders for loading data, saving data, and functions
-% folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-% folder_Plots = '../../PlotOutput/WenglorCalibration/'; %folder containing plot output
-% folder_Functions = '../Functions/'; %folder with functions
-% 
-% %paths for loading and saving data
-% LoadData_Path = strcat(folder_LoadData,'DataFullSubwindowCalcs_30min_Restricted'); %path for 30 minute data
-% 
-% %load data
-% load(LoadData_Path); %load window data
-% 
-% %load functions
-% addpath(folder_Functions); %point MATLAB to location of functions
-% 
-% %% GET INFO FOR SAMPLE PLOT
-% i = find(strcmp(Sites,Site_SamplePlot));
-% m = find(T_subwindow == T_subwindow_SamplePlot);
-% j = intersect(...
-%     find(StartTime_subwindow{i}{m}>=StartTime_SamplePlot),...
-%     find(StartTime_subwindow{i}{m}<=EndTime_SamplePlot));
-% 
-% %% GET VALUES FOR SAMPLE PLOT
-% u = ubar_subwindow{i}{m}(j);
-% t = StartTime_subwindow{i}{m}(j);
-% Qsum = Qsum_subwindow{i}{m}(j);
-% Qfit = Qfit_subwindow{i}{m}(j);
+%% INITIALIZATION
+%initialize
+clearvars;
+close all;
+
+%% PARAMETERS AND INPUTS
+Site_SamplePlot = 'Oceano';
+StartTime_SamplePlot = datetime(2015,5,16,12,40,0);
+EndTime_SamplePlot = datetime(2015,5,16,12,45,0);
+T_subwindow_SamplePlot = duration(0,0,1);
+folder_SaveData = '../../../../Google Drive/Work/Projects/AeolianTurbulence/Publications/Saltation methods paper/Aeolian methods - scripts and data/'; %folder for data
+
+%% INFO FOR PLOTTING
+PlotFont = 14;
+
+%% LOAD DATA AND FUNCTIONS
+%folders for loading data, saving data, and functions
+folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
+folder_Plots = '../../PlotOutput/Methods/'; %folder containing plot output
+folder_Functions = '../Functions/'; %folder with functions
+
+%paths for loading and saving data
+LoadData_Path = strcat(folder_LoadData,'DataFullSubwindowCalcs_30min_Restricted'); %path for 30 minute data
+
+%load data
+load(LoadData_Path); %load window data
+
+%load functions
+addpath(folder_Functions); %point MATLAB to location of functions
+
+%% GET INFO FOR SAMPLE PLOT
+i = find(strcmp(Sites,Site_SamplePlot));
+m = find(T_subwindow == T_subwindow_SamplePlot);
+j = intersect(...
+    find(StartTime_subwindow{i}{m}>=StartTime_SamplePlot),...
+    find(StartTime_subwindow{i}{m}<=EndTime_SamplePlot));
+
+%% GET VALUES FOR SAMPLE PLOT
+u = ubar_subwindow{i}{m}(j);
+t = StartTime_subwindow{i}{m}(j);
+Qsum = Qsum_subwindow{i}{m}(j);
+sigma_Qsum = sigma_Qsum_subwindow{i}{m}(j);
+Qfit = Qfit_subwindow{i}{m}(j);
+sigma_Qfit = sigma_Qfit_subwindow{i}{m}(j);
+
+%% EXPORT VALUES FOR SAMPLE PLOT
+TotalFluxTable = table(seconds(t-t(1)),round(u,1),...
+    round(Qsum,1), round(Qfit,1),...
+    'VariableNames',{'t_s','u_m_pers',...
+    'Qsum_g_perm_pers','Qfit_g_perm_pers'});
+writetable(TotalFluxTable,[folder_SaveData,'TotalFlux_TimeSeries_Sample.txt']);
 
 %% PLOT VALUES
 figure(1); clf;
@@ -77,3 +87,4 @@ text(t(10),ylims(1)+0.95*range(ylims),'(b)','FontSize',PlotFont);
 % print plot
 set(gcf,'PaperUnits','inches','PaperSize',[6 8],'PaperPosition',[0 0 6 8],'PaperPositionMode','Manual');
 print([folder_Plots,'SampleTimeseries_TotalFlux.png'],'-dpng');
+print([folder_Plots,'SampleTimeseries_TotalFlux.tif'],'-dtiff');

@@ -20,15 +20,16 @@ folder_LoadFluxLawData = '../../AnalysisData/FluxLaw/'; %folder for loading 30 m
 folder_LoadThresholdData = '../../AnalysisData/Windowing/'; %folder for retrieving subwindow calcs
 folder_LoadSubwindowData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving subwindow values
 folder_LoadWindowData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving subwindow values
-folder_LoadRoughnessData = '../../AnalysisData/Roughness/'; %folder for loading roughness data
+folder_LoadRoughnessData = '../../AnalysisData/Misc/'; %folder for loading roughness data
 folder_Functions = '../Functions/'; %folder with functions
 folder_Plots = '../../PlotOutput/Thresholds/'; %folder for plots
+folder_SaveData = '../../AnalysisData/Thresholds/'; %folder for saving data
 
 %% paths for loading and saving data
 LoadFluxLawData_Path = strcat(folder_LoadFluxLawData,'FluxLawCalcs_30min_Restricted'); %path for 30 minute data
-LoadThresholdData_Path = strcat(folder_LoadThresholdData,'DataSubwindowCalcs_30min_Unrestricted'); %path for loading subwindow calcs
+LoadThresholdData_Path = strcat(folder_LoadThresholdData,'DataIntervalAveragedSubwindowCalcs_30min_Unrestricted'); %path for loading subwindow calcs
 LoadWindowData_Path = strcat(folder_LoadWindowData,'DataWindows_30min_Unrestricted'); %path for loading subwindow data
-LoadSubwindowData_Path = strcat(folder_LoadSubwindowData,'DataSubwindows_30min_Unrestricted'); %path for loading subwindow data
+LoadSubwindowData_Path = strcat(folder_LoadSubwindowData,'DataIntervalAveragedSubwindows_30min_Unrestricted'); %path for loading subwindow data
 LoadRoughnessData_Path = strcat(folder_LoadRoughnessData,'RoughnessCalcs_30min_Restricted'); %path for 30 minute data
 
 %% load data and rename variables as necessary
@@ -194,3 +195,28 @@ set(gca, 'FontSize', PlotFont);
 set(gcf,'PaperUnits','inches','PaperSize',[9 5],'PaperPosition',[0 0 9 5],'PaperPositionMode','Manual');
 print([folder_Plots,'ThresholdCalcSample.png'],'-dpng');
 print([folder_Plots,'ThresholdCalcSample.tif'],'-dtiff','-r600');
+
+%% EXPORT DATA IN PLOTS
+%export BSNE flux data
+t_flux_sampleplot,ntotal_sampleplot
+t_wind_sampleplot,u_sampleplot
+t_avg_sampleplot,ntotal_avg_sampleplot
+t_avg_sampleplot,u_avg_sampleplot
+tmid_measurement_sampleplot,fQ_measurement_sampleplot
+tmid_measurement_sampleplot,uth_measurement_sampleplot
+
+
+ThresholdAnalysis_RawFlux_Table = table(round(t_flux_sampleplot,2),...
+    ntotal_sampleplot,'VariableNames',{'t','n'});
+writetable(ThresholdAnalysis_RawFlux_Table,[folder_SaveData,'ThresholdAnalysis_RawFlux.txt']);
+ThresholdAnalysis_RawWind_Table = table(round(t_wind_sampleplot,2),...
+    round(u_sampleplot,3),'VariableNames',{'t','u'});
+writetable(ThresholdAnalysis_RawWind_Table,[folder_SaveData,'ThresholdAnalysis_RawWind.txt']);
+ThresholdAnalysis_IntervalAverageValues_Table = table(t_avg_sampleplot,...
+    round(ntotal_avg_sampleplot,1),...
+    round(u_avg_sampleplot,3),'VariableNames',{'t','n','u'});
+writetable(ThresholdAnalysis_IntervalAverageValues_Table,[folder_SaveData,'ThresholdAnalysis_IntervalAverageValues.txt']);
+ThresholdAnalysis_ThresholdCalcs_Table = table(tmid_measurement_sampleplot,...
+    round(fQ_measurement_sampleplot,3),...
+    round(uth_measurement_sampleplot,3),'VariableNames',{'t','fQ','uth'});
+writetable(ThresholdAnalysis_ThresholdCalcs_Table,[folder_SaveData,'ThresholdAnalysis_ThresholdCalcs.txt']);

@@ -62,7 +62,7 @@ tauit_LiMcKennaNeuman2012 = rho_windtunnel*ustit_LiMcKennaNeuman2012.^2;
 tauit_McKennaNeumanBedard2016 = rho_windtunnel*ustit_McKennaNeumanBedard2016.^2;
 
 %% information about field studies
-folder_FieldData = '../../AnalysisData/Literature/'; %folder for loading lit data
+folder_FieldData = '../../AnalysisData/FluxLaw/'; %folder for loading lit data
 load(strcat(folder_FieldData,'LitData')); %Literature data
 
 rho_field = 1.22; %kg/m^3 (assumes T~15C)

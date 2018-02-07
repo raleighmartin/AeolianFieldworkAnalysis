@@ -12,7 +12,7 @@ PlotFont = 14;
 %% LOAD DATA AND FUNCTIONS
 %folders for loading data, saving data, and functions
 folder_LoadData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_Plots = '../../PlotOutput/WenglorCalibration/'; %folder containing plot output
+folder_Plots = '../../PlotOutput/Methods/'; %folder containing plot output
 folder_Functions = '../Functions/'; %folder with functions
 
 %paths for loading data
@@ -25,91 +25,93 @@ load(LoadData_Path); %load window data
 addpath(folder_Functions); %point MATLAB to location of functions
 
 % %%
-% % %%%%%%%%%%%%%%%%%%%%%%%%%
-% % PLOTS - PROFILE FITTING %
-% % %%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-% %% figure on Wenglor heights with zeros
-% figure(1); clf;
-% 
-% % boxplot of fraction of unused Wenglor heights in analysis
+% %%%%%%%%%%%%%%%%%%%%%%%%%
+% PLOTS - PROFILE FITTING %
+% %%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% figure on Wenglor heights with zeros
+figure(1); clf;
+
+% boxplot of fraction of unused Wenglor heights in analysis
+subplot('Position',[0.07 0.15 0.5 0.8]); hold on;
+
+%plot symbols
+for i = 1:N_Sites
+    plot(T_subwindow_s,1-median_f_zW_analysis{i},Markers_Field{i},'Color',Colors_Field{i})
+end
+xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
+set(gca,'xscale','log');
+xTicks = get(gca, 'xtick');
+xTickLabels = get(gca, 'xticklabel');
+
+%generate and plot boxplot
+for i = 1:N_Sites
+    %create vector for boxplot
+    f_boxplot = [];
+    T_boxplot = [];
+    for j = 1:N_T_subwindow
+        ind_positive_Qsum = find(Qsum_all_analysis{i}{j}>0);
+        f = 1-f_zW_analysis{i}{j}(ind_positive_Qsum);
+        f_boxplot = [f_boxplot; f];
+        T_boxplot = [T_boxplot; T_subwindow_s(j)*ones(size(f))];
+    end
+        
+    %create boxplot
+    boxplot(f_boxplot,T_boxplot,'Colors',Colors_Field{i},'Symbol','','Positions',T_subwindow_s,'Widths',T_subwindow_s/4);
+end
+
+% format plot
+xlabel('sampling time scale, $$\Delta t$$ (s)','Interpreter','LaTeX');
+ylabel('frac. of HF sensor hts. with zero flux');
+set(gca,'XTick',xTicks,'XTickLabel',{'1','10','100','1000'},'XMinorTick','On');
+set(gca,'YMinorTick','On','Box','On');
+set(gca,'xscale','log');
+set(gca,'FontSize',PlotFont);
+legend(SiteNames,'Location','NorthEast');
+ylim([0 1]);
+xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
+text(0.8*mean(T_subwindow_s(1:2)),0.95,'(a)','FontSize',PlotFont);
+
+% % plot median fraction of unused Wenglor heights in analysis
 % subplot('Position',[0.07 0.15 0.5 0.8]); hold on;
-% 
-% %plot symbols
 % for i = 1:N_Sites
-%     plot(T_subwindow_s,1-median_f_zW_analysis{i},Markers_Field{i},'Color',Colors_Field{i})
-% end
-% xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
-% set(gca,'xscale','log');
-% xTicks = get(gca, 'xtick');
-% xTickLabels = get(gca, 'xticklabel');
-% 
-% %generate and plot boxplot
-% for i = 1:N_Sites
-%     %create vector for boxplot
-%     f_boxplot = [];
-%     T_boxplot = [];
-%     for j = 1:N_T_subwindow
-%         ind_positive_Qsum = find(Qsum_all_analysis{i}{j}>0);
-%         f = 1-f_zW_analysis{i}{j}(ind_positive_Qsum);
-%         f_boxplot = [f_boxplot; f];
-%         T_boxplot = [T_boxplot; T_subwindow_s(j)*ones(size(f))];
-%     end
-%         
-%     %create boxplot
-%     boxplot(f_boxplot,T_boxplot,'Colors',Colors_Field{i},'Symbol','','Positions',T_subwindow_s,'Widths',T_subwindow_s/4);
+% %    plot(T_subwindow_s,1-median_f_zW_analysis{i},Markers_Field{i},'Color',Colors_Field{i})
+%     errorbar(T_subwindow_s,1-median_f_zW_analysis{i},...
+%         (upperquartile_f_zW_analysis{i}-median_f_zW_analysis{i}),...
+%         (median_f_zW_analysis{i}-lowerquartile_f_zW_analysis{i}),...
+%         Markers_Field{i},'Color',Colors_Field{i})
 % end
 % 
 % % format plot
 % xlabel('sampling time scale, $$\Delta t$$ (s)','Interpreter','LaTeX');
 % ylabel('frac. of HF sensor hts. with zero flux');
-% set(gca,'XTick',xTicks,'XTickLabel',{'1','10','100','1000'},'XMinorTick','On');
-% set(gca,'YMinorTick','On','Box','On');
+% set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 % set(gca,'xscale','log');
 % set(gca,'FontSize',PlotFont);
-% legend(SiteNames,'Location','NorthEast');
+% %legend(SiteNames,'Location','NorthEast');
 % ylim([0 1]);
 % xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
 % text(0.8*mean(T_subwindow_s(1:2)),0.95,'(a)','FontSize',PlotFont);
-% 
-% % % plot median fraction of unused Wenglor heights in analysis
-% % subplot('Position',[0.07 0.15 0.5 0.8]); hold on;
-% % for i = 1:N_Sites
-% % %    plot(T_subwindow_s,1-median_f_zW_analysis{i},Markers_Field{i},'Color',Colors_Field{i})
-% %     errorbar(T_subwindow_s,1-median_f_zW_analysis{i},...
-% %         (upperquartile_f_zW_analysis{i}-median_f_zW_analysis{i}),...
-% %         (median_f_zW_analysis{i}-lowerquartile_f_zW_analysis{i}),...
-% %         Markers_Field{i},'Color',Colors_Field{i})
-% % end
-% % 
-% % % format plot
-% % xlabel('sampling time scale, $$\Delta t$$ (s)','Interpreter','LaTeX');
-% % ylabel('frac. of HF sensor hts. with zero flux');
-% % set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-% % set(gca,'xscale','log');
-% % set(gca,'FontSize',PlotFont);
-% % %legend(SiteNames,'Location','NorthEast');
-% % ylim([0 1]);
-% % xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
-% % text(0.8*mean(T_subwindow_s(1:2)),0.95,'(a)','FontSize',PlotFont);
-% 
-% % plot example of number of Wenglors with zeros
-% subplot('Position',[0.65 0.15 0.34 0.8]); hold on;
-% for i = 1:N_Sites
-%     plot(u_f0_analysis,f0_analysis{i}, Markers_Field{i},'Color',Colors_Field{i})
-% end
-% % format plot
-% xlabel('wind speed, $$u$$ (m s$$^{-1}$$)','Interpreter','LaTeX');
-% ylabel('frac. of time intervals with zero flux');
-% set(gca,'YMinorTick','On','Box','On');
-% set(gca,'FontSize',PlotFont);
-% legend(SiteNames,'Location','NorthEast');
-% ylim([0 1]);
-% text(u_f0_analysis(1)+0.25,0.95,'(b)','FontSize',PlotFont);
-% 
-% % print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[10 4],'PaperPosition',[0 0 10 4],'PaperPositionMode','Manual');
-% print([folder_Plots,'f_zW_T.png'],'-dpng');
+
+% plot example of number of Wenglors with zeros
+subplot('Position',[0.65 0.15 0.34 0.8]); hold on;
+for i = 1:N_Sites
+    plot(u_f0_analysis,f0_analysis{i}, Markers_Field{i},'Color',Colors_Field{i})
+end
+% format plot
+xlabel('wind speed, $$u$$ (m s$$^{-1}$$)','Interpreter','LaTeX');
+ylabel('frac. of time intervals with zero flux');
+set(gca,'YMinorTick','On','Box','On');
+set(gca,'FontSize',PlotFont);
+legend(SiteNames,'Location','NorthEast');
+ylim([0 1]);
+text(u_f0_analysis(1)+0.25,0.95,'(b)','FontSize',PlotFont);
+
+% print plot
+set(gcf,'PaperUnits','inches','PaperSize',[10 4],'PaperPosition',[0 0 10 4],'PaperPositionMode','Manual');
+print([folder_Plots,'f_zW_T.png'],'-dpng');
+print([folder_Plots,'f_zW_T.tif'],'-dtiff');
+
 % 
 % 
 % %% plot fraction of profiles with full number of Wenglor heights used
@@ -181,46 +183,48 @@ addpath(folder_Functions); %point MATLAB to location of functions
 % set(gcf,'PaperUnits','inches','PaperSize',[6 4],'PaperPosition',[0 0 6 4],'PaperPositionMode','Manual');
 % print([folder_Plots,'Chi2nu_profilefit_T.png'],'-dpng');
 % 
-% %%
-% % %%%%%%%%%%%%%%%%%%%%%%%%%%
-% % PLOTS - SALTATION HEIGHT %
-% % %%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-% %% plot median of zq values
-% figure(5); clf; hold on;
-% for i = 1:N_Sites
-%     plot(T_subwindow_s,median_zq_real_analysis{i},[Markers_Field{i},'-'],'Color',Colors_Field{i})
-%     %plot(T_subwindow_s,mean_zq_real_analysis{i},[Markers_Field{i},'-'],'Color',Colors_Field{i})
-%     plot(T_subwindow_s,median_zq_full_analysis{i},[Markers_Field{i},'--'],'Color',Colors_Field{i})
-% end
-% 
-% % include error bars as median of sigma_zq values
-% for i = 1:N_Sites
-%     for m = 1:N_T_subwindow
-%         plot(T_subwindow_s(m)*[1 1],median_zq_real_analysis{i}(m)+median_sigma_zq_real_analysis{i}(m)*[-1 1],'Color',Colors_Field{i})
-%         %plot(T_subwindow_s(m)*[1 1],mean_zq_real_analysis{i}(m)+mean_sigma_zq_real_analysis{i}(m)*[-1 1],'Color',Colors_Field{i})
-%         plot(T_subwindow_s(m)*[1 1],median_zq_full_analysis{i}(m)+median_sigma_zq_full_analysis{i}(m)*[-1 1],'Color',Colors_Field{i})
-%     end
-% end
-% 
-% % create legend
-% legend_items = cell(N_Sites*2,1);
-% for i = 1:N_Sites
-%     legend_items{i*2-1} = [SiteNames{i},' all profiles'];
-%     legend_items{i*2} = [SiteNames{i},' full profiles'];
-% end 
-% 
-% % format plot
-% xlabel('subsampling time scale, $$\Delta t$$ (s)','Interpreter','LaTeX');
-% ylabel('median saltation height from exp. profile fit, $$z_q \pm \sigma_{z_q}$$ (m)','Interpreter','LaTeX');
-% set(gca,'xscale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont,'LooseInset', get(gca,'TightInset'));
-% legend(legend_items,'Location','SouthEast','FontSize',11);
-% xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
-% ylim([0 0.14]);
-% 
-% % print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[7 6],'PaperPosition',[0 0 7 6],'PaperPositionMode','Manual');
-% print([folder_Plots,'median_zq_T.png'],'-dpng');
+%%
+% %%%%%%%%%%%%%%%%%%%%%%%%%%
+% PLOTS - SALTATION HEIGHT %
+% %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% plot median of zq values
+figure(5); clf; hold on;
+for i = 1:N_Sites
+    plot(T_subwindow_s,median_zq_real_analysis{i},[Markers_Field{i},'-'],'Color',Colors_Field{i})
+    %plot(T_subwindow_s,mean_zq_real_analysis{i},[Markers_Field{i},'-'],'Color',Colors_Field{i})
+    plot(T_subwindow_s,median_zq_full_analysis{i},[Markers_Field{i},'--'],'Color',Colors_Field{i})
+end
+
+% include error bars as median of sigma_zq values
+for i = 1:N_Sites
+    for m = 1:N_T_subwindow
+        plot(T_subwindow_s(m)*[1 1],median_zq_real_analysis{i}(m)+median_sigma_zq_real_analysis{i}(m)*[-1 1],'Color',Colors_Field{i})
+        %plot(T_subwindow_s(m)*[1 1],mean_zq_real_analysis{i}(m)+mean_sigma_zq_real_analysis{i}(m)*[-1 1],'Color',Colors_Field{i})
+        plot(T_subwindow_s(m)*[1 1],median_zq_full_analysis{i}(m)+median_sigma_zq_full_analysis{i}(m)*[-1 1],'Color',Colors_Field{i})
+    end
+end
+
+% create legend
+legend_items = cell(N_Sites*2,1);
+for i = 1:N_Sites
+    legend_items{i*2-1} = [SiteNames{i},' all profiles'];
+    legend_items{i*2} = [SiteNames{i},' full profiles'];
+end 
+
+% format plot
+xlabel('subsampling time scale, $$\Delta t$$ (s)','Interpreter','LaTeX');
+ylabel('median saltation height from exp. profile fit, $$z_q \pm \sigma_{z_q}$$ (m)','Interpreter','LaTeX');
+set(gca,'xscale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont,'LooseInset', get(gca,'TightInset'));
+legend(legend_items,'Location','SouthEast','FontSize',11);
+xlim([0.9*min(T_subwindow_s) max(T_subwindow_s)]);
+ylim([0 0.14]);
+
+% print plot
+set(gcf,'PaperUnits','inches','PaperSize',[7 6],'PaperPosition',[0 0 7 6],'PaperPositionMode','Manual');
+print([folder_Plots,'median_zq_T.png'],'-dpng');
+print([folder_Plots,'median_zq_T.tif'],'-dtiff');
+
 % 
 % 
 % %% plot median of sigma_zq values
@@ -385,6 +389,7 @@ text(1.5e0,5e3,'(b)','FontSize',PlotFont);
 % print plot
 set(gcf,'PaperUnits','inches','PaperSize',[6 8],'PaperPosition',[0 0 6 8],'PaperPositionMode','Manual');
 print([folder_Plots,'median_Q_T.png'],'-dpng');
+print([folder_Plots,'median_Q_T.tif'],'-dtiff');
 
 % %%
 % % %%%%%%%%%%%%%%%%%%
