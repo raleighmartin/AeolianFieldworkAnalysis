@@ -386,8 +386,10 @@ ustth_bin_avg_daterange = cell(N_daterange,1); %TFEM threshold shear velocity - 
 ustth_bin_SE_daterange = cell(N_daterange,1); %TFEM threshold shear velocity - standard error
 tauth_bin_avg_daterange = cell(N_daterange,1); %TFEM threshold stress - average
 tauth_bin_SE_daterange = cell(N_daterange,1); %TFEM threshold stress - standard error
+ustft_daterange = zeros(N_daterange,1); %inferred fluid threshold shear velocity - best fit
 tauft_daterange = zeros(N_daterange,1); %inferred fluid threshold stress - best fit
 sigma_tauft_daterange = zeros(N_daterange,1); %inferred fluid threshold stress - uncertainty
+ustit_daterange = zeros(N_daterange,1); %inferred impact threshold shear velocity - best fit
 tauit_daterange = zeros(N_daterange,1); %inferred impact threshold stress - best fit
 sigma_tauit_daterange = zeros(N_daterange,1); %inferred impact threshold stress - uncertainty
 ustitftratio_daterange = zeros(N_daterange,1); %ratio of impact and fluid threshold shear velocities - best fit
@@ -423,12 +425,39 @@ for d = 1:N_daterange
     ustth_bin_SE_daterange{d} = ustth_bin_SE; %TFEM threshold shear velocity - standard error
     tauth_bin_avg_daterange{d} = tauth_bin_avg; %TFEM threshold stress - average
     tauth_bin_SE_daterange{d} = tauth_bin_SE; %TFEM threshold stress - standard error
+    ustft_daterange(d) = sqrt(tauft/rho); %inferred fluid threshold shear velocity - best fit
     tauft_daterange(d) = tauft; %inferred fluid threshold stress - best fit
     sigma_tauft_daterange(d) = sigma_tauft; %inferred fluid threshold stress - uncertainty
+    ustit_daterange(d) = sqrt(tauit/rho); %inferred impact threshold shear velocity - best fit
     tauit_daterange(d) = tauit; %inferred impact threshold stress - best fit
     sigma_tauit_daterange(d) = sigma_tauit; %inferred impact threshold stress - uncertainty
     ustitftratio_daterange(d) = ustitftratio; %ratio of impact and fluid threshold shear velocities - best fit
     sigma_ustitftratio_daterange(d) = sigma_ustitftratio; %ratio of impact and fluid threshold shear velocities - uncertainty
+end
+
+%% get wind distribution by date range - Oceano
+ind_Site = find(strcmp(Site_sensitivityanalysis,Sites)); %% get index of site for analysis
+ind_Deltat = find(Deltat_all==Deltat_analysis); %get measurement interval
+ind_deltat = find(deltat_all==deltat_analysis); %get sampling interval
+starttime = StartTime_subwindow_all{ind_Site}{ind_Deltat,ind_deltat};
+ubar = ubar_subwindow_all{ind_Site}{ind_Deltat,ind_deltat}; %get mean wind speeds
+zU = zU_subwindow_all{ind_Site}{ind_Deltat,ind_deltat}; %get anemometer heights
+z0 = z0_Site(ind_Site); %get z0
+kappa = 0.4; %assume von Karman constant
+ubar_daterange = cell(N_daterange,1); %initialize list of ubar for each date range
+p_ubar_daterange = cell(N_daterange,1); %initialize pdf of ubar values in bin
+ubar_bins_daterange = cell(N_daterange,1); %initialize ubars for each bin
+uft_daterange = zeros(N_daterange,1); %initialize list of uft for each date range
+uit_daterange = zeros(N_daterange,1); %initialize list of uit for each date range
+for d = 1:N_daterange
+    ind_date = intersect(find(days(starttime-daterange_startdate(d))>0),find(days(starttime-daterange_enddate(d))<0)); %get indices of date range
+    ubar_daterange{d} = ubar(ind_date); %get ubars for this date range
+    zU_bar = mean(zU(ind_date)); %get mean zU for this date range
+    [N_ubar, ubar_bins] = hist(ubar_daterange{d},20); %get histogram of ubar values
+    p_ubar_daterange{d} = N_ubar/(mean(diff(ubar_bins))*length(ubar_daterange{d})); %get pdf of ubar values in bin
+    ubar_bins_daterange{d} = ubar_bins; %get ubars for each bin
+    uft_daterange(d) = ustft_daterange(d)/kappa*log(zU_bar/z0); %get fluid threshold
+    uit_daterange(d) = ustit_daterange(d)/kappa*log(zU_bar/z0); %get impact threshold
 end
 
 %%%%%%%%%%%%%
@@ -517,7 +546,7 @@ set(gca,'FontSize',PlotFont);
 set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_activity.png'],'-dpng');
-% print([folder_Plots,'threshold_activity.tif'],'-dtiff','-r600');
+print([folder_Plots,'threshold_activity.tif'],'-dtiff','-r600');
 
 %% plot fQ versus fD
 
@@ -572,7 +601,7 @@ set(gca, 'LooseInset', get(gca,'TightInset'));
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[5 7],'PaperPosition',[0 0 5 7],'PaperPositionMode','Manual');
 print([folder_Plots,'detection_activity.png'],'-dpng');
-% print([folder_Plots,'detection_activity.tif'],'-dtiff','-r600');
+print([folder_Plots,'detection_activity.tif'],'-dtiff','-r600');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% plot sensitivity analyses %
@@ -788,7 +817,7 @@ set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
 set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperSize',[7 7],'PaperPosition',[0 0 7 7],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_activity_sensitivityanalyses.png'],'-dpng');
-% print([folder_Plots,'threshold_activity_sensitivityanalyses.tif'],'-dtiff','-r600');
+print([folder_Plots,'threshold_activity_sensitivityanalyses.tif'],'-dtiff','-r600');
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -800,26 +829,44 @@ d_max_plot = 1.0; %mm
 d_plot = logspace(log10(d_min_plot),log10(d_max_plot),100);
 rho_p = 2650; %kg/m^3
 g = 9.8; %m/s^2
-c1 = 5.5e-3; %m/s
-c2 = 49; %um
-c3 = 0.29; %um^-1/2
-c4 = 3.84e-3; %um^-1
 P = 1e5; %Pa
-T = 290; %K
+T = 293.15; %K (=20 C)
 rho_a = 1.2; %kg/m^3
+mu = 0.00751*(T/291.15)^(1.5)/(T+120); %the viscosity in kg/(m s) from the Sutherland relation
 
 %fluid threshold predictions
 tauft_Bagnold1941 = 0.1^2*rho_p*g*(d_plot/1000); %Pa (Kok et al. 2012, Eq. 2.5)
 tauft_ShaoLu2000 = 0.111^2*(rho_p*g*(d_plot/1000) + 0.29./(d_plot*rho_a)); %Pa (Kok et al., 2012, Eq. 2.8)
-%tauft_ShaoLu2000 = 0.111^2*(rho_p*g*(d_plot/1000)); %Pa (Kok et al., 2012, Eq. 2.8)
 
+%fluid threshold prediction - Iversen and White (1982) (also Greeley and Iversen (1985) - from Jasper's code)
+ustft_IversenWhite1982 = zeros(size(d_plot)); %initialize ust values
+for k = 1:length(d_plot)
+    i = 1; %initial value for loop
+    error = 1; %initial error for iterative calculation
+    ustft_calc = 2; %initial guess at fluid threshold, Greeley and Iversen
+    d = d_plot(k)*1e-3; %grain size for calculation, m
+    while (error > 0.000001) %calculating the fluid threshold, following Eqs. (3.5) and (3.12) in Iversen and White (1982)        
+        i = i+1; %iterate i
+        Re_IW = rho_a*d*ustft_calc/mu; %Reynolds number for Greeley and Iversen calculation
+        if (Re_IW > 10)
+            A = 0.120*sqrt(1+0.0000006/(rho_p*g*d^(2.5)))*(1-0.0858*exp(-0.0617*(Re_IW-10))); %calculation of parameter A for Iversen and White (1982) equation
+        elseif (Re_IW > 0.3)
+            A = 0.129*sqrt(1+0.0000006/(rho_p*g*d^(2.5)))/sqrt(1.928*Re_IW^(0.092)-1); %calculation of parameter A for Iversen and White (1982) equation
+        elseif (Re_IW > 0.03)
+            A = 0.200*sqrt(1+0.0000006/(rho_p*g*d^(2.5)))/sqrt(1+2.5*Re_IW); %calculation of parameter A for Iversen and White (1982) equation
+        else
+            error('Reynolds number too small for Greeley & Iversen scheme');
+        end
+        ustft_last = ustft_calc; %record last ust_ft
+        ustft_calc = A*sqrt((rho_p/rho_a)*g*d); %compute new ust_ft
+        error = abs(ustft_calc/ustft_last-1); %compute difference
+    end
+    ustft_IversenWhite1982(k) = ustft_calc; %record final ust_ft value from iterative calculation
+end
+tauft_IversenWhite1982 = rho_a*ustft_IversenWhite1982.^2; %compute fluid threshold shear stress for Greeley and Iversen
 
 %impact threshold predictions
 tauit_Bagnold1941 = 0.082^2*rho_p*g*(d_plot/1000); %Pa (Kok et al. 2012, Eq. 2.5)
-%ustit_Kok2010 = c1*(700/P)^(1/6)*(220/T)^(2/5)*exp((c2./(1e3*d_plot)).^3+c3*sqrt(1e3*d_plot)-c4*(1e3*d_plot)); %m/s (Kok 2010, Eq. 25)
-%tauit_Kok2010 = rho_a*ustit_Kok2010.^2; %Pa (Kok 2010, Eq. 25)
-%ustit_LapotreEtAl2016 = exp((0.04081*log(d_plot*1e-3).^4)+(1.237*log(d_plot*1e-3).^3)+(13.98*log(d_plot*1e-3).^2)+(70.35*log(d_plot*1e-3))+132.6); %m/s (Lapotre et al. 2016, Eq. S1)
-%tauit_LapotreEtAl2016 = rho_a*ustit_LapotreEtAl2016.^2; %Pa (Lapotre et al. 2016, Eq. S1)
 d_KokEtAl2012 = 1e-3*[50;57;65;80;100;125;150;200;250;325;400;500;650;800;1000;1150;1350;1650;2000]; %mm (Kok et al. 2012, Fig 21a)
 ustit_KokEtAl2012 = [0.1914325;0.1587225;0.139529375;0.13898875;0.14131125;0.1490075;0.156135;0.178005;0.19810625;0.22675;0.25335375;0.28567;0.326585625;0.36428125;0.40729875;0.436010625;0.47370875;0.521250625;0.5729775]; %m/s (Kok et al. 2012, Fig 21a)
 tauit_KokEtAl2012 = rho_a.*ustit_KokEtAl2012.^2; %Pa (Kok et al. 2012, Fig 21a)
@@ -829,23 +876,24 @@ figure(13); clf; hold on;
 
 % observations - fluid threshold
 for i = 1:N_Sites
-    plot(d50_Site(i),tauft_all(i),['b',PlotMarkers_Site{i}],'MarkerSize',8); %fluid threshold
+    plot(d50_Site(i),tauft_all(i),['b',PlotMarkers_Site{i}],'MarkerSize',10,'LineWidth',1); %fluid threshold
+    %plot(d50_Site(i),tauft_all(i),['k',PlotMarkers_Site{i}],'MarkerSize',10,'MarkerFaceColor','b'); %fluid threshold
 end
 
 % predictions - fluid threshold
-plot(d_plot,tauft_Bagnold1941,'b--','LineWidth',1);
+plot(d_plot,tauft_Bagnold1941,'b-','LineWidth',1);
+plot(d_plot,tauft_IversenWhite1982,'b--','LineWidth',1);
 plot(d_plot,tauft_ShaoLu2000,'b-.','LineWidth',1);
 
 % observations - impact threshold
 for i = 1:N_Sites
-    plot(d50_Site(i),tauit_all(i),['g',PlotMarkers_Site{i}],'MarkerSize',8); %impact threshold
+    plot(d50_Site(i),tauit_all(i),['g',PlotMarkers_Site{i}],'MarkerSize',10,'LineWidth',1); %impact threshold
+    %plot(d50_Site(i),tauit_all(i),['k',PlotMarkers_Site{i}],'MarkerSize',10,'MarkerFaceColor','g'); %impact threshold
 end
 
 % predictions - impact threshold
-plot(d_plot,tauit_Bagnold1941,'g--','LineWidth',1);
-%plot(d_plot,tauit_Kok2010,'g-.','LineWidth',1);
-plot(d_KokEtAl2012,tauit_KokEtAl2012,'g-','LineWidth',1);
-%plot(d_plot,tauit_LapotreEtAl2016,'g-','LineWidth',1);
+plot(d_plot,tauit_Bagnold1941,'g-','LineWidth',1);
+plot(d_KokEtAl2012,tauit_KokEtAl2012,'g--','LineWidth',1);
 
 % observations - error bars
 for i = 1:N_Sites
@@ -854,21 +902,59 @@ for i = 1:N_Sites
 end
 
 %create legend
-legend('\tau_{ft,Rancho Guad.}','\tau_{ft,Jericoacoara}','\tau_{ft,Oceano}',...
-    '\tau_{ft,Bagnold (1941)}','\tau_{ft,Shao & Lu (2000)}',...
-    '\tau_{it,Jericoacoara}','\tau_{it,Rancho Guad.}','\tau_{it,Oceano}',...
+h_legend = legend('\tau_{ft,Rancho Guadalupe}','\tau_{ft,Jericoacoara}','\tau_{ft,Oceano}',...
+    '\tau_{ft,Bagnold (1941)}','\tau_{ft,Iversen & White (1982)}','\tau_{ft,Shao & Lu (2000)}',...
+    '\tau_{it,Jericoacoara}','\tau_{it,Rancho Guadalupe}','\tau_{it,Oceano}',...
     '\tau_{it,Bagnold (1941)}','\tau_{it,Kok et al. (2012)}',...
-    'Location','NorthWest')
+    'Location','NorthWest');
+set(h_legend,'FontSize',12);
 
 % annotate plot
 xlabel('particle diameter, $$d$$ (mm)','interpreter','latex');
 ylabel('shear stress, $$\tau$$ (Pa)','interpreter','latex');
 set(gca,'FontSize',PlotFont);
 set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+set(gca,'XTick',0.1:0.1:1,'XTickLabel',{'0.1','0.2','','','0.5','','','','','1.0'});
 xlim([0.1 1.0]);
 ylim([0 0.3]);
 
 %print plot
 set(gca, 'LooseInset', get(gca,'TightInset'));
-set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
+set(gcf,'PaperUnits','inches','PaperSize',[7.5 6],'PaperPosition',[0 0 7.5 6],'PaperPositionMode','Manual');
 print([folder_Plots,'threshold_prediction.png'],'-dpng');
+print([folder_Plots,'threshold_prediction.tif'],'-dtiff','-r600');
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%% wind distributions %
+%%%%%%%%%%%%%%%%%%%%%%%
+figure(14); clf; hold on;
+plot(ubar_bins_daterange{2},p_ubar_daterange{2},'-','Color','k','LineWidth',1); %2nd date range wind distribution
+plot(uit_daterange(2)*[1 1],[0 0.5],'-','Color','g','LineWidth',1); %2nd date range impact threshold
+plot(uft_daterange(2)*[1 1],[0 0.5],'-','Color','b','LineWidth',1); %2nd date range fluid threshold
+plot(ubar_bins_daterange{3},p_ubar_daterange{3},'--','Color','k','LineWidth',1); %3rd date range wind distribution
+plot(uit_daterange(3)*[1 1],[0 0.5],'--','Color','g','LineWidth',1); %3rd date range impact threshold
+plot(uft_daterange(3)*[1 1],[0 0.5],'--','Color','b','LineWidth',1); %3rd date range fluid threshold
+
+%create legend
+legend_items = cell(6,1);
+legend_items{1} = [datestr(daterange_startdate(2),'mmm dd'),'-',datestr(daterange_enddate(2),'dd'),': \Phi_{u,1 minute}'];
+legend_items{2} = [datestr(daterange_startdate(2),'mmm dd'),'-',datestr(daterange_enddate(2),'dd'),': u_{it}'];
+legend_items{3} = [datestr(daterange_startdate(2),'mmm dd'),'-',datestr(daterange_enddate(2),'dd'),': u_{ft}'];
+legend_items{4} = [datestr(daterange_startdate(3),'mmm dd'),'-',datestr(daterange_enddate(3),'dd'),': \Phi_{u,1 minute}'];
+legend_items{5} = [datestr(daterange_startdate(3),'mmm dd'),'-',datestr(daterange_enddate(3),'dd'),': u_{it}'];
+legend_items{6} = [datestr(daterange_startdate(3),'mmm dd'),'-',datestr(daterange_enddate(3),'dd'),': u_{ft}'];
+h_legend = legend(legend_items,'Location','NorthWest');
+set(h_legend,'FontSize',PlotFont);
+
+%annotate plot
+xlim([0 10]);
+xlabel('$$u$$, streamwise wind speed (m/s)','Interpreter','Latex','FontSize',PlotFont);
+ylabel('probability density (m$$^{-1}$$ s)','Interpreter','Latex','FontSize',PlotFont);
+set(gca,'FontSize',PlotFont);
+set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+
+%print plot
+set(gca, 'LooseInset', get(gca,'TightInset'));
+set(gcf,'PaperUnits','inches','PaperSize',[6.5 4],'PaperPosition',[0 0 6.5 4],'PaperPositionMode','Manual');
+print([folder_Plots,'wind_distribution_daterange.png'],'-dpng');
+print([folder_Plots,'wind_distribution_daterange.tif'],'-dtiff','-r600');

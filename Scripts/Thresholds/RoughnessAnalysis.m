@@ -32,7 +32,7 @@ Q_bin_N_min = 3; %minimum number of entries for bin
 
 %% folders for loading and saving data
 folder_LoadData = '../../AnalysisData/Windowing/'; %folder for retrieving data for this analysis
-folder_SaveData = '../../AnalysisData/WindAnalysis/'; %folder for outputs of this analysis
+folder_SaveData = '../../AnalysisData/Misc/'; %folder for outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
 folder_Plots = '../../PlotOutput/Roughness/'; %folder for plots
 
@@ -734,4 +734,4 @@ ylim([1e-5 1e-2]);
 set(gca, 'LooseInset', get(gca,'TightInset'));
 set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
 print([folder_Plots,'zs_Q_z0_fQ.png'],'-dpng');
-%print([folder_Plots,'zs_Q_z0_fQ.tif'],'-dtiff','-r600');
+print([folder_Plots,'zs_Q_z0_fQ.tif'],'-dtiff','-r600');
