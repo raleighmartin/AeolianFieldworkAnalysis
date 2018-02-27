@@ -3,7 +3,7 @@ clearvars;
 
 %% information about where to load data and save plots
 folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_Plots = '../../PlotOutput/GrainSize/'; %folder for plots
+folder_Plots = '../../PlotOutput/SizeSelective/'; %folder for plots
 
 %% Information about sites
 Sites = {'Jericoacoara';'RanchoGuadalupe';'Oceano'};

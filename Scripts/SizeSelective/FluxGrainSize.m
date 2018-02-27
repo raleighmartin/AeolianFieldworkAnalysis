@@ -15,7 +15,6 @@ dref_type = 'd50';
 %dref_type = 'dmodal';
 
 %% set range of trustworthy grain sizes
-%d_min = 0.06;
 d_min = 0.13; %minimum trustworthy grain size
 d_max = 1; %maximum trustworthy grain size
 
@@ -152,7 +151,7 @@ taunorm_max_Qhat_tau_fit = 2; %maximum normalized shear stress for fitting Qhat 
 
 %% information about where to load data and save plots
 folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
-folder_GrainSizeData = '../../AnalysisData/SizeSelective/'; %folder for grain size data
+folder_GrainSizeData = '../../AnalysisData/GrainSize/'; %folder for grain size data
 folder_SaltationData = '../../AnalysisData/Windowing/'; %folder for saltation flux data
 GrainSizeData_Path = strcat(folder_GrainSizeData,'GrainSizeData'); %path for loading mean grain size data
 SaltationFluxData_Path = strcat(folder_SaltationData,'DataWindowCalcs_30min_Restricted'); %path for loading saltation data
@@ -868,6 +867,7 @@ end
 d_taunormbar_airborne_mid_Cluster = cell(N_Cluster,1); %grain sizes for this analysis, include only grain size bins with d>d_min and d<2
 dV_taunormbar_airborne_Cluster = cell(N_Cluster,1);
 dVdlogd_taunormbar_airborne_Cluster = cell(N_Cluster,1);
+d50_taunormbar_airborne_Cluster = cell(N_Cluster,1); %d50 for each taunormbar
 for i = 1:N_Cluster
 %     ind_drange = find(d_airborne_lower_Cluster{i} >= d_min & d_airborne_upper_Cluster{i}<=2); %include only grain size bins with d>d_min and d<2
 %     N_d = length(ind_drange); %number of grain size bins
@@ -878,6 +878,7 @@ for i = 1:N_Cluster
     d_taunormbar_airborne_mid_Cluster{i} = d_airborne_mid_Cluster{i}; %grain sizes for this analysis, include only grain size bins with d>d_min
     dV_taunormbar_airborne_Cluster{i} = zeros(N_taunorm_bins,N_d);
     dVdlogd_taunormbar_airborne_Cluster{i} = zeros(N_taunorm_bins,N_d);
+    d50_taunormbar_airborne_Cluster{i} = zeros(N_taunorm_bins,1); %d50 for each taunormbar
     ind_usable = ind_usable_profile_Cluster{i};
     for j = 1:N_taunorm_bins
         ind_taunorm = find(taunorm_profile_Cluster{i}>=taunorm_bin_min(j) & taunorm_profile_Cluster{i}<=taunorm_bin_max(j));
@@ -887,7 +888,15 @@ for i = 1:N_Cluster
 %         dVdlogd_taunormbar_airborne_Cluster{i}(j,:) = dV_taunormbar_airborne_Cluster{i}(j,:)./dlogd_airborne_Cluster{i}(ind_drange);
         dV_taunormbar_airborne_Cluster{i}(j,:) = mean(dV_profilebar_airborne_Cluster{i}(ind_average,:),1); %normalize by volume fraction > d_min        
         dVdlogd_taunormbar_airborne_Cluster{i}(j,:) = dV_taunormbar_airborne_Cluster{i}(j,:)./dlogd_airborne_Cluster{i};
+        [d10, d50, d90] = ReferenceGrainSizes(dV_taunormbar_airborne_Cluster{i}(j,:),...
+            d_airborne_lower_Cluster{i}, d_airborne_upper_Cluster{i}); %compute reference grain sizes
+        if ~isempty(d50)
+            d50_taunormbar_airborne_Cluster{i}(j) = d50; %d50 for each taunormbar
+        else
+            d50_taunormbar_airborne_Cluster{i}(j) = NaN; %set d50 as NaN if it doesn't exist
+        end
     end
+    
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1713,6 +1722,22 @@ end
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[8 10],'PaperPosition',[0 0 8 10],'PaperPositionMode','Manual');
 print([folder_Plots,'znorm_profile_BSNE.png'],'-dpng');
+
+
+%% Plot dair/dsfc vs. tau/tau_it
+figure(13); clf; hold on;
+
+for i = 1:N_Cluster
+    
+    ind_plot = find(d50_profilebar_airborne_Cluster{i}>0.1);
+    plot(taunorm_profile_Cluster{i}(ind_plot),d50_profilebar_airborne_Cluster{i}(ind_plot),Marker_Cluster{i},'Color',Color_Cluster{i})
+    %plot(taunorm_bin_min,d50_taunormbar_airborne_Cluster{i}) %use aggregated values
+    
+end
+xlabel('Normalized shear stress, $$\tau/\tau_{it}$$','Interpreter','Latex');
+ylabel('Median airborne grain diameter, $$d_{50,airborne}$$ (mm)','Interpreter','Latex');
+h_legend = legend(ClusterNames,'Location','NorthWest');
+set(h_legend,'FontSize',12);
 
 
 
