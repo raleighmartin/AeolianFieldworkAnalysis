@@ -26,8 +26,8 @@ fQ_bin_maxrange = 0.2; %maximum range of fQ for binning
 folder_LoadData = '../../AnalysisData/Windowing/'; %folder for retrieving data for this analysis
 folder_SaveData = '../../AnalysisData/FluxLaw/'; %folder for outputs of this analysis
 folder_Functions = '../Functions/'; %folder with functions
-folder_GrainSizeData = '../../AnalysisData/BSNE/'; %folder for grain size data
-folder_LitData = '../../AnalysisData/Literature/'; %folder for loading lit data
+folder_GrainSizeData = '../../AnalysisData/GrainSize/'; %folder for grain size data
+folder_LitData = '../../AnalysisData/FluxLaw/'; %folder for loading lit data
 
 %% paths for loading and saving data - restricted
 LoadData_Path = strcat(folder_LoadData,'DataWindowCalcs_30min_Restricted'); %path for 30 minute data
@@ -83,7 +83,9 @@ N_variables = length(variable_list);
 for i = 1:N_Sites
     ind_tauRe = find(~isnan(tauRe_all{i}));
     for j = 1:N_variables
-        eval([variable_list{j},'{i}=',variable_list{j},'{i}(ind_tauRe);']);
+        if(~strcmp(variable_list{j},'GrainSizeData_all')) %exclude variable for removing "bad" points
+            eval([variable_list{j},'{i}=',variable_list{j},'{i}(ind_tauRe);']);
+        end
     end
 end
 
@@ -91,7 +93,9 @@ end
 for i = 1:N_Sites
     ind_Q = find(~isnan(Q_all{i}));
     for j = 1:N_variables
-        eval([variable_list{j},'{i}=',variable_list{j},'{i}(ind_Q);']);
+        if(~strcmp(variable_list{j},'GrainSizeData_all')) %exclude variable for removing "bad" points
+            eval([variable_list{j},'{i}=',variable_list{j},'{i}(ind_Q);']);
+        end
     end
 end
 

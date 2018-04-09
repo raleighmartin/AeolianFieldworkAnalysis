@@ -10,7 +10,7 @@ close all;
 %% information about where to load data and save plots
 folder_GrainSizeData = '../../AnalysisData/GrainSize/'; %folder for grain size data
 GrainSizeData_Path = strcat(folder_GrainSizeData,'GrainSizeData'); %path for loading mean grain size data
-folder_Plots = '../../PlotOutput/GrainSize/'; %folder for plots
+folder_Plots = '../../PlotOutput/SizeSelective/'; %folder for plots
 folder_Functions = '../Functions/'; %folder with functions
 
 %% load data and functions
