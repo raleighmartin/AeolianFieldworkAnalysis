@@ -429,3 +429,116 @@ end
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[9 9],'PaperPosition',[0 0 9 9],'PaperPositionMode','Manual');
 print([folder_Plots,'dbar_profile_comparison.png'],'-dpng');
+
+
+%% plot variation in d90 grain sizes (normalized by mean surface)
+% versus height (normalized by z_q)
+figure(8); clf;
+
+%initialize subplots
+h_subplot = gobjects(8,1);
+
+% Namikas
+h_subplot(1) = subplot('position',[0.1 0.7 0.25 0.24]); hold on;
+
+%plot airborne profiles
+for i = 1:N_Namikas06
+    plot(znorm_Namikas06,d90_airborne_Namikas06{i}./...
+        mean(dbar_bar_surface_Cluster(3:6)),[Marker_bin{i},'-']);
+end
+%for normalization, use mean surface grain size from all of the Oceano
+%clusters
+
+%format plot
+htitle = title('Namikas 2006');
+set(gca,'YMinorTick','On','Box','On');
+ylabel('Norm. 90th pctl grain, $${d}_{90,air}/\bar{d}_{bed}$$ (mm)','Interpreter','Latex')
+xlim([0 6]);
+ylim([0.7 1.5]);
+
+%create legend
+legend_items = cell(N_Namikas06,1);
+for i = 1:N_Namikas06
+    legend_items{i} = ['u_{*} = ',num2str(ust_Namikas06(i),'%10.2f'),' m/s'];
+end
+h_legend = legend(legend_items,'Location','NorthEast');
+set(h_legend,'FontSize',8);
+
+%% Farrell
+h_subplot(2) = subplot('position',[0.41 0.7 0.25 0.24]); hold on;
+
+%plot airborne profiles
+for i = 1:N_ustbins_Farrell12
+    plot(znorm_airborne_ustbin_Farrell12{i},d90_airborne_ustbin_Farrell12{i}./...
+        mean(dbar_bar_surface_Cluster(1)),[Marker_bin{i},'-']);
+end
+%for normalization, use mean surface grain size from Jericoacoara
+
+%format plot
+htitle = title('Farrell 2012');
+set(gca,'YMinorTick','On','Box','On');
+xlim([0 6]);
+ylim([0.7 1.5]);
+
+%create legend
+for i = 1:N_ustbins_Farrell12
+    legend_items{i} = [num2str(ust_lower_Farrell12(i),'%10.2f'),'\leq u_{*} \leq',num2str(ust_upper_Farrell12(i),'%10.2f'),' m/s'];
+end
+h_legend = legend(legend_items,'Location','NorthEast');
+set(h_legend,'FontSize',8);
+
+
+%% our data
+for i = 1:N_Cluster
+    if i == 1
+        h_subplot(3) = subplot('position',[0.1 0.38 0.25 0.24]); hold on;
+    elseif i == 2
+        h_subplot(4) = subplot('position',[0.41 0.38 0.25 0.24]); hold on;
+    elseif i == 3 %make this subplot bigger to accommodate legend
+        %h_subplot(5) = subplot('position',[0.72 0.38 0.25 0.24]); hold on;
+        h_subplot(5) = subplot('position',[0.72 0.38 0.25 0.385]); hold on;
+    elseif i == 4
+        h_subplot(6) = subplot('position',[0.1 0.06 0.25 0.24]); hold on;
+    elseif i == 5
+        h_subplot(7) = subplot('position',[0.41 0.06 0.25 0.24]); hold on;
+    else
+        h_subplot(8) = subplot('position',[0.72 0.06 0.25 0.24]); hold on;
+    end
+
+    %plot airborne profiles
+    for j = 1:N_taunorm_bins
+        ind_plot = find(~isnan(d90_profile_airborne_taunorm_Cluster{i}(j,:)));
+        if ~isempty(ind_plot) %plot only profiles with data
+            plot(znorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
+                d90_profile_airborne_taunorm_Cluster{i}(j,ind_plot)./...
+                dbar_bar_surface_Cluster(i),[Marker_bin{j},'-']);
+        else %for those profiles with no data, create a dummy plot so that legend renders properly
+            plot([0 0],[0 0],[Marker_bin{j},'-']); 
+        end
+    end
+
+    %format plot
+    htitle = title(ClusterNames{i});
+    set(gca,'YMinorTick','On','Box','On');
+    if mod(i,3) == 1
+        ylabel('Norm. 90th pctl grain, $${d}_{90,air}/\bar{d}_{bed}$$ (mm)','Interpreter','Latex')
+    end
+    if i>=2*round(N_Cluster/2)-2
+        xlabel('Normalized height, $$z/z_q$$','Interpreter','Latex')
+    end
+    xlim([0 6]);
+    ylim([0.7 1.5]);
+
+    %create legend
+    if i == 3
+        for j = 1:N_taunorm_bins
+            legend_items{j} = [num2str(taunorm_min_bins(j),'%10.1f'),'\leq \tau/\tau_{it} \leq',num2str(taunorm_max_bins(j),'%10.1f')];
+        end
+        h_legend = legend(legend_items,'Location','NorthOutside');
+        set(h_legend,'FontSize',8);
+    end
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[9 9],'PaperPosition',[0 0 9 9],'PaperPositionMode','Manual');
+print([folder_Plots,'d90_profile_comparison.png'],'-dpng');

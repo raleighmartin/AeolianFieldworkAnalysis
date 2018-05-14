@@ -1013,12 +1013,14 @@ znorm_mid_taunorm_bin = geomean([znorm_lower_taunorm_bin'; znorm_upper_taunorm_b
 N_znorm_bins = length(znorm_mid_taunorm_bin);
 
 %% get taunorm-conditioned mean grain size profiles at each site
-dbar_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned grain size profiles for all clusters
+dbar_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned mean grain size profiles for all clusters
+d90_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned d90 profiles for all clusters
 znorm_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize heights for binned grain size profiles for all clusters
 
 for i = 1:N_Cluster
     
     dbar_profile_airborne_taunorm_Cluster{i} = zeros(N_taunorm_bins,N_znorm_bins)*NaN; %initialize binned grain size profiles for this cluster
+    d90_profile_airborne_taunorm_Cluster{i} = zeros(N_taunorm_bins,N_znorm_bins)*NaN; %initialize d90 profiles for this cluster
     znorm_profile_airborne_taunorm_Cluster{i} = zeros(N_taunorm_bins,N_znorm_bins)*NaN; %initialize heights for binned grain size profiles for all clusters
 
     %go through each taunorm bin
@@ -1031,7 +1033,8 @@ for i = 1:N_Cluster
         for k = 1:N_znorm_bins
             znorm_taunormbin = []; %intialize list of zs for this bin
             dbar_taunormbin = []; %initialize list of dbars for this bin
-
+            d90_taunormbin = []; %initialize list of d90s for this bin
+            
             %go through each profile for this height
             for l = 1:length(ind_taunormbin)
                 znorm_profile = znorm_profile_Cluster{i}{ind_taunormbin(l)}; %get znorm profiles for u* bin
@@ -1039,10 +1042,12 @@ for i = 1:N_Cluster
                     find(znorm_profile<znorm_upper_taunorm_bin(k))); %get ind of znorm for height
                 znorm_taunormbin = [znorm_taunormbin; znorm_profile(ind_znorm)]; %add znorm to list (if it exists)
                 dbar_taunormbin = [dbar_taunormbin; dbar_profile_airborne_Cluster{i}{ind_taunormbin(l)}(ind_znorm)]; %add dbar to list (if it exists)
+                d90_taunormbin = [d90_taunormbin; d90_profile_airborne_Cluster{i}{ind_taunormbin(l)}(ind_znorm)']; %add d90 to list (if it exists)
             end
             if ~isempty(znorm_taunormbin)
                 znorm_profile_airborne_taunorm_Cluster{i}(j,k) = mean(znorm_taunormbin(~isnan(dbar_taunormbin))); %get mean znorm for taunorm bin
                 dbar_profile_airborne_taunorm_Cluster{i}(j,k) = mean(dbar_taunormbin(~isnan(dbar_taunormbin))); %get mean dbar for taunorm bin
+                d90_profile_airborne_taunorm_Cluster{i}(j,k) = mean(d90_taunormbin(~isnan(d90_taunormbin))); %get mean d90 for taunorm bin
             end
         end
     end

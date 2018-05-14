@@ -63,7 +63,7 @@ d_upper_Namikas06 = [0.125 0.149 0.177 0.21 0.25 0.297 0.354 0.42 0.5 0.564]; %u
 
 % Farrell 2012
 filename_Farrell12 = [folder_LiteratureData,'FarrellEtAl2012.dat'];
-formatSpec_Farrell12 = '%f%f%f%f%f%f%f%f%[^\n\r]';
+formatSpec_Farrell12 = '%f%f%f%f%f%f%f%f%f%[^\n\r]';
 N_Farrell12 = 14;
 N_z_Farrell12 = 6; %number of heights for Farrell profiles
 ust_Farrell12 = [0.54; 0.47; 0.53; 0.49; 0.50; 0.50; 0.47; 0.45; 0.51; 0.48; 0.41; 0.50; 0.50; 0.49]; %u* values (m/s) from paper
@@ -278,7 +278,8 @@ fclose(fileID_Farrell12);
 z_bottom_Farrell12 = cell(N_Farrell12,1); %trap bottom height (m)
 q_Farrell12 = cell(N_Farrell12,1); %flux (g/m^2/s)
 H_Farrell12 = cell(N_Farrell12,1); %trap dimension height (m)
-dbar_airborne_Farrell12 = cell(N_Farrell12,1); %mean height of grains in trap (mm)
+dbar_airborne_Farrell12 = cell(N_Farrell12,1); %mean size of grains in trap (mm)
+dsigma_airborne_Farrell12 = cell(N_Farrell12,1); %std dev size of grains in trap (mm)
 %zq_Farrell12 = zeros(N_Farrell12,1); %e-folding height (m)
 %sigma_zq_Farrell12 = zeros(N_Farrell12,1); %e-folding height uncertainty (m)
 %Q_fit_Farrell12 = zeros(N_Farrell12,1); %total flux (g/m/s)
@@ -296,6 +297,7 @@ for i = 1:N_Farrell12
     W_profile = dataArray_Farrell12{7}(ind_profile); %trap width (m)
     H_Farrell12{i} = dataArray_Farrell12{6}(ind_profile); %trap height (m)
     dbar_airborne_Farrell12{i} = dataArray_Farrell12{8}(ind_profile); %mean particle diameter (mm)
+    dsigma_airborne_Farrell12{i} = dataArray_Farrell12{9}(ind_profile); %std dev particle diameter (mm)
     z_bottom_Farrell12{i} = dataArray_Farrell12{5}(ind_profile)-H_Farrell12{i}; %bottom height of profile traps (m)
     q_Farrell12{i} = m_profile./(T_profile.*W_profile.*H_Farrell12{i});
     

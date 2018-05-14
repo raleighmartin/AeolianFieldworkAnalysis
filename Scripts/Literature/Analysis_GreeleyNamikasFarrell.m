@@ -119,18 +119,21 @@ dlogd_Namikas06 = log(d_upper_Namikas06)-log(d_lower_Namikas06); %calculate dlog
 dVdlogd_Namikas06 = cell(N_Namikas06,1); %initialize array for size distributions
 dbar_airborne_Namikas06 = cell(N_Namikas06,1); %compute mean grain size at each height
 d50_airborne_Namikas06 = cell(N_Namikas06,1); %compute median grain size at each height
+d90_airborne_Namikas06 = cell(N_Namikas06,1); %compute d90 at each height
 
 % Make calculations
 for i=1:N_Namikas06
     dVdlogd_Namikas06{i} = zeros(N_z_Namikas06, N_d_Namikas06); %initialize matrix for size distributions
     dbar_airborne_Namikas06{i} = zeros(N_z_Namikas06, 1); %initialize vector for mean sizes
     d50_airborne_Namikas06{i} = zeros(N_z_Namikas06, 1); %initialize vector for median sizes
+    d90_airborne_Namikas06{i} = zeros(N_z_Namikas06, 1); %initialize vector for d90
     for j=1:N_z_Namikas06
         dV = (qi_Namikas06{i}(j,:)/sum(qi_Namikas06{i}(j,:)));
         dVdlogd_Namikas06{i}(j,:) = dV./dlogd_Namikas06;
         dbar_airborne_Namikas06{i}(j) = sum(dV.*d_Namikas06);
         [d10, d50, d90] = ReferenceGrainSizes(dV, d_lower_Namikas06, d_upper_Namikas06);
         d50_airborne_Namikas06{i}(j) = d50;
+        d90_airborne_Namikas06{i}(j) = d90;
     end
 end
 
@@ -161,6 +164,17 @@ for i = 1:N_Farrell12
     sigma_Q_fit_Farrell12(i) = sigma_Q; %total flux (g/m/s)
 end
 
+% estimate d90 values from mu and sigma
+d90_airborne_Farrell12 = cell(N_Farrell12,1);
+for i = 1:N_Farrell12
+    d90_airborne_Farrell12{i} = zeros(size(dbar_airborne_Farrell12{i}));
+    for j=1:length(dbar_airborne_Farrell12{i})
+        d90_log = norminv(0.9,log10(dbar_airborne_Farrell12{i}(j)),log10(dsigma_airborne_Farrell12{i}(j))); %estimate d90 for lognormal distribution
+        d90 = 10^d90_log; %convert d90 out of log units
+        d90_airborne_Farrell12{i}(j) = d90;
+    end
+end
+
 %remove outlier values
 N_Farrell12 = length(GoodInd_Farrell12);
 q_Farrell12 = q_Farrell12(GoodInd_Farrell12);
@@ -176,21 +190,25 @@ H_Farrell12 = H_Farrell12(GoodInd_Farrell12);
 zq_Farrell12 = zq_Farrell12(GoodInd_Farrell12);
 sigma_zq_Farrell12 = sigma_zq_Farrell12(GoodInd_Farrell12);
 dbar_airborne_Farrell12 = dbar_airborne_Farrell12(GoodInd_Farrell12);
+d90_airborne_Farrell12 = d90_airborne_Farrell12(GoodInd_Farrell12);
 
-%group dbar and z by u*
+%group dbar and d90 and z by u*
 z_airborne_ustbin_Farrell12 = cell(N_ustbins_Farrell12,1);
 znorm_airborne_ustbin_Farrell12 = cell(N_ustbins_Farrell12,1);
 dbar_airborne_ustbin_Farrell12 = cell(N_ustbins_Farrell12,1);
+d90_airborne_ustbin_Farrell12 = cell(N_ustbins_Farrell12,1);
 for i = 1:N_ustbins_Farrell12
     ind_ustbin = intersect(find(ust_Farrell12>=ust_lower_Farrell12(i)),...
         find(ust_Farrell12<=ust_upper_Farrell12(i))); %indices of profiles in ust bin
     z_airborne_ustbin_Farrell12{i} = zeros(N_z_Farrell12,1);
     dbar_airborne_ustbin_Farrell12{i} = zeros(N_z_Farrell12,1);
+    d90_airborne_ustbin_Farrell12{i} = zeros(N_z_Farrell12,1);
     
     %go through each height for this bin
     for j = 1:N_z_Farrell12
         z_ustbin = []; %intialize list of zs for this bin
         dbar_ustbin = []; %initialize list of dbars for this bin
+        d90_ustbin = []; %initialize list of d90s for this bin
         
         %go through each profile for this height
         for k = 1:length(ind_ustbin)
@@ -199,9 +217,11 @@ for i = 1:N_ustbins_Farrell12
                 find(z_profile<z_bottom_Farrell12{1}(j)+H_Farrell12{1}(j))); %get ind of z for height
             z_ustbin = [z_ustbin; z_profile(ind_z)]; %add z to list (if it exists)
             dbar_ustbin = [dbar_ustbin; dbar_airborne_Farrell12{ind_ustbin(k)}(ind_z)]; %add dbar to list (if it exists)
+            d90_ustbin = [d90_ustbin; d90_airborne_Farrell12{ind_ustbin(k)}(ind_z)]; %add d90 to list (if it exists)
         end
         z_airborne_ustbin_Farrell12{i}(j) = mean(z_ustbin(~isnan(dbar_ustbin))); %get mean z for ustbin
         dbar_airborne_ustbin_Farrell12{i}(j) = mean(dbar_ustbin(~isnan(dbar_ustbin))); %get mean dbar for ustbin
+        d90_airborne_ustbin_Farrell12{i}(j) = mean(d90_ustbin(~isnan(d90_ustbin))); %get mean d90 for ustbin
     end
     znorm_airborne_ustbin_Farrell12{i} = z_airborne_ustbin_Farrell12{i}/zq_Farrell12_assumed;
 end
