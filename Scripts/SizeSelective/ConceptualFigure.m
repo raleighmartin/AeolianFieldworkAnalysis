@@ -9,7 +9,7 @@ close all;
 % INFORMATION FOR SAVING PLOT %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-folder_Plots = '../../PlotOutput/GrainSize/'; %folder for plots
+folder_Plots = '../../PlotOutput/SizeSelective/'; %folder for plots
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % INFORMATION FOR DETERMINING WHERE TO PLACE FACTORS %
@@ -151,7 +151,8 @@ y_length = y_height+y_restitution;
 
 %% compute size fraction
 ind_sizefraction = unique([ind_fine, ind_medium, ind_coarse]);
-y_sizefraction = y_ejectionrate + y_saltationpromotion + y_length;
+%y_sizefraction = y_ejectionrate + y_saltationpromotion + y_length;
+y_sizefraction = y_saltationpromotion + y_length;
 
 %% information for plotting
 PlotFont = 12; %font for labels
@@ -221,14 +222,16 @@ for i = 1:4
     %subplot for size fraction
     if i == 1
         scalingfactor = 2;
-        h1_1 = plot(x(ind_ejectionrate),y_ejectionrate(ind_ejectionrate)*scalingfactor,'Marker',marker_ejectionrate,'MarkerSize',5,'LineWidth',1.0,'Color',color_ejectionrate); %ejection rate
+        %h1_1 = plot(x(ind_ejectionrate),y_ejectionrate(ind_ejectionrate)*scalingfactor,'Marker',marker_ejectionrate,'MarkerSize',5,'LineWidth',1.0,'Color',color_ejectionrate); %ejection rate
         h1_2 = plot(x(ind_saltationpromotion),y_saltationpromotion(ind_saltationpromotion)*scalingfactor,'Marker',marker_saltationpromotion,'MarkerSize',5,'LineWidth',1.0,'Color',color_saltationpromotion); %promotion to saltation
         h1_3 = plot(x(ind_length),y_length(ind_length)*scalingfactor,'Marker',marker_length,'MarkerSize',5,'LineWidth',1.0,'Color',color_length); %trajectory length
         h1_4 = plot(x(ind_sizefraction),y_sizefraction(ind_sizefraction)*scalingfactor,'LineWidth',2.0,'Color',color_sizefraction); %combined - size fraction
         %h1_4 = plot(x(ind_sizefraction),y_sizefraction(ind_sizefraction)*scalingfactor,'Marker',marker_sizefraction,'MarkerSize',4,'LineWidth',2.0,'Color',color_sizefraction); %combined - size fraction
                 
-        h1_legend = legend([h1_1 h1_2 h1_3 h1_4],...
-            'Ejection rate','Promotion to saltation','Travel length','Combined effect');
+        %h1_legend = legend([h1_1 h1_2 h1_3 h1_4],...
+            %'Ejection rate','Promotion to saltation','Travel length','Combined effect');
+        h1_legend = legend([h1_2 h1_3 h1_4],...
+            'Promotion to saltation','Travel length','Combined effect');
         
         set(h1_legend,'Location','EastOutside','FontSize',10);       
         text(0.175,0.9,'(a)','FontSize',PlotFont);
