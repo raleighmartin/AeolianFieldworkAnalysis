@@ -10,6 +10,8 @@ close all;
 %% information about where to load data and save plots
 folder_AnalysisData = '../../AnalysisData/SizeSelective/'; %folder for saving analysis data
 AnalysisData_Path = strcat(folder_AnalysisData,'SizeSelectiveAnalysis_Additional');
+folder_LitData = '../../AnalysisData/Literature/'; %folder for loading/saving literature data
+LitData_Path = strcat(folder_LitData,'LitAnalysis');
 folder_Plots = '../../PlotOutput/SizeSelective/'; %folder for plots
 folder_Functions = '../Functions/'; %folder with functions
 
@@ -20,6 +22,7 @@ folder_Functions = '../Functions/'; %folder with functions
 
 %% load data and functions
 load(AnalysisData_Path); %load additional analysis data
+load(LitData_Path); %load literature data
 addpath(folder_Functions); %point MATLAB to location of functions
 
 %%
@@ -58,8 +61,205 @@ end
 % PLOTS %
 %%%%%%%%%
 
-%% plot variation in reference zqnorm with saltation flux - dref values
+%% plot variation in reference grain sizes with saltation flux
 figure(1); clf;
+for i = 1:N_Cluster
+    subplot(round(N_Cluster/2),2,i); hold on;
+    ind_usable = ind_usable_profile_Cluster{i};
+    h90_air = plot(taunorm_profile_Cluster{i}(ind_usable),d90_profilebar_airborne_Cluster{i}(ind_usable),'^');
+    h50_air = plot(taunorm_profile_Cluster{i}(ind_usable),d50_profilebar_airborne_Cluster{i}(ind_usable),'o');
+    h10_air = plot(taunorm_profile_Cluster{i}(ind_usable),d10_profilebar_airborne_Cluster{i}(ind_usable),'v');
+    c90 = get(h90_air,'Color');
+    c50 = get(h50_air,'Color');
+    c10 = get(h10_air,'Color');
+    h90_sfc = plot([1 4],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
+    h50_sfc = plot([1 4],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
+    h10_sfc = plot([1 4],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
+    xlim([1 4]);
+    ylim([0 0.9]);
+    text(1.05, 0.8, Label_Cluster{i},'FontSize',12);
+    if i==N_Cluster || i==N_Cluster-1
+        xlabel('shear stress ratio, $$\tau/\tau_{it}$$','Interpreter','Latex')
+    end
+    if mod(i,2) == 1
+        ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+    end
+    if i == N_Cluster - 1
+        legend([h90_air, h50_air, h10_air], 'd_{90,air}','d_{50,air}','d_{10,air}');
+    elseif i == N_Cluster
+        legend([h90_sfc, h50_sfc, h10_sfc], 'd_{90,bed}','d_{50,bed}','d_{10,bed}');
+    end
+    title(ClusterNames{i});
+
+    set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On');
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[7 9],'PaperPosition',[0 0 7 9],'PaperPositionMode','Manual');
+print([folder_Plots,'IndexGrainSize_NormShearStress.png'],'-dpng');
+
+
+%% plot variation in reference grain sizes with shear velocity
+figure(2); clf;
+for i = 1:N_Cluster
+    subplot(2,round(N_Cluster/2),i); hold on;
+    h90_air = plot(ust_profile_Cluster{i},d90_profilebar_airborne_Cluster{i},'^');
+    h50_air = plot(ust_profile_Cluster{i},d50_profilebar_airborne_Cluster{i},'o');
+    h10_air = plot(ust_profile_Cluster{i},d10_profilebar_airborne_Cluster{i},'v');
+    hbar_air = plot(ust_profile_Cluster{i},dbar_profilebar_airborne_Cluster{i},'s');
+    c90 = get(h90_air,'Color');
+    c50 = get(h50_air,'Color');
+    c10 = get(h10_air,'Color');
+    cbar = get(hbar_air,'Color');
+    h90_bed = plot([0.2 0.6],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
+    h50_bed = plot([0.2 0.6],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
+    h10_bed = plot([0.2 0.6],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
+    hbar_bed = plot([0.2 0.6],dbar_bar_surface_Cluster(i)*[1 1],'Color',cbar);
+    xlim([0.2 0.6]);
+    ylim([0 0.9]);
+    if i>round(N_Cluster/2)
+        xlabel('shear velocity, $$u_{*}$$ (m s$$^{-1}$$)','Interpreter','Latex')
+    end
+    if mod(i,round(N_Cluster/2)) == 1
+        ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+    end
+    if i == N_Cluster - 1
+        legend([h90_air, h50_air, h10_air,hbar_air], 'd_{90,air}','d_{50,air}','d_{10,air}','d_{bar,air}');
+    elseif i == N_Cluster
+        legend([h90_bed, h50_bed, h10_bed,hbar_bed], 'd_{90,bed}','d_{50,bed}','d_{10,bed}','d_{bar,bed}');
+    end
+    title(ClusterNames{i});
+    set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[6 7],'PaperPosition',[0 0 6 7],'PaperPositionMode','Manual');
+print([folder_Plots,'ReferenceGrainSize_ShearVelocity.png'],'-dpng');
+
+
+%% plot variation in reference grain sizes with shear stress
+figure(3); clf;
+for i = 1:N_Cluster
+    subplot(2,round(N_Cluster/2),i); hold on;
+    
+    %plot airborne sizes
+    h90_air = plot(tau_profile_Cluster{i},d90_profilebar_airborne_Cluster{i},'^');
+    h50_air = plot(tau_profile_Cluster{i},d50_profilebar_airborne_Cluster{i},'o');
+    h10_air = plot(tau_profile_Cluster{i},d10_profilebar_airborne_Cluster{i},'v');
+    hbar_air = plot(tau_profile_Cluster{i},dbar_profilebar_airborne_Cluster{i},'s');
+    
+    %get info about airborne plots
+    c90 = get(h90_air,'Color');
+    c50 = get(h50_air,'Color');
+    c10 = get(h10_air,'Color');
+    cbar = get(hbar_air,'Color');
+    
+    %plot airborne uncertainties
+    for j = 1:length(tau_profile_Cluster{i})
+        plot(tau_profile_Cluster{i}(j)*[1 1],d90_profilebar_airborne_Cluster{i}(j)*[1 1]+d90_profilesigma_airborne_Cluster{i}(j)*[-1 1],'Color',c90);
+        plot(tau_profile_Cluster{i}(j)*[1 1],d50_profilebar_airborne_Cluster{i}(j)*[1 1]+d50_profilesigma_airborne_Cluster{i}(j)*[-1 1],'Color',c50);
+        plot(tau_profile_Cluster{i}(j)*[1 1],d10_profilebar_airborne_Cluster{i}(j)*[1 1]+d10_profilesigma_airborne_Cluster{i}(j)*[-1 1],'Color',c10);
+        plot(tau_profile_Cluster{i}(j)*[1 1],dbar_profilebar_airborne_Cluster{i}(j)*[1 1]+dbar_profilesigma_airborne_Cluster{i}(j)*[-1 1],'Color',cbar);
+    end
+        
+    %make surface plots
+    h90_bed = plot([0 0.45],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
+    h50_bed = plot([0 0.45],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
+    h10_bed = plot([0 0.45],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
+    hbar_bed = plot([0 0.45],dbar_bar_surface_Cluster(i)*[1 1],'Color',cbar);       
+    xlim([0 0.45]);
+    ylim([0 0.9]);
+    if i>round(N_Cluster/2)
+        xlabel('shear stress, $$\tau$$ (Pa)','Interpreter','Latex')
+    end
+    if mod(i,round(N_Cluster/2)) == 1
+        ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+    end
+    if i == N_Cluster - 1
+        legend([h90_air, h50_air, h10_air,hbar_air], 'd_{90,air}','d_{50,air}','d_{10,air}','d_{bar,air}');
+    elseif i == N_Cluster
+        legend([h90_bed, h50_bed, h10_bed,hbar_bed], 'd_{90,bed}','d_{50,bed}','d_{10,bed}','d_{bar,bed}');
+    end
+    title(ClusterNames{i});
+    set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[10 7],'PaperPosition',[0 0 10 7],'PaperPositionMode','Manual');
+print([folder_Plots,'ReferenceGrainSize_ShearStress.png'],'-dpng');
+
+%% plot variation in reference grain sizes with height
+figure(4); clf;
+for i = 1:N_Cluster
+    subplot(2,round(N_Cluster/2),i); hold on;
+    h90_air = plot(z_airborne_Cluster{i},d90_airborne_Cluster{i},'^');
+    h50_air = plot(z_airborne_Cluster{i},d50_airborne_Cluster{i},'o');
+    h10_air = plot(z_airborne_Cluster{i},d10_airborne_Cluster{i},'v');
+    c90 = get(h90_air,'Color');
+    c50 = get(h50_air,'Color');
+    c10 = get(h10_air,'Color');
+    h90_sfc = plot([0 0.6],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
+    h50_sfc = plot([0 0.6],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
+    h10_sfc = plot([0 0.6],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
+    xlim([0 0.6]);
+    ylim([0 0.9]);
+    if i>round(N_Cluster/2)
+        xlabel('height above surface, $$z$$ (m)','Interpreter','Latex')
+    end
+    if mod(i,round(N_Cluster/2)) == 1
+        ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+    end
+    if i == N_Cluster - 1
+        legend([h90_air, h50_air, h10_air], 'd_{90,air}','d_{50,air}','d_{10,air}');
+    elseif i == N_Cluster
+        legend([h90_sfc, h50_sfc, h10_sfc], 'd_{90,surface}','d_{50,surface}','d_{10,surface}');
+    end
+    title(ClusterNames{i});
+    set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[6 5],'PaperPosition',[0 0 6 5],'PaperPositionMode','Manual');
+print([folder_Plots,'ReferenceGrainSize_Height.png'],'-dpng');
+
+
+%% plot variation in reference grain sizes with normalized height
+figure(5); clf;
+for i = 1:N_Cluster
+    subplot(2,round(N_Cluster/2),i); hold on;
+    h90_air = plot(znorm_airborne_Cluster{i},d90_airborne_Cluster{i},'^');
+    h50_air = plot(znorm_airborne_Cluster{i},d50_airborne_Cluster{i},'o');
+    h10_air = plot(znorm_airborne_Cluster{i},d10_airborne_Cluster{i},'v');
+    c90 = get(h90_air,'Color');
+    c50 = get(h50_air,'Color');
+    c10 = get(h10_air,'Color');
+    h90_sfc = plot([0 7],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
+    h50_sfc = plot([0 7],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
+    h10_sfc = plot([0 7],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
+    xlim([0 7]);
+    ylim([0 0.9]);
+    if i>round(N_Cluster/2)
+        xlabel('norm. ht above sfc., $$z/z_{q}$$','Interpreter','Latex')
+    end
+    if mod(i,round(N_Cluster/2)) == 1
+        ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
+    end
+    if i == N_Cluster - 1
+        legend([h90_air, h50_air, h10_air], 'd_{90,air}','d_{50,air}','d_{10,air}');
+    elseif i == N_Cluster
+        legend([h90_sfc, h50_sfc, h10_sfc], 'd_{90,surface}','d_{50,surface}','d_{10,surface}');
+    end
+    title(ClusterNames{i});
+    set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[6 5],'PaperPosition',[0 0 6 5],'PaperPositionMode','Manual');
+print([folder_Plots,'ReferenceGrainSize_NormHeight.png'],'-dpng');
+
+
+%% plot variation in reference zqnorm with saltation flux - dref values
+figure(6); clf;
 for i = 1:N_Cluster
     subplot(round(N_Cluster/2),2,i); hold on;
     ind_usable = ind_usable_profile_Cluster{i};
@@ -92,7 +292,7 @@ print([folder_Plots,'SaltationHeight_IndexGrainSize_NormShearStress.png'],'-dpng
 
 
 %% PLOT normalized size-conditioned zq VS tau
-figure(2); clf;
+figure(7); clf;
 
 for i = 1:N_Cluster
     
@@ -152,7 +352,7 @@ print([folder_Plots,'zq_tau_dhat_',binning_type,'_',int2str(N_bins),'_',dref_typ
 
 
 %% Plot ust-conditioned airborne versus surface size distributions
-figure(3); clf;
+figure(8); clf;
 
 %initialize subplots
 h_subplot = gobjects(N_Cluster,1);
@@ -228,7 +428,7 @@ print([folder_Plots,'GSD_ust_bins_',binning_type,'_',int2str(N_bins),'_',dref_ty
 
 
 %% Plot ustnorm-conditioned airborne versus surface size distributions
-figure(4); clf;
+figure(9); clf;
 
 %initialize subplots
 h_subplot = gobjects(N_Cluster,1);
@@ -323,7 +523,7 @@ print([folder_Plots,'GSD_ustnorm_bins_',binning_type,'_',int2str(N_bins),'_',dre
 
 
 %% PLOT size-conditioned normalized Q VS u* - dhat bins
-figure(5); clf;
+figure(10); clf;
 
 for i = 1:N_Cluster
     
@@ -377,7 +577,7 @@ print([folder_Plots,'Qhat_tau_dhat_',binning_type,'_',int2str(N_bins),'_',dref_t
 
 
 %% PLOT Qhat,i versus tau fit values
-figure(6); clf;
+figure(11); clf;
 
 %plot C values and error bars
 subplot(1,2,1); hold on;
@@ -428,7 +628,7 @@ print([folder_Plots,'C_tauth_dhat_positive_',binning_type,'_',int2str(N_bins),'_
 
 
 %% plot f_airborne / f_surface versus d - binned
-figure(7); clf;
+figure(12); clf;
 
 for i = 1:N_Cluster
     
@@ -473,7 +673,7 @@ print([folder_Plots,'fratio_tau_',binning_type,'_',int2str(N_bins),'_',dref_type
 
 
 %% plot f_airborne / f_surface versus d
-figure(8); clf;
+figure(13); clf;
 
 for i = 1:N_Cluster
     
@@ -518,7 +718,7 @@ print([folder_Plots,'fratio_tau_',binning_type,'_',int2str(N_bins),'_',dref_type
 
 
 %% PLOT mean fratio / fsurface - unbinned
-figure(9); clf; hold on;
+figure(14); clf; hold on;
 
 %plot fratio values
 for i = 1:N_Cluster
@@ -545,7 +745,7 @@ print([folder_Plots,'fratiobar_tau_unbinned_',dref_type,'.png'],'-dpng');
 
 
 %% PLOT mean fratio / fsurface - unbinned - limited d 
-figure(10); clf; hold on;
+figure(15); clf; hold on;
 
 %plot fratio values
 for i = 1:N_Cluster
@@ -567,7 +767,7 @@ print([folder_Plots,'fratiobar_d_unbinned_limited_',dref_type,'.png'],'-dpng');
 
 
 %% PLOT mean fratio / fsurface - binned
-figure(11); clf; hold on;
+figure(16); clf; hold on;
 
 %plot fratio values
 for i = 1:N_Cluster
@@ -586,7 +786,7 @@ print([folder_Plots,'fratiobar_tau_',binning_type,'_',int2str(N_bins),'_',dref_t
 
 
 %% PLOT normalized size-conditioned zq VS u*
-figure(12); clf;
+figure(17); clf;
 
 for i = 1:N_Cluster
     
@@ -641,7 +841,7 @@ print([folder_Plots,'zq_tau_dhat_',binning_type,'_',int2str(N_bins),'_',dref_typ
 
 
 %% PLOT mean size-conditioned zq VS dhat
-figure(13); clf; hold on;
+figure(18); clf; hold on;
 
 %plot data
 for i = 1:N_Cluster
@@ -698,7 +898,7 @@ print([folder_Plots,'zq_dhat_',binning_type,'_',int2str(N_bins),'_',dref_type,'.
 
 
 %% PLOT mean size-conditioned zq VS d
-figure(14); clf; hold on;
+figure(19); clf; hold on;
 
 %plot data
 for i = 1:N_Cluster
@@ -729,7 +929,7 @@ print([folder_Plots,'zq_d_',binning_type,'_',int2str(N_bins),'_',dref_type,'.png
 
 
 %% PLOT slope of fair/fbed VS tau/tauth and slope of zq/d VS tau/tauth
-figure(15); clf;
+figure(20); clf;
 
 % PLOT slope of fair/fbed
 subplot(2,1,1); hold on;
@@ -802,7 +1002,7 @@ print([folder_Plots,'fratio_zqinorm_taunorm_d_',binning_type,'_',int2str(N_bins)
 
 
 %% plot variation in z of BSNEs
-figure(16); clf;
+figure(21); clf;
 for i = 1:N_Cluster
     subplot(2,round(N_Cluster/2),i); hold on;
     
@@ -829,7 +1029,7 @@ print([folder_Plots,'z_profile_BSNE.png'],'-dpng');
 
 
 %% plot variation in z of BSNEs
-figure(17); clf;
+figure(22); clf;
 for i = 1:N_Cluster
     subplot(2,round(N_Cluster/2),i); hold on;
     
@@ -872,3 +1072,65 @@ end
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[10 7],'PaperPosition',[0 0 10 7],'PaperPositionMode','Manual');
 print([folder_Plots,'z_profile_BSNE.png'],'-dpng');
+
+%% plot variation in airborne size distributions with height for Namikas 06
+% note - don't include top bin, as its midpoint is a bit uncertain
+figure(23); clf;
+
+%initialize subplots
+h_subplot = gobjects(N_Cluster,1);
+
+%set colors by height
+Color_z_Namikas06 = cell(N_z_Namikas06,1);
+for i = 1:N_z_Namikas06
+    Color_z_Namikas06{i} = [(i-1)/(N_z_Namikas06-1), 0, 1-(i-1)/(N_z_Namikas06-1)];
+end
+
+for i = 1:N_Namikas06
+    
+    %initialize subplot
+    if i == 1
+        h_subplot(1) = subplot('position',[0.1 0.1 0.25 0.85]); hold on;
+    elseif i == 2
+        h_subplot(2) = subplot('position',[0.41 0.1 0.25 0.85]); hold on;
+    else
+        h_subplot(3) = subplot('position',[0.72 0.1 0.25 0.85]); hold on;
+    end
+        
+    %plot airborne distribution
+    for k = 1:N_z_Namikas06
+        plot(d_Namikas06(1:end-1),...
+            dVdlogd_profile_airborne_Namikas06{i}(k,1:end-1),...
+            ['-',Marker_bin{k}],'MarkerSize',3,'Color',Color_z_Namikas06{k})
+    end
+    
+    %format plot
+    set(gca,'XScale','log','YScale','log','YMinorTick','On','Box','On');
+    xlim([0.06, 2]);
+    set(gca,'xtick',[0.06:0.01:0.1,0.2:0.1:2]);
+    set(gca,'xticklabels',{'0.06','','','','0.1','0.2','','0.4','','','0.7','','','1','','','','','','','','','','2'});
+    ylim([1e-3 1e1]);
+
+    %label plot
+    htitle = title(['u_{*} = ',num2str(ust_Namikas06(i)),' m/s']);
+    set(htitle,'Position',[0.35,3.5]); %set title below edge of box to accommodate second axis
+    xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
+    if mod(i,3) == 1
+        ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+    end
+    
+    %create legend
+    legend_items = cell(N_z_Namikas06,1);
+    for j = 1:N_z_Namikas06
+        %legend_items{j} = [num2str(z_bottom_Namikas06(j),'%10.2f'),' < z \leq ',num2str(z_top_Namikas06(j),'%10.2f')];
+        legend_items{j} = [num2str(znorm_bottom_Namikas06(j),'%10.2f'),' < z/z_{q} \leq ',num2str(znorm_top_Namikas06(j),'%10.2f')];
+    end
+    if i == 1
+        h_legend = legend(legend_items,'Location','SouthWest');
+        set(h_legend,'FontSize',8);
+    end
+end
+
+%print plot - landscape
+set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
+print([folder_Plots,'GSD_Namikas06_z.png'],'-dpng');

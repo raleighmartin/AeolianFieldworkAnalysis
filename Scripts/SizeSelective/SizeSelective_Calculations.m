@@ -721,6 +721,8 @@ qi_Cluster = cell(N_Cluster,1); %size-selective partial flux in cluster
 sigma_qi_Cluster = cell(N_Cluster,1); %size-selective partial flux uncertainty in cluster
 Qi_Cluster = cell(N_Cluster,1); %size-selective flux in cluster
 sigma_Qi_Cluster = cell(N_Cluster,1); %size-selective flux uncertainty in cluster
+q0i_Cluster = cell(N_Cluster,1); %size-selective basal flux in cluster
+sigma_q0i_Cluster = cell(N_Cluster,1); %size-selective basal flux uncertainty in cluster
 zqi_Cluster = cell(N_Cluster,1); %size-selective zq in cluster
 sigma_zqi_Cluster = cell(N_Cluster,1); %size-selective zq uncertainty in cluster
 zqinorm_Cluster = cell(N_Cluster,1); %size-selective zqinorm in cluster
@@ -790,6 +792,8 @@ for i = 1:N_Cluster
     %compute size-selective total fluxes and zq
     Qi_Cluster{i} = zeros(N_profile_Cluster,N_drange); %size-selective flux in cluster
     sigma_Qi_Cluster{i} = zeros(N_profile_Cluster,N_drange); %size-selective flux uncertainty in cluster
+    q0i_Cluster{i} = zeros(N_profile_Cluster,N_drange); %size-selective basal flux in cluster
+    sigma_q0i_Cluster{i} = zeros(N_profile_Cluster,N_drange); %size-selective basal flux uncertainty in cluster
     zqi_Cluster{i} = zeros(N_profile_Cluster,N_drange); %size-selective zq in cluster
     sigma_zqi_Cluster{i} = zeros(N_profile_Cluster,N_drange); %size-selective zq uncertainty in cluster
     zqinorm_Cluster{i} = zeros(N_profile_Cluster,N_drange); %size-selective zq/d in cluster
@@ -800,9 +804,11 @@ for i = 1:N_Cluster
     %fit size-selective profiles
     for j = 1:N_profile_Cluster
         for k = 1:N_drange
-            [~,zqi,Qi,~,sigma_zqi,sigma_Qi] = qz_profilefit_exponential(qi_Cluster{i}{j}(:,k), z_profile_Cluster{i}{j}, sigma_qi_Cluster{i}{j}(:,k), sigma_z_profile_Cluster{i}{j}, zq_profile_Cluster{i}(j)); %perform profile fitting
+            [q0i,zqi,Qi,sigma_q0i,sigma_zqi,sigma_Qi] = qz_profilefit_exponential(qi_Cluster{i}{j}(:,k), z_profile_Cluster{i}{j}, sigma_qi_Cluster{i}{j}(:,k), sigma_z_profile_Cluster{i}{j}, zq_profile_Cluster{i}(j)); %perform profile fitting
             Qi_Cluster{i}(j,k) = Qi;
             sigma_Qi_Cluster{i}(j,k) = sigma_Qi;
+            q0i_Cluster{i}(j,k) = q0i;
+            sigma_q0i_Cluster{i}(j,k) = sigma_q0i;
             zqi_Cluster{i}(j,k) = zqi;
             sigma_zqi_Cluster{i}(j,k) = sigma_zqi;
             zqinorm_Cluster{i}(j,k) = 1000*zqi/d_f_mid_Cluster{i}(k);
@@ -1014,13 +1020,18 @@ N_znorm_bins = length(znorm_mid_taunorm_bin);
 
 %% get taunorm-conditioned mean grain size profiles at each site
 dbar_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned mean grain size profiles for all clusters
+d10_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned d10 profiles for all clusters
 d50_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned d50 profiles for all clusters
 d90_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned d90 profiles for all clusters
+d10norm_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned d10_air/d50_surface profiles for all clusters
+d50norm_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned d50_air/d50_surface profiles for all clusters
+d90norm_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize binned d90_air/d50_surface profiles for all clusters
 znorm_profile_airborne_taunorm_Cluster = cell(N_Cluster,1); %initialize heights for binned grain size profiles for all clusters
 
 for i = 1:N_Cluster
     
     dbar_profile_airborne_taunorm_Cluster{i} = zeros(N_taunorm_bins,N_znorm_bins)*NaN; %initialize binned grain size profiles for this cluster
+    d10_profile_airborne_taunorm_Cluster{i} = zeros(N_taunorm_bins,N_znorm_bins)*NaN; %initialize d10 profiles for this cluster
     d50_profile_airborne_taunorm_Cluster{i} = zeros(N_taunorm_bins,N_znorm_bins)*NaN; %initialize d50 profiles for this cluster
     d90_profile_airborne_taunorm_Cluster{i} = zeros(N_taunorm_bins,N_znorm_bins)*NaN; %initialize d90 profiles for this cluster
     znorm_profile_airborne_taunorm_Cluster{i} = zeros(N_taunorm_bins,N_znorm_bins)*NaN; %initialize heights for binned grain size profiles for all clusters
@@ -1035,6 +1046,7 @@ for i = 1:N_Cluster
         for k = 1:N_znorm_bins
             znorm_taunormbin = []; %intialize list of zs for this bin
             dbar_taunormbin = []; %initialize list of dbars for this bin
+            d10_taunormbin = []; %initialize list of d10s for this bin
             d50_taunormbin = []; %initialize list of d50s for this bin
             d90_taunormbin = []; %initialize list of d90s for this bin
             
@@ -1045,17 +1057,22 @@ for i = 1:N_Cluster
                     find(znorm_profile<znorm_upper_taunorm_bin(k))); %get ind of znorm for height
                 znorm_taunormbin = [znorm_taunormbin; znorm_profile(ind_znorm)]; %add znorm to list (if it exists)
                 dbar_taunormbin = [dbar_taunormbin; dbar_profile_airborne_Cluster{i}{ind_taunormbin(l)}(ind_znorm)]; %add dbar to list (if it exists)
+                d10_taunormbin = [d10_taunormbin; d10_profile_airborne_Cluster{i}{ind_taunormbin(l)}(ind_znorm)']; %add d10 to list (if it exists)
                 d50_taunormbin = [d50_taunormbin; d50_profile_airborne_Cluster{i}{ind_taunormbin(l)}(ind_znorm)']; %add d50 to list (if it exists)
                 d90_taunormbin = [d90_taunormbin; d90_profile_airborne_Cluster{i}{ind_taunormbin(l)}(ind_znorm)']; %add d90 to list (if it exists)
             end
             if ~isempty(znorm_taunormbin)
                 znorm_profile_airborne_taunorm_Cluster{i}(j,k) = mean(znorm_taunormbin(~isnan(dbar_taunormbin))); %get mean znorm for taunorm bin
                 dbar_profile_airborne_taunorm_Cluster{i}(j,k) = mean(dbar_taunormbin(~isnan(dbar_taunormbin))); %get mean dbar for taunorm bin
+                d10_profile_airborne_taunorm_Cluster{i}(j,k) = mean(d10_taunormbin(~isnan(d10_taunormbin))); %get mean d10 for taunorm bin
                 d50_profile_airborne_taunorm_Cluster{i}(j,k) = mean(d50_taunormbin(~isnan(d50_taunormbin))); %get mean d50 for taunorm bin
                 d90_profile_airborne_taunorm_Cluster{i}(j,k) = mean(d90_taunormbin(~isnan(d90_taunormbin))); %get mean d90 for taunorm bin
             end
         end
     end
+    d10norm_profile_airborne_taunorm_Cluster{i} = d10_profile_airborne_taunorm_Cluster{i}./d50_bar_surface_Cluster(i); %compute binned d10_air/d50_surface profiles
+    d50norm_profile_airborne_taunorm_Cluster{i} = d50_profile_airborne_taunorm_Cluster{i}./d50_bar_surface_Cluster(i); %compute binned d50_air/d50_surface profiles
+    d90norm_profile_airborne_taunorm_Cluster{i} = d90_profile_airborne_taunorm_Cluster{i}./d50_bar_surface_Cluster(i); %compute binned d90_air/d50_surface profiles
 end
 
 %%

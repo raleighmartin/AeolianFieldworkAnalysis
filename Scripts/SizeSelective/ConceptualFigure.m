@@ -181,21 +181,90 @@ marker_length = '<';
 color_sizefraction = [0 0 0];
 marker_sizefraction = 'hexagram';
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% INFORMATION ABOUT SUBPLOT POSITIONS %
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%
+% GENERAL PLOT ONLY %
+%%%%%%%%%%%%%%%%%%%%%
+
+%modify lines slightly for plotting - get x-values
+x1 = x(ind_saltationpromotion);
+x2 = x(ind_length);
+x3 = x(ind_sizefraction);
+
+%modify lines slightly for plotting - get y-values and scale to axes
+scalingfactor = 2;
+y1 = y_saltationpromotion(ind_saltationpromotion)*scalingfactor;
+y2 = y_length(ind_length)*scalingfactor;
+y3 = y_sizefraction(ind_sizefraction)*scalingfactor;
+
+%modify lines slightly for plotting - smooth out inflection points
+ind_1 = find(round(diff(diff(y1)),2)~=0)+1; %get indices of inflection pts
+for j = 1:length(ind_1)
+    y1(ind_1(j)) = mean([y1(ind_1(j)),mean(y1([-1 1]+ind_1(j)))]); %smooth inflection point
+end
+ind_2 = find(round(diff(diff(y2)),2)~=0)+1; %get indices of inflection pts
+for j = 1:length(ind_2)
+    y2(ind_2(j)) = mean([y2(ind_2(j)),mean(y2([-1 1]+ind_2(j)))]); %smooth inflection point
+end
+ind_3 = find(round(diff(diff(y3)),2)~=0)+1; %get indices of inflection pts
+for j = 1:length(ind_3)
+    y3(ind_3(j)) = mean([y3(ind_3(j)),mean(y3([-1 1]+ind_3(j)))]); %smooth inflection point
+end
+
+%initialize figure
+h1 = figure(1); cla; hold on;
+h1_axis = findall(h1,'type','axes');
+h1_position = get(h1_axis,'position');
+set(h1_axis,'position',(h1_position.*[1 1 0.98 1.07])+[0.07 0.01 0 0]);
+
+%plot dividing lines and format plot
+plot([0.2 2],[0 0],'k','LineWidth',1);
+plot([0.4 0.4],[-1 1],'k--','LineWidth',1);
+plot([0.8 0.8],[-1 1],'k--','LineWidth',1);
+text(0.28,0.88,'Fine','HorizontalAlignment','Center','FontSize',PlotFont);
+text(0.56,0.88,'Medium','HorizontalAlignment','Center','FontSize',PlotFont);
+text(1.05,0.88,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
+xlim([0.2 1.5]);
+ylim([-1 1]);
+set(gca,'XScale','log','YTick',[],'Box','Off','FontSize',PlotFont);
+set(gca,'xtick',[0.2:0.1:1, 1.1:0.1:1.5]);
+set(gca,'xticklabels',{'0.2','','0.4','','','','0.8','','','','','','','1.5'});
+
+%plot conceptual lines
+h1_1 = plot(x1,y1,'Marker',marker_saltationpromotion,'MarkerSize',5,'LineWidth',1.0,'Color',color_saltationpromotion); %promotion to saltation
+h1_2 = plot(x2,y2,'Marker',marker_length,'MarkerSize',5,'LineWidth',1.0,'Color',color_length); %trajectory length
+h1_3 = plot(x3,y3,'LineWidth',2.0,'Color',color_sizefraction); %combined - size fraction
+
+h1_legend = legend([h1_1 h1_2 h1_3],...
+    'Promotion to saltation','Travel length','Combined effect');
+
+set(h1_legend,'Location','Southwest','FontSize',10);       
+xlabel('Normalized grain size, $$d_i / d_{50,bed}$$','Interpreter','Latex','FontSize',PlotFont);
+ylabel({'Enhance';'          $$\Uparrow$$';...
+    '\textbf{Effect on}';'\textbf{size-sel.}';'\textbf{mobility}';...
+    '          $$\Downarrow$$';'Reduce'},...
+    'Interpreter','Latex','FontSize',PlotFont);
+set(get(gca,'YLabel'),'Rotation',0,'VerticalAlignment','Middle');
+set(get(gca,'YLabel'),'Position',get(get(gca,'YLabel'),'Position')+[-0.05 0 0])
+
+%print figure
+set(gcf,'PaperUnits','inches','PaperSize',[5 4],'PaperPosition',[0 0 5 4],'PaperPositionMode','Manual');
+print([folder_Plots,'ConceptualFigure_Simple.png'],'-dpng');
+
+%%%%%%%%%%%%%%%%%%%%%
+% GENERATE SUBPLOTS %
+%%%%%%%%%%%%%%%%%%%%%
+
+%information about subplot positions
 subplot_positions = {...
     [0.15 0.7 0.82 0.29],...
     [0.15 0.37 0.31 0.27],...
     [0.64 0.37 0.31 0.27],...
     [0.15 0.06 0.82 0.24]};
 
-%%%%%%%%%%%%%%%%%%%%%
-% GENERATE SUBPLOTS %
-%%%%%%%%%%%%%%%%%%%%%
-
 %initialize plot and subplots
-figure(1);
+figure(2);
 h_subplot = gobjects(4,1);
 
 for i = 1:4
@@ -215,7 +284,8 @@ for i = 1:4
     end
     xlim([0.2 1.5]);
     ylim([-1 1]);
-    set(gca,'XScale','log','YTick',[],'Box','On','FontSize',PlotFont);
+    %set(gca,'XScale','log','YTick',[],'Box','On','FontSize',PlotFont);
+    set(gca,'XScale','log','YTick',[],'Box','Off','FontSize',PlotFont);
     set(gca,'xtick',[0.2:0.1:1, 1.1:0.1:1.5]);
     set(gca,'xticklabels',{'0.2','','0.4','','','','0.8','','','','','','','1.5'});
 

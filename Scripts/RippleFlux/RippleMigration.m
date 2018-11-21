@@ -8,14 +8,15 @@ close all;
 phi = 0.65; %volume fraction of soil
 
 %% information about field sites and distance sensors
-Sites = {'RanchoGuadalupe';'Oceano'};
+%Sites = {'RanchoGuadalupe';'Oceano'};
+Sites = {'Oceano'};
 UpwindSensor = {'L1';'L2'};
 DownwindSensor = {'L2';'L1'};
 delta_x_Sensor = [0.08 0.06]; %distance separation of upwind/downwind distance sensors (m)
 N_Sites = length(Sites);
 
 %% information about where to load data and save plots
-folder_ProcessedData = '../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
+folder_ProcessedData = '../../../../Google Drive/Data/AeolianFieldwork/Processed/'; %folder for retrieving processed data
 folder_AnalysisData = '../AnalysisData/'; %folder for storing outputs of this analysis
 SaveFullData_Path = strcat(folder_ProcessedData,'StressFluxWindows_all');
 SaveData_Path = strcat(folder_AnalysisData,'StressFluxWindows_all');
@@ -25,7 +26,7 @@ Data = cell(N_Sites,1);
 Metadata = cell(N_Sites,1);
 for i = 1:N_Sites
     ProcessedData_Path = strcat(folder_ProcessedData,'ProcessedData_',Sites{i});
-    Metadata_Path = strcat(folder_ProcessedData,'Metadata_',Sites{i});
+    Metadata_Path = strcat(folder_ProcessedData,'/',Sites{i},'/','Metadata_',Sites{i});
     Data{i} = load(ProcessedData_Path); %load processed data
     Metadata{i} = load(Metadata_Path); %load metadata
 end

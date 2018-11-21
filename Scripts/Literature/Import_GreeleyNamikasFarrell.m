@@ -1,4 +1,4 @@
-%% SCRIPT TO IMPORT GREELEY (1996), NAMIKAS (2003), AND FARRELL (2012) FROM TEXT AND XLS FILES
+%% SCRIPT TO IMPORT GREELEY (1996), NAMIKAS (2003 / 2006), AND FARRELL (2012) FROM TEXT AND XLS FILES
 clearvars; %initialize
 
 
@@ -52,6 +52,7 @@ ind_Namikas03_small = 1:3;
 ind_Namikas03_med = 4:7;
 ind_Namikas03_large = 8:9;
 ust_Namikas06 = [0.30, 0.36, 0.55]; %shear velocity (m/s) - mean for each set of indices
+sigma_ust_Namikas06 = ust_Namikas06*ust_relerr; %calculate u* uncertainty based on assumed relative error
 z_bottom_Namikas06 = 1e-2*[0 1 2 4 7 13]'; %bottom of trap (m)
 z_top_Namikas06 = 1e-2*[1 2 4 7 13 33]'; %top of trap (m)
 H_Namikas06 = z_top_Namikas06-z_bottom_Namikas06; %heights of traps (m)

@@ -31,788 +31,320 @@ addpath(folder_Functions); %point MATLAB to location of functions
 %%%%%%%%%%%%%%%%%
 
 %% plotting information
-PlotFont = 12; %font for labels
+PlotFont = 10; %font for labels
 LineWidth_Plot = 1; %width of lines
-Marker_Cluster = {'s','d','o','p','h','^','v','>'}; %markers for Clusters
-Color_Cluster = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250],[0.4940 0.1840 0.5560],[0.4660 0.6740 0.1880], [0.3010 0.7450 0.9330], [0.6350 0.0780 0.1840]}; %colors for sites / clusters
-Label_Cluster = {'(a)','(b)','(c)','(d)','(e)','(f)','(g)','(h)'}; %markers for Clusters
-Marker_bin = {'o','s','d','^','v','>','<','p','h','x','*','+'}; %markers for bins
-
-%% colors for bins by wind strength or other property
-Color_bin = cell(N_bins,1);
-for i = 1:N_bins
-    Color_bin{i} = [0, (i-1)/(N_bins-1), 1-(i-1)/(N_bins-1)];
-end
-Color_ust_bin = cell(N_ust_bins,1);
-for i = 1:N_ust_bins
-    Color_ust_bin{i} = [(i-1)/(N_ust_bins-1), 0, 1-(i-1)/(N_ust_bins-1)];
-end
-Color_ustnorm_bin = cell(N_ustnorm_bins,1);
-for i = 1:N_ustnorm_bins
-    Color_ustnorm_bin{i} = [(i-1)/(N_ustnorm_bins-1), 0, 1-(i-1)/(N_ustnorm_bins-1)];
-end
-Color_taunorm_bin = cell(N_taunorm_bins,1);
-for i = 1:N_taunorm_bins
-    Color_taunorm_bin{i} = [(i-1)/(N_taunorm_bins-1), 0, 1-(i-1)/(N_taunorm_bins-1)];
-end
-Color_z_Namikas06 = cell(N_z_Namikas06,1);
-for i = 1:N_z_Namikas06
-    Color_z_Namikas06{i} = [(i-1)/(N_z_Namikas06-1), 0, 1-(i-1)/(N_z_Namikas06-1)];
-end
+Marker_bin = {'o','s','d','^','v','>','<'}; %markers for bins
+Color_bin = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250],[0.4940 0.1840 0.5560],[0.4660 0.6740 0.1880], [0.3010 0.7450 0.9330], [0.6350 0.0780 0.1840]}; %colors for bins
 
 %%
 %%%%%%%%%
 % PLOTS %
 %%%%%%%%%
 
-% %% plot variation in reference grain sizes with saltation flux
-% figure(1); clf;
-% for i = 1:N_Cluster
-%     subplot(round(N_Cluster/2),2,i); hold on;
-%     ind_usable = ind_usable_profile_Cluster{i};
-%     h90_air = plot(taunorm_profile_Cluster{i}(ind_usable),d90_profilebar_airborne_Cluster{i}(ind_usable),'^');
-%     h50_air = plot(taunorm_profile_Cluster{i}(ind_usable),d50_profilebar_airborne_Cluster{i}(ind_usable),'o');
-%     h10_air = plot(taunorm_profile_Cluster{i}(ind_usable),d10_profilebar_airborne_Cluster{i}(ind_usable),'v');
-%     c90 = get(h90_air,'Color');
-%     c50 = get(h50_air,'Color');
-%     c10 = get(h10_air,'Color');
-%     h90_sfc = plot([1 4],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
-%     h50_sfc = plot([1 4],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
-%     h10_sfc = plot([1 4],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
-%     xlim([1 4]);
-%     ylim([0 0.9]);
-%     text(1.05, 0.8, Label_Cluster{i},'FontSize',12);
-%     if i==N_Cluster || i==N_Cluster-1
-%         xlabel('shear stress ratio, $$\tau/\tau_{it}$$','Interpreter','Latex')
-%     end
-%     if mod(i,2) == 1
-%         ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
-%     end
-%     if i == N_Cluster - 1
-%         legend([h90_air, h50_air, h10_air], 'd_{90,air}','d_{50,air}','d_{10,air}');
-%     elseif i == N_Cluster
-%         legend([h90_sfc, h50_sfc, h10_sfc], 'd_{90,bed}','d_{50,bed}','d_{10,bed}');
-%     end
-%     title(ClusterNames{i});
+% %% plot tau/tau_it-conditioned d_ref,air/d_50,sfc versus z/z_q
+% % Fig 1: d_ref = d_50
+% % Fig 2: d_ref = d_10
+% % Fig 3: d_ref = d_90
 % 
-%     set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On');
-% end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[7 9],'PaperPosition',[0 0 7 9],'PaperPositionMode','Manual');
-% print([folder_Plots,'IndexGrainSize_NormShearStress.png'],'-dpng');
-% 
-% 
-% %% plot variation in reference grain sizes with shear velocity
-% figure(2); clf;
-% for i = 1:N_Cluster
-%     subplot(2,round(N_Cluster/2),i); hold on;
-%     h90_air = plot(ust_profile_Cluster{i},d90_profilebar_airborne_Cluster{i},'^');
-%     h50_air = plot(ust_profile_Cluster{i},d50_profilebar_airborne_Cluster{i},'o');
-%     h10_air = plot(ust_profile_Cluster{i},d10_profilebar_airborne_Cluster{i},'v');
-%     hbar_air = plot(ust_profile_Cluster{i},dbar_profilebar_airborne_Cluster{i},'s');
-%     c90 = get(h90_air,'Color');
-%     c50 = get(h50_air,'Color');
-%     c10 = get(h10_air,'Color');
-%     cbar = get(hbar_air,'Color');
-%     h90_bed = plot([0.2 0.6],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
-%     h50_bed = plot([0.2 0.6],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
-%     h10_bed = plot([0.2 0.6],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
-%     hbar_bed = plot([0.2 0.6],dbar_bar_surface_Cluster(i)*[1 1],'Color',cbar);
-%     xlim([0.2 0.6]);
-%     ylim([0 0.9]);
-%     if i>round(N_Cluster/2)
-%         xlabel('shear velocity, $$u_{*}$$ (m s$$^{-1}$$)','Interpreter','Latex')
-%     end
-%     if mod(i,round(N_Cluster/2)) == 1
-%         ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
-%     end
-%     if i == N_Cluster - 1
-%         legend([h90_air, h50_air, h10_air,hbar_air], 'd_{90,air}','d_{50,air}','d_{10,air}','d_{bar,air}');
-%     elseif i == N_Cluster
-%         legend([h90_bed, h50_bed, h10_bed,hbar_bed], 'd_{90,bed}','d_{50,bed}','d_{10,bed}','d_{bar,bed}');
-%     end
-%     title(ClusterNames{i});
-%     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-% end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[6 7],'PaperPosition',[0 0 6 7],'PaperPositionMode','Manual');
-% print([folder_Plots,'ReferenceGrainSize_ShearVelocity.png'],'-dpng');
-% 
-% 
-% %% plot variation in reference grain sizes with shear stress
-% figure(3); clf;
-% for i = 1:N_Cluster
-%     subplot(2,round(N_Cluster/2),i); hold on;
-%     
-%     %plot airborne sizes
-%     h90_air = plot(tau_profile_Cluster{i},d90_profilebar_airborne_Cluster{i},'^');
-%     h50_air = plot(tau_profile_Cluster{i},d50_profilebar_airborne_Cluster{i},'o');
-%     h10_air = plot(tau_profile_Cluster{i},d10_profilebar_airborne_Cluster{i},'v');
-%     hbar_air = plot(tau_profile_Cluster{i},dbar_profilebar_airborne_Cluster{i},'s');
-%     
-%     %get info about airborne plots
-%     c90 = get(h90_air,'Color');
-%     c50 = get(h50_air,'Color');
-%     c10 = get(h10_air,'Color');
-%     cbar = get(hbar_air,'Color');
-%     
-%     %plot airborne uncertainties
-%     for j = 1:length(tau_profile_Cluster{i})
-%         plot(tau_profile_Cluster{i}(j)*[1 1],d90_profilebar_airborne_Cluster{i}(j)*[1 1]+d90_profilesigma_airborne_Cluster{i}(j)*[-1 1],'Color',c90);
-%         plot(tau_profile_Cluster{i}(j)*[1 1],d50_profilebar_airborne_Cluster{i}(j)*[1 1]+d50_profilesigma_airborne_Cluster{i}(j)*[-1 1],'Color',c50);
-%         plot(tau_profile_Cluster{i}(j)*[1 1],d10_profilebar_airborne_Cluster{i}(j)*[1 1]+d10_profilesigma_airborne_Cluster{i}(j)*[-1 1],'Color',c10);
-%         plot(tau_profile_Cluster{i}(j)*[1 1],dbar_profilebar_airborne_Cluster{i}(j)*[1 1]+dbar_profilesigma_airborne_Cluster{i}(j)*[-1 1],'Color',cbar);
-%     end
-%         
-%     %make surface plots
-%     h90_bed = plot([0 0.45],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
-%     h50_bed = plot([0 0.45],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
-%     h10_bed = plot([0 0.45],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
-%     hbar_bed = plot([0 0.45],dbar_bar_surface_Cluster(i)*[1 1],'Color',cbar);       
-%     xlim([0 0.45]);
-%     ylim([0 0.9]);
-%     if i>round(N_Cluster/2)
-%         xlabel('shear stress, $$\tau$$ (Pa)','Interpreter','Latex')
-%     end
-%     if mod(i,round(N_Cluster/2)) == 1
-%         ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
-%     end
-%     if i == N_Cluster - 1
-%         legend([h90_air, h50_air, h10_air,hbar_air], 'd_{90,air}','d_{50,air}','d_{10,air}','d_{bar,air}');
-%     elseif i == N_Cluster
-%         legend([h90_bed, h50_bed, h10_bed,hbar_bed], 'd_{90,bed}','d_{50,bed}','d_{10,bed}','d_{bar,bed}');
-%     end
-%     title(ClusterNames{i});
-%     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-% end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[10 7],'PaperPosition',[0 0 10 7],'PaperPositionMode','Manual');
-% print([folder_Plots,'ReferenceGrainSize_ShearStress.png'],'-dpng');
-% 
-% %% plot variation in reference grain sizes with height
-% figure(4); clf;
-% for i = 1:N_Cluster
-%     subplot(2,round(N_Cluster/2),i); hold on;
-%     h90_air = plot(z_airborne_Cluster{i},d90_airborne_Cluster{i},'^');
-%     h50_air = plot(z_airborne_Cluster{i},d50_airborne_Cluster{i},'o');
-%     h10_air = plot(z_airborne_Cluster{i},d10_airborne_Cluster{i},'v');
-%     c90 = get(h90_air,'Color');
-%     c50 = get(h50_air,'Color');
-%     c10 = get(h10_air,'Color');
-%     h90_sfc = plot([0 0.6],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
-%     h50_sfc = plot([0 0.6],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
-%     h10_sfc = plot([0 0.6],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
-%     xlim([0 0.6]);
-%     ylim([0 0.9]);
-%     if i>round(N_Cluster/2)
-%         xlabel('height above surface, $$z$$ (m)','Interpreter','Latex')
-%     end
-%     if mod(i,round(N_Cluster/2)) == 1
-%         ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
-%     end
-%     if i == N_Cluster - 1
-%         legend([h90_air, h50_air, h10_air], 'd_{90,air}','d_{50,air}','d_{10,air}');
-%     elseif i == N_Cluster
-%         legend([h90_sfc, h50_sfc, h10_sfc], 'd_{90,surface}','d_{50,surface}','d_{10,surface}');
-%     end
-%     title(ClusterNames{i});
-%     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-% end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[6 5],'PaperPosition',[0 0 6 5],'PaperPositionMode','Manual');
-% print([folder_Plots,'ReferenceGrainSize_Height.png'],'-dpng');
-% 
-% 
-% %% plot variation in reference grain sizes with normalized height
-% figure(5); clf;
-% for i = 1:N_Cluster
-%     subplot(2,round(N_Cluster/2),i); hold on;
-%     h90_air = plot(znorm_airborne_Cluster{i},d90_airborne_Cluster{i},'^');
-%     h50_air = plot(znorm_airborne_Cluster{i},d50_airborne_Cluster{i},'o');
-%     h10_air = plot(znorm_airborne_Cluster{i},d10_airborne_Cluster{i},'v');
-%     c90 = get(h90_air,'Color');
-%     c50 = get(h50_air,'Color');
-%     c10 = get(h10_air,'Color');
-%     h90_sfc = plot([0 7],d90_bar_surface_Cluster(i)*[1 1],'Color',c90);
-%     h50_sfc = plot([0 7],d50_bar_surface_Cluster(i)*[1 1],'Color',c50);
-%     h10_sfc = plot([0 7],d10_bar_surface_Cluster(i)*[1 1],'Color',c10);
-%     xlim([0 7]);
-%     ylim([0 0.9]);
-%     if i>round(N_Cluster/2)
-%         xlabel('norm. ht above sfc., $$z/z_{q}$$','Interpreter','Latex')
-%     end
-%     if mod(i,round(N_Cluster/2)) == 1
-%         ylabel('grain diameter, $$d$$ (mm)','Interpreter','Latex');
-%     end
-%     if i == N_Cluster - 1
-%         legend([h90_air, h50_air, h10_air], 'd_{90,air}','d_{50,air}','d_{10,air}');
-%     elseif i == N_Cluster
-%         legend([h90_sfc, h50_sfc, h10_sfc], 'd_{90,surface}','d_{50,surface}','d_{10,surface}');
-%     end
-%     title(ClusterNames{i});
-%     set(gca,'XMinorTick','On','YMinorTick','On','Box','On');
-% end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[6 5],'PaperPosition',[0 0 6 5],'PaperPositionMode','Manual');
-% print([folder_Plots,'ReferenceGrainSize_NormHeight.png'],'-dpng');
-
-% %% plot variation in airborne size distributions with height
-% % note - don't include top bin, as its midpoint is a bit uncertain
-% figure(6); clf;
-% 
-% %initialize subplots
-% h_subplot = gobjects(N_Cluster,1);
-% 
-% for i = 1:N_Namikas06
-%     
-%     %initialize subplot
-%     if i == 1
-%         h_subplot(1) = subplot('position',[0.1 0.1 0.25 0.85]); hold on;
-%     elseif i == 2
-%         h_subplot(2) = subplot('position',[0.41 0.1 0.25 0.85]); hold on;
-%     else
-%         h_subplot(3) = subplot('position',[0.72 0.1 0.25 0.85]); hold on;
-%     end
-%         
-%     %plot airborne distribution
-%     for k = 1:N_z_Namikas06
-%         plot(d_Namikas06(1:end-1),...
-%             dVdlogd_Namikas06{i}(k,1:end-1),...
-%             ['-',Marker_bin{k}],'MarkerSize',3,'Color',Color_z_Namikas06{k})
+% for n = 1:3
+%     if n == 1
+%         drefnorm_profile_airborne_Namikas06 = d50norm_profile_airborne_Namikas06;
+%         drefnorm_profile_airborne_taunorm_Farrell12 = d50norm_profile_airborne_taunorm_Farrell12;
+%         drefnorm_profile_airborne_taunorm_Cluster = d50norm_profile_airborne_taunorm_Cluster;
+%     elseif n == 2
+%         drefnorm_profile_airborne_Namikas06 = d10norm_profile_airborne_Namikas06;
+%         drefnorm_profile_airborne_taunorm_Farrell12 = d10norm_profile_airborne_taunorm_Farrell12;
+%         drefnorm_profile_airborne_taunorm_Cluster = d10norm_profile_airborne_taunorm_Cluster;
+%     elseif n == 3
+%         drefnorm_profile_airborne_Namikas06 = d90norm_profile_airborne_Namikas06;
+%         drefnorm_profile_airborne_taunorm_Farrell12 = d90norm_profile_airborne_taunorm_Farrell12;
+%         drefnorm_profile_airborne_taunorm_Cluster = d90norm_profile_airborne_taunorm_Cluster;
 %     end
 %     
-%     %format plot
-%     set(gca,'XScale','log','YScale','log','YMinorTick','On','Box','On');
-%     xlim([0.06, 2]);
-%     set(gca,'xtick',[0.06:0.01:0.1,0.2:0.1:2]);
-%     set(gca,'xticklabels',{'0.06','','','','0.1','0.2','','0.4','','','0.7','','','1','','','','','','','','','','2'});
-%     ylim([1e-3 1e1]);
+%     %initialize figure and subplots
+%     figure(n); clf;
+%     h_subplot = gobjects(8,1);
 % 
-%     %label plot
-%     htitle = title(['u_{*} = ',num2str(ust_Namikas06(i)),' m/s']);
-%     set(htitle,'Position',[0.35,3.5]); %set title below edge of box to accommodate second axis
-%     xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
-%     if mod(i,3) == 1
-%         ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
-%     end
-%     
-%     %create legend
-%     legend_items = cell(N_z_Namikas06,1);
-%     for j = 1:N_z_Namikas06
-%         %legend_items{j} = [num2str(z_bottom_Namikas06(j),'%10.2f'),' < z \leq ',num2str(z_top_Namikas06(j),'%10.2f')];
-%         legend_items{j} = [num2str(znorm_bottom_Namikas06(j),'%10.2f'),' < z/z_{q} \leq ',num2str(znorm_top_Namikas06(j),'%10.2f')];
-%     end
-%     if i == 1
-%         h_legend = legend(legend_items,'Location','SouthWest');
-%         set(h_legend,'FontSize',8);
-%     end
-% end
-% 
-% %print plot - landscape
-% set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
-% print([folder_Plots,'GSD_Namikas06_z.png'],'-dpng');
-
-
-%% plot variation in mean airborne grain sizes (normalized by d50 surface)
-% versus height (normalized by z_q)
-figure(7); clf;
-
-%initialize subplots
-h_subplot = gobjects(8,1);
-
-% Namikas
-h_subplot(1) = subplot('position',[0.07 0.73 0.25 0.23]); hold on;
-
-%plot airborne profiles
-for i = 1:N_Namikas06
-    plot(znorm_Namikas06,d50_airborne_Namikas06{i}./...
-        mean(d50_bar_surface_Cluster(3:6)),[Marker_bin{i},'-']);
-end
-%for normalization, use mean surface d50 from all of the Oceano
-%clusters
-
-%format plot
-htitle = title('Namikas 2006');
-set(gca,'YMinorTick','On','Box','On');
-ylabel('$${d}_{50,air}/{d}_{50,bed}$$','Interpreter','Latex')
-xlim([0 6]);
-ylim([0.5 1]);
-
-%create legend
-rho_Namikas06 = 1.16; %kg/m^3
-tau_Namikas06 = rho_Namikas06.*ust_Namikas06.^2; %Pa
-
-legend_items = cell(length(ust_Namikas06),1);
-for i = 1:N_Namikas06
-    %legend_items{i} = ['u_{*} = ',num2str(ust_Namikas06(i),'%10.2f'),' m/s'];
-    legend_items{i} = ['\tau = ',num2str(tau_Namikas06(i),'%10.2f'),' Pa'];
-end
-h_legend = legend(legend_items,'Location','NorthEast');
-set(h_legend,'FontSize',8);
-
-%% Farrell
-h_subplot(2) = subplot('position',[0.41 0.73 0.25 0.23]); hold on;
-
-%plot airborne profiles
-for i = 1:N_ustbins_Farrell12
-    plot(znorm_airborne_ustbin_Farrell12{i},dbar_airborne_ustbin_Farrell12{i}./...
-        mean(d50_bar_surface_Cluster(1)),[Marker_bin{i},'-']);
-end
-%for normalization, use mean surface grain size from Jericoacoara
-
-%format plot
-htitle = title('Farrell et al., 2012');
-set(gca,'YMinorTick','On','Box','On');
-ylabel('$$\bar{d}_{air}/{d}_{50,bed}$$','Interpreter','Latex')
-xlim([0 6]);
-ylim([0.5 1]);
-
-%create legend
-rho_Farrell12 = 1.16; %kg/m^3
-tau_lower_Farrell12 = rho_Farrell12.*ust_lower_Farrell12.^2; %Pa
-tau_upper_Farrell12 = rho_Farrell12.*ust_upper_Farrell12.^2; %Pa
-
-legend_items = cell(length(ust_lower_Farrell12),1);
-for i = 1:N_ustbins_Farrell12
-    %legend_items{i} = [num2str(ust_lower_Farrell12(i),'%10.2f'),'\leq u_{*} \leq',num2str(ust_upper_Farrell12(i),'%10.2f'),' m/s'];
-    legend_items{i} = [num2str(tau_lower_Farrell12(i),'%10.2f'),'\leq \tau \leq',num2str(tau_upper_Farrell12(i),'%10.2f'),' Pa'];
-end
-h_legend = legend(legend_items,'Location','NorthEast');
-set(h_legend,'FontSize',8);
-
-
-%% our data
-for i = 1:N_Cluster
-    if i == 1
-        h_subplot(3) = subplot('position',[0.07 0.41 0.25 0.23]); hold on;
-    elseif i == 2
-        h_subplot(4) = subplot('position',[0.41 0.41 0.25 0.23]); hold on;
-    elseif i == 3 %make this subplot bigger to accommodate legend
-        h_subplot(5) = subplot('position',[0.72 0.41 0.25 0.49]); hold on;
-    elseif i == 4
-        h_subplot(6) = subplot('position',[0.07 0.09 0.25 0.23]); hold on;
-    elseif i == 5
-        h_subplot(7) = subplot('position',[0.41 0.09 0.25 0.23]); hold on;
-    else
-        h_subplot(8) = subplot('position',[0.72 0.09 0.25 0.23]); hold on;
-    end
-
-    %plot airborne profiles
-    for j = 1:N_taunorm_bins
-        ind_plot = find(~isnan(dbar_profile_airborne_taunorm_Cluster{i}(j,:)));
-        if ~isempty(ind_plot) %plot only profiles with data
-            plot(znorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
-                d50_profile_airborne_taunorm_Cluster{i}(j,ind_plot)./...
-                d50_bar_surface_Cluster(i),[Marker_bin{j},'-']);
-        else %for those profiles with no data, create a dummy plot so that legend renders properly
-            plot([0 0],[0 0],[Marker_bin{j},'-']); 
-        end
-    end
-
-    %format plot
-    htitle = title(ClusterNames{i});
-    set(gca,'YMinorTick','On','Box','On');
-    if mod(i,3) == 1
-        ylabel('$$d_{50,air}/d_{50,bed}$$','Interpreter','Latex')
-    end
-    if i>=2*round(N_Cluster/2)-2
-        xlabel('Normalized height, $$z/z_q$$','Interpreter','Latex')
-    end
-    xlim([0 6]);
-    ylim([0.5 1]);
-   
-    %create legend
-    legend_items = cell(N_taunorm_bins,1);
-    for j = 1:N_taunorm_bins
-        if j == 1
-            legend_items{j} = ['\tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];       
-        else
-            legend_items{j} = [num2str(taunorm_min_bins(j),'%10.1f'),' < \tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];
-        end
-    end
-    if i == 3
-        h_legend = legend(legend_items,'Location','NorthOutside');
-        set(h_legend,'FontSize',8);
-    end
-end
-
-%print plot
-set(gcf,'PaperUnits','inches','PaperSize',[7 5],'PaperPosition',[0 0 7 5],'PaperPositionMode','Manual');
-print([folder_Plots,'d50_profile_comparison.png'],'-dpng');
-
-
-%% plot variation in mean airborne grain sizes (normalized by d50 surface) - flipped axes
-% versus height (normalized by z_q)
-figure(8); clf;
-
-%initialize subplots
-h_subplot = gobjects(8,1);
-
-% Namikas
-h_subplot(1) = subplot('position',[0.05 0.73 0.28 0.23]); hold on;
-
-%plot airborne profiles
-for i = 1:N_Namikas06
-    plot(d50_airborne_Namikas06{i}./...
-        mean(d50_bar_surface_Cluster(3:6)),znorm_Namikas06,...
-        [Marker_bin{i},'-']);
-end
-%for normalization, use mean surface d50 from all of the Oceano
-%clusters
-
-%format plot
-htitle = title('Namikas, 2006');
-set(gca,'XMinorTick','On','Box','On');
-ylabel('Normalized ht., $$z/<z_q>$$','Interpreter','Latex')
-ylim([0 6]);
-xlim([0.4 1.0]);
-text(0.42,5.5,'(a)');
-
-%create legend
-rho_Namikas06 = 1.16; %kg/m^3
-tau_Namikas06 = rho_Namikas06.*ust_Namikas06.^2; %Pa
-
-legend_items = cell(length(ust_Namikas06),1);
-for i = 1:N_Namikas06
-    %legend_items{i} = ['u_{*} = ',num2str(ust_Namikas06(i),'%10.2f'),' m/s'];
-    legend_items{i} = ['\tau = ',num2str(tau_Namikas06(i),'%10.2f'),' Pa'];
-end
-h_legend = legend(legend_items,'Location','NorthEast');
-set(h_legend,'FontSize',8);
-
-%% Farrell
-h_subplot(2) = subplot('position',[0.38 0.73 0.28 0.23]); hold on;
-
-%plot airborne profiles
-for i = 1:N_ustbins_Farrell12
-    plot(dbar_airborne_ustbin_Farrell12{i}./...
-        mean(d50_bar_surface_Cluster(1)),...
-        znorm_airborne_ustbin_Farrell12{i},[Marker_bin{i},'-']);
-end
-%for normalization, use mean surface grain size from Jericoacoara
-
-%format plot
-htitle = title('Farrell 2012');
-set(gca,'XMinorTick','On','Box','On');
-ylim([0 6]);
-xlim([0.4 1.0]);
-text(0.42,5.5,'(b)');
-
-%create legend
-rho_Farrell12 = 1.16; %kg/m^3
-tau_lower_Farrell12 = rho_Farrell12.*ust_lower_Farrell12.^2; %Pa
-tau_upper_Farrell12 = rho_Farrell12.*ust_upper_Farrell12.^2; %Pa
-
-legend_items = cell(length(ust_lower_Farrell12),1);
-for i = 1:N_ustbins_Farrell12
-    %legend_items{i} = [num2str(ust_lower_Farrell12(i),'%10.2f'),'\leq u_{*} \leq',num2str(ust_upper_Farrell12(i),'%10.2f'),' m/s'];
-    legend_items{i} = [num2str(tau_lower_Farrell12(i),'%10.2f'),'\leq \tau \leq',num2str(tau_upper_Farrell12(i),'%10.2f'),' Pa'];
-end
-h_legend = legend(legend_items,'Location','NorthEast');
-set(h_legend,'FontSize',8);
-
-
-%% our data
-panel_labels = {'(c)','(d)','(e)','(f)','(g)','(h)'};
-for i = 1:N_Cluster
-    if i == 1
-        h_subplot(3) = subplot('position',[0.05 0.41 0.28 0.23]); hold on;
-    elseif i == 2
-        h_subplot(4) = subplot('position',[0.38 0.41 0.28 0.23]); hold on;
-    elseif i == 3 %make this subplot bigger to accommodate legend
-        h_subplot(5) = subplot('position',[0.71 0.41 0.28 0.49]); hold on;
-    elseif i == 4
-        h_subplot(6) = subplot('position',[0.05 0.09 0.28 0.23]); hold on;
-    elseif i == 5
-        h_subplot(7) = subplot('position',[0.38 0.09 0.28 0.23]); hold on;
-    else
-        h_subplot(8) = subplot('position',[0.71 0.09 0.28 0.23]); hold on;
-    end
-
-    %plot airborne profiles
-    for j = 1:N_taunorm_bins
-        ind_plot = find(~isnan(dbar_profile_airborne_taunorm_Cluster{i}(j,:)));
-        if ~isempty(ind_plot) %plot only profiles with data
-            plot(d50_profile_airborne_taunorm_Cluster{i}(j,ind_plot)./...
-                d50_bar_surface_Cluster(i),...
-                znorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
-                [Marker_bin{j},'-']);
-        else %for those profiles with no data, create a dummy plot so that legend renders properly
-            plot([0 0],[0 0],[Marker_bin{j},'-']); 
-        end
-    end
-
-    %format plot
-    htitle = title(ClusterNames{i});
-    set(gca,'XMinorTick','On','Box','On');
-    if mod(i,3) == 1
-        ylabel('Norm. ht., $$z/<z_q>$$','Interpreter','Latex')
-    end
-    if i>=2*round(N_Cluster/2)-2
-        xlabel('Norm. airborne g.s., $${d}_{ref,air}/{d}_{50,bed}$$','Interpreter','Latex')
-    end
-    ylim([0 6]);
-    xlim([0.4 1.0]);
-   
-    %create legend
-    legend_items = cell(N_taunorm_bins,1);
-    for j = 1:N_taunorm_bins
-        if j == 1
-            legend_items{j} = ['\tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];       
-        else
-            legend_items{j} = [num2str(taunorm_min_bins(j),'%10.1f'),' < \tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];
-        end
-    end
-    if i == 3
-        h_legend = legend(legend_items,'Location','NorthOutside');
-        set(h_legend,'FontSize',8);
-    end
-    
-    text(0.42,5.5,panel_labels{i});
-end
-
-%print plot
-set(gcf,'PaperUnits','inches','PaperSize',[8 5.5],'PaperPosition',[0 0 8 5.5],'PaperPositionMode','Manual');
-print([folder_Plots,'d50_profile_comparison_flipped.png'],'-dpng');
-
-
-
-% %% plot variation in mean airborne grain sizes (normalized by mean surface)
-% % versus height (normalized by z_q)
-% figure(9); clf;
-% 
-% %initialize subplots
-% h_subplot = gobjects(8,1);
-% 
-% % Namikas
-% h_subplot(1) = subplot('position',[0.1 0.7 0.25 0.24]); hold on;
-% 
-% %plot airborne profiles
-% for i = 1:N_Namikas06
-%     plot(znorm_Namikas06,dbar_airborne_Namikas06{i}./...
-%         mean(dbar_bar_surface_Cluster(3:6)),[Marker_bin{i},'-']);
-% end
-% %for normalization, use mean surface grain size from all of the Oceano
-% %clusters
-% 
-% %format plot
-% htitle = title('Namikas 2006');
-% set(gca,'YMinorTick','On','Box','On');
-% ylabel('Norm. mean grain diam., $$\bar{d}_{air}/\bar{d}_{bed}$$ (mm)','Interpreter','Latex')
-% xlim([0 6]);
-% ylim([0.5 1]);
-% 
-% %create legend
-% legend_items = cell(N_Namikas06,1);
-% for i = 1:N_Namikas06
-%     legend_items{i} = ['u_{*} = ',num2str(ust_Namikas06(i),'%10.2f'),' m/s'];
-% end
-% h_legend = legend(legend_items,'Location','NorthEast');
-% set(h_legend,'FontSize',8);
-% 
-% %% Farrell
-% h_subplot(2) = subplot('position',[0.41 0.7 0.25 0.24]); hold on;
-% 
-% %plot airborne profiles
-% for i = 1:N_ustbins_Farrell12
-%     plot(znorm_airborne_ustbin_Farrell12{i},dbar_airborne_ustbin_Farrell12{i}./...
-%         mean(dbar_bar_surface_Cluster(1)),[Marker_bin{i},'-']);
-% end
-% %for normalization, use mean surface grain size from Jericoacoara
-% 
-% %format plot
-% htitle = title('Farrell 2012');
-% set(gca,'YMinorTick','On','Box','On');
-% xlim([0 6]);
-% ylim([0.5 1]);
-% 
-% %create legend
-% for i = 1:N_ustbins_Farrell12
-%     legend_items{i} = [num2str(ust_lower_Farrell12(i),'%10.2f'),'\leq u_{*} \leq',num2str(ust_upper_Farrell12(i),'%10.2f'),' m/s'];
-% end
-% h_legend = legend(legend_items,'Location','NorthEast');
-% set(h_legend,'FontSize',8);
-% 
-% 
-% %% our data
-% for i = 1:N_Cluster
-%     if i == 1
-%         h_subplot(3) = subplot('position',[0.1 0.38 0.25 0.24]); hold on;
-%     elseif i == 2
-%         h_subplot(4) = subplot('position',[0.41 0.38 0.25 0.24]); hold on;
-%     elseif i == 3 %make this subplot bigger to accommodate legend
-%         %h_subplot(5) = subplot('position',[0.72 0.38 0.25 0.24]); hold on;
-%         h_subplot(5) = subplot('position',[0.72 0.38 0.25 0.385]); hold on;
-%     elseif i == 4
-%         h_subplot(6) = subplot('position',[0.1 0.06 0.25 0.24]); hold on;
-%     elseif i == 5
-%         h_subplot(7) = subplot('position',[0.41 0.06 0.25 0.24]); hold on;
-%     else
-%         h_subplot(8) = subplot('position',[0.72 0.06 0.25 0.24]); hold on;
-%     end
+%     % Namikas
+%     h_subplot(1) = subplot('position',[0.06 0.73 0.275 0.23]); hold on;
 % 
 %     %plot airborne profiles
-%     for j = 1:N_taunorm_bins
-%         ind_plot = find(~isnan(dbar_profile_airborne_taunorm_Cluster{i}(j,:)));
-%         if ~isempty(ind_plot) %plot only profiles with data
-%             plot(znorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
-%                 dbar_profile_airborne_taunorm_Cluster{i}(j,ind_plot)./...
-%                 dbar_bar_surface_Cluster(i),[Marker_bin{j},'-']);
+%     for i = 1:N_taunorm_bins
+%         %get index of Namakis06 associated with taunorm_bin 
+%         ind_Namikas06 = intersect(find(taunorm_Namikas06>taunorm_min_bins(i)),...
+%             find(taunorm_Namikas06<taunorm_max_bins(i)));
+%         if ~isempty(ind_Namikas06) %plot only if there is a profile
+%             plot(drefnorm_profile_airborne_Namikas06{ind_Namikas06},znorm_Namikas06,...     
+%                 [Marker_bin{i},'-']);
 %         else %for those profiles with no data, create a dummy plot so that legend renders properly
-%             plot([0 0],[0 0],[Marker_bin{j},'-']); 
+%             plot([0 0],[0 0],[Marker_bin{i},'-']);
 %         end
 %     end
 % 
 %     %format plot
-%     htitle = title(ClusterNames{i});
-%     set(gca,'YMinorTick','On','Box','On');
-%     if mod(i,3) == 1
-%         ylabel('Norm. mean grain diam., $$\bar{d}_{air}/\bar{d}_{bed}$$ (mm)','Interpreter','Latex')
+%     htitle = title('Namikas, 2006');
+%     set(htitle,'FontSize',PlotFont);
+%     set(gca,'XMinorTick','On','YMinorTick','On','YScale','log','Box','On');
+%     set(gca,'YTickLabel',{'0.1','1','10'})
+%     ylabel('Norm. ht., $$z/<z_q>$$','Interpreter','Latex')
+%     ylim([0.1 10]);
+%     if n == 1
+%         xlim([0.4 1.0]);   
+%         text(0.42,7.5,'(a)'); %label panel
+%     elseif n == 2
+%         xlim([0.2 0.8]);
+%         text(0.22,7.5,'(a)'); %label panel          
+%     elseif n == 3
+%         xlim([0.6 1.2]);
+%         text(0.62,7.5,'(a)'); %label panel
 %     end
-%     if i>=2*round(N_Cluster/2)-2
-%         xlabel('Normalized height, $$z/z_q$$','Interpreter','Latex')
-%     end
-%     xlim([0 6]);
-%     ylim([0.5 1]);
-%    
-%     %create legend
-%     legend_items = cell(N_taunorm_bins,1);
-%     for j = 1:N_taunorm_bins
-%         if j == 1
-%             legend_items{j} = ['\tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];       
-%         else
-%             legend_items{j} = [num2str(taunorm_min_bins(j),'%10.1f'),' < \tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];
-%         end
-%     end
-%     if i == 3
-%         h_legend = legend(legend_items,'Location','NorthOutside');
-%         set(h_legend,'FontSize',8);
-%     end
-% end
+%     set(gca,'FontSize',PlotFont);
 % 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[9 9],'PaperPosition',[0 0 9 9],'PaperPositionMode','Manual');
-% print([folder_Plots,'dbar_profile_comparison.png'],'-dpng');
-% 
-% 
-% %% plot variation in d90 grain sizes (normalized by mean surface)
-% % versus height (normalized by z_q)
-% figure(10); clf;
-% 
-% %initialize subplots
-% h_subplot = gobjects(8,1);
-% 
-% % Namikas
-% h_subplot(1) = subplot('position',[0.1 0.7 0.25 0.24]); hold on;
-% 
-% %plot airborne profiles
-% for i = 1:N_Namikas06
-%     plot(znorm_Namikas06,d90_airborne_Namikas06{i}./...
-%         mean(dbar_bar_surface_Cluster(3:6)),[Marker_bin{i},'-']);
-% end
-% %for normalization, use mean surface grain size from all of the Oceano
-% %clusters
-% 
-% %format plot
-% htitle = title('Namikas 2006');
-% set(gca,'YMinorTick','On','Box','On');
-% ylabel('Norm. 90th pctl grain, $${d}_{90,air}/\bar{d}_{bed}$$ (mm)','Interpreter','Latex')
-% xlim([0 6]);
-% ylim([0.7 1.5]);
-% 
-% %create legend
-% legend_items = cell(N_Namikas06,1);
-% for i = 1:N_Namikas06
-%     legend_items{i} = ['u_{*} = ',num2str(ust_Namikas06(i),'%10.2f'),' m/s'];
-% end
-% h_legend = legend(legend_items,'Location','NorthEast');
-% set(h_legend,'FontSize',8);
-% 
-% %% Farrell
-% h_subplot(2) = subplot('position',[0.41 0.7 0.25 0.24]); hold on;
-% 
-% %plot airborne profiles
-% for i = 1:N_ustbins_Farrell12
-%     plot(znorm_airborne_ustbin_Farrell12{i},d90_airborne_ustbin_Farrell12{i}./...
-%         mean(dbar_bar_surface_Cluster(1)),[Marker_bin{i},'-']);
-% end
-% %for normalization, use mean surface grain size from Jericoacoara
-% 
-% %format plot
-% htitle = title('Farrell 2012');
-% set(gca,'YMinorTick','On','Box','On');
-% xlim([0 6]);
-% ylim([0.7 1.5]);
-% 
-% %create legend
-% for i = 1:N_ustbins_Farrell12
-%     legend_items{i} = [num2str(ust_lower_Farrell12(i),'%10.2f'),'\leq u_{*} \leq',num2str(ust_upper_Farrell12(i),'%10.2f'),' m/s'];
-% end
-% h_legend = legend(legend_items,'Location','NorthEast');
-% set(h_legend,'FontSize',8);
-% 
-% 
-% %% our data
-% for i = 1:N_Cluster
-%     if i == 1
-%         h_subplot(3) = subplot('position',[0.1 0.38 0.25 0.24]); hold on;
-%     elseif i == 2
-%         h_subplot(4) = subplot('position',[0.41 0.38 0.25 0.24]); hold on;
-%     elseif i == 3 %make this subplot bigger to accommodate legend
-%         %h_subplot(5) = subplot('position',[0.72 0.38 0.25 0.24]); hold on;
-%         h_subplot(5) = subplot('position',[0.72 0.38 0.25 0.385]); hold on;
-%     elseif i == 4
-%         h_subplot(6) = subplot('position',[0.1 0.06 0.25 0.24]); hold on;
-%     elseif i == 5
-%         h_subplot(7) = subplot('position',[0.41 0.06 0.25 0.24]); hold on;
-%     else
-%         h_subplot(8) = subplot('position',[0.72 0.06 0.25 0.24]); hold on;
-%     end
+%     %% Farrell
+%     h_subplot(2) = subplot('position',[0.385 0.73 0.275 0.23]); hold on;
 % 
 %     %plot airborne profiles
-%     for j = 1:N_taunorm_bins
-%         ind_plot = find(~isnan(d90_profile_airborne_taunorm_Cluster{i}(j,:)));
+%     for i = 1:N_taunorm_bins
+%         ind_plot = find(~isnan(drefnorm_profile_airborne_taunorm_Farrell12{i}));
 %         if ~isempty(ind_plot) %plot only profiles with data
-%             plot(znorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
-%                 d90_profile_airborne_taunorm_Cluster{i}(j,ind_plot)./...
-%                 dbar_bar_surface_Cluster(i),[Marker_bin{j},'-']);
+%             plot(drefnorm_profile_airborne_taunorm_Farrell12{i},...
+%                 znorm_taunorm_Farrell12{i},[Marker_bin{i},'-']);
 %         else %for those profiles with no data, create a dummy plot so that legend renders properly
-%             plot([0 0],[0 0],[Marker_bin{j},'-']); 
+%             plot([0 0],[0 0],[Marker_bin{i},'-']); 
 %         end
 %     end
 % 
 %     %format plot
-%     htitle = title(ClusterNames{i});
-%     set(gca,'YMinorTick','On','Box','On');
-%     if mod(i,3) == 1
-%         ylabel('Norm. 90th pctl grain, $${d}_{90,air}/\bar{d}_{bed}$$ (mm)','Interpreter','Latex')
+%     htitle = title('Farrell et al., 2012');
+%     set(htitle,'FontSize',PlotFont);
+%     set(gca,'XMinorTick','On','YMinorTick','On','YScale','log','Box','On');
+%     set(gca,'YTickLabel',{'0.1','1','10'})
+%     ylim([0.1 10]);
+%     if n == 1
+%         xlim([0.4 1.0]);   
+%         text(0.42,7.5,'(b)'); %label panel
+%     elseif n == 2
+%         xlim([0.2 0.8]);
+%         text(0.22,7.5,'(b)'); %label panel          
+%     elseif n == 3
+%         xlim([0.6 1.2]);
+%         text(0.62,7.5,'(b)'); %label panel
 %     end
-%     if i>=2*round(N_Cluster/2)-2
-%         xlabel('Normalized height, $$z/z_q$$','Interpreter','Latex')
-%     end
-%     xlim([0 6]);
-%     ylim([0.7 1.5]);
-%     
-%     %create legend
-%     legend_items = cell(N_taunorm_bins,1);
-%     for j = 1:N_taunorm_bins
-%         if j == 1
-%             legend_items{j} = ['\tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];       
+%     set(gca,'FontSize',PlotFont);
+% 
+%     %% our data
+%     panel_labels = {'(c)','(d)','(e)','(f)','(g)','(h)'};
+%     for i = 1:N_Cluster
+%         if i == 1
+%             h_subplot(3) = subplot('position',[0.06 0.41 0.275 0.23]); hold on;
+%         elseif i == 2
+%             h_subplot(4) = subplot('position',[0.385 0.41 0.275 0.23]); hold on;
+%         elseif i == 3 %make this subplot bigger to accommodate legend
+%             h_subplot(5) = subplot('position',[0.71 0.41 0.275 0.455]); hold on;
+%         elseif i == 4
+%             h_subplot(6) = subplot('position',[0.06 0.09 0.275 0.23]); hold on;
+%         elseif i == 5
+%             h_subplot(7) = subplot('position',[0.385 0.09 0.275 0.23]); hold on;
 %         else
-%             legend_items{j} = [num2str(taunorm_min_bins(j),'%10.1f'),' < \tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];
+%             h_subplot(8) = subplot('position',[0.71 0.09 0.275 0.23]); hold on;
+%         end
+% 
+%         %plot airborne profiles - d50air/d50sfc
+%         for j = 1:N_taunorm_bins
+%             ind_plot = find(~isnan(drefnorm_profile_airborne_taunorm_Cluster{i}(j,:)));
+%             if ~isempty(ind_plot) %plot only profiles with data
+%                 plot(drefnorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
+%                     znorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
+%                     [Marker_bin{j},'-']);
+%             else %for those profiles with no data, create a dummy plot so that legend renders properly
+%                 plot([0 0],[0 0],[Marker_bin{j},'-']);
+%             end
+%         end
+% 
+%         %format plot
+%         htitle = title(ClusterNames{i});
+%         set(htitle,'FontSize',PlotFont);
+%         if mod(i,3) == 1
+%             ylabel('Norm. ht., $$z/<z_q>$$','Interpreter','Latex')
+%         end
+%         if i>=2*round(N_Cluster/2)-2
+%             if n == 1
+%                 xlabel('Norm. airborne g.s., $${d}_{50,air}/{d}_{50,bed}$$','Interpreter','Latex')
+%             elseif n == 2
+%                 xlabel('Norm. airborne g.s., $${d}_{10,air}/{d}_{10,bed}$$','Interpreter','Latex')
+%             elseif n == 3
+%                 xlabel('Norm. airborne g.s., $${d}_{90,air}/{d}_{90,bed}$$','Interpreter','Latex')
+%             end
+%         end
+%         ylim([0.1 10]);
+%         if n == 1
+%             xlim([0.4 1.0]);   
+%             text(0.42,7.5,panel_labels{i}); %label panel
+%         elseif n == 2
+%             xlim([0.2 0.8]);
+%             text(0.22,7.5,panel_labels{i}); %label panel          
+%         elseif n == 3
+%             xlim([0.6 1.2]);
+%             text(0.62,7.5,panel_labels{i}); %label panel
+%         end
+%         set(gca,'XMinorTick','On','YMinorTick','On','YScale','log','Box','On');
+%         set(gca,'YTickLabel',{'0.1','1','10'})
+%         set(gca,'FontSize',PlotFont);
+% 
+%         %create legend
+%         legend_items = cell(N_taunorm_bins,1);
+%         for j = 1:N_taunorm_bins
+%             if j == 1
+%                 legend_items{j} = ['\tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];       
+%             else
+%                 legend_items{j} = [num2str(taunorm_min_bins(j),'%10.1f'),' < \tau/\tau_{it} \leq ',num2str(taunorm_max_bins(j),'%10.1f')];
+%             end
+%         end
+%         if i == 3
+%             h_legend = legend(legend_items,'Location','NorthOutside');
+%             set(h_legend,'FontSize',8);
 %         end
 %     end
-%     if i == 3
-%         h_legend = legend(legend_items,'Location','NorthOutside');
-%         set(h_legend,'FontSize',8);
+% 
+%     %print plot
+%     set(gcf,'PaperUnits','inches','PaperSize',[8 6],'PaperPosition',[0 0 8 6],'PaperPositionMode','Manual');
+%     if n == 1
+%         print([folder_Plots,'d50norm_profile_airborne_comparison.png'],'-dpng');
+%     elseif n == 2
+%         print([folder_Plots,'d10norm_profile_airborne_comparison.png'],'-dpng');
+%     elseif n == 3
+%         print([folder_Plots,'d90norm_profile_airborne_comparison.png'],'-dpng');
 %     end
 % end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[9 9],'PaperPosition',[0 0 9 9],'PaperPositionMode','Manual');
-% print([folder_Plots,'d90_profile_comparison.png'],'-dpng');
+
+%% plot q_norm vs z_norm and exponential profile for each site
+% znorm = z / zq for Cluster
+% qnorm = q / q0 for profile
+
+ind_d_all = [6,13,19]; %indices of d's to plot
+
+%create three separate plots
+for n = 1:3
+    if n == 1
+        ind_Cluster_all = [1,2];
+    elseif n == 2
+        ind_Cluster_all = [3,4];
+    elseif n == 3
+        ind_Cluster_all = [5,6];
+    end
+
+    %initialize plot
+    figure(n+3); clf;
+
+    %go through first two sites
+    for i = 1:2
+
+        %go through three different diameters
+        for j = 1:3
+
+            %initialize subplot
+            if i == 1
+                if j == 1
+                    h_subplot(1) = subplot('position',[0.06 0.57 0.275 0.38]);
+                elseif j == 2
+                    h_subplot(3) = subplot('position',[0.385 0.57 0.275 0.38]);
+                elseif j == 3
+                    h_subplot(3) = subplot('position',[0.71 0.57 0.275 0.38]);
+                end
+            elseif i == 2
+                if j == 1
+                    h_subplot(4) = subplot('position',[0.06 0.09 0.275 0.38]);
+                elseif j == 2
+                    h_subplot(5) = subplot('position',[0.385 0.09 0.275 0.38]);
+                elseif j == 3
+                    h_subplot(6) = subplot('position',[0.71 0.09 0.275 0.38]);
+                end
+            end
+            hold on;
+
+            %information on profiles
+            ind_Cluster = ind_Cluster_all(i); %which cluster to plot?
+            ind_d = ind_d_all(j); %which grain-size bin to plot?
+
+            %get normalized profiles
+            N_profile = length(qi_Cluster{ind_Cluster}); %get number of profiles
+            znorm_plot = cell(N_profile,1);
+            qnorm_plot = cell(N_profile,1);
+            L_profile = zeros(N_profile,1);
+            for k = 1:N_profile
+                [~,ind_sort] = sort(z_profile_Cluster{ind_Cluster}{k}); %sort by ascending z
+                znorm_plot{k} = z_profile_Cluster{ind_Cluster}{k}(ind_sort)./zqi_bar_Cluster{ind_Cluster}(ind_d); %get sorted znorms for plotting
+                qnorm_plot{k} = (qi_Cluster{ind_Cluster}{k}(ind_sort,ind_d)./q0i_Cluster{ind_Cluster}(k,ind_d)); %get sorted qnorms for plotting
+                L_profile(k) = length(znorm_plot{k});
+            end
+                
+            %get reference profile
+            znorm_min = min(vertcat(znorm_plot{:})); %get min znorm
+            znorm_max = max(vertcat(znorm_plot{:})); %get max znorm
+
+            %plot profiles
+            plot(exp(-[znorm_min znorm_max]),[znorm_min znorm_max],'k','LineWidth',2); %plot reference profile
+            for k = 1:N_profile %plot individual profiles
+                if L_profile(k)==max(L_profile) %plot only full profiles
+                    plot(qnorm_plot{k},znorm_plot{k});
+                end
+            end
+
+            %format profile
+            if i == 2
+                xlabel('Norm. size-selective flux, $$q_{i}(z)/q_{i,0}$$','Interpreter','Latex');
+            end
+            if j == 1
+                ylabel('Normalized height, $$z/\langle z_{q,i} \rangle$$','Interpreter','Latex');
+            end
+            htitle = title([ClusterNames{ind_Cluster},', d = ',num2str(d_f_mid_Cluster{ind_Cluster}(ind_d),3),' mm']);
+            set(htitle,'FontSize',PlotFont-2);
+            set(gca,'YMinorTick','On','XMinorTick','On','XScale','log','Box','On');
+            set(gca,'FontSize',PlotFont);
+            
+            %get and update plotting limits
+            xlims_init = xlim;
+            xlims_new = [10^(floor(log10(xlims_init(1)))) 1];
+            xlim(xlims_new);
+            ylims_init = ylim;
+            ylims_new = [0 ceil(ylims_init(2))];
+            ylim(ylims_new);
+            
+            %correct some labels
+            if xlims_new(1) <= 1e-5
+                set(gca,'XMinorTick','Off');
+                set(gca,'XTick',[10^(-5),10^(-4),10^(-3),10^(-2),10^(-1),10^(0)]);
+                set(gca,'XTickLabel',{'10^{-5}','10^{-4}','10^{-3}','10^{-2}','10^{-1}','10^{0}'})
+            elseif xlims_new(1) <= 1e-4
+                set(gca,'XMinorTick','Off');
+                set(gca,'XTick',[10^(-4),10^(-3),10^(-2),10^(-1),10^(0)]);
+                set(gca,'XTickLabel',{'10^{-4}','10^{-3}','10^{-2}','10^{-1}','10^{0}'})
+            end
+                
+            %panel labels
+            x_text = 10^(0.9*(log10(xlims_new(2))-log10(xlims_new(1)))+log10(xlims_new(1)));
+            y_text = 0.9*ylims_new(2);
+            if i == 1
+                if j == 1
+                    text(x_text,y_text,'(a)')
+                elseif j == 2
+                    text(x_text,y_text,'(b)')
+                elseif j == 3
+                    text(x_text,y_text,'(c)')
+                end
+            elseif i == 2
+                if j == 1
+                    text(x_text,y_text,'(d)')
+                elseif j == 2
+                    text(x_text,y_text,'(e)')
+                elseif j == 3
+                    text(x_text,y_text,'(f)')
+                end
+            end
+        end
+    end
+
+    %print plot
+    set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual');
+    print([folder_Plots,'profile_demo_',int2str(n),'.png'],'-dpng');
+end

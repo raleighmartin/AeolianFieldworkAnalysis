@@ -330,6 +330,8 @@ qi_Cluster = cell(N_Cluster,1); %size-selective partial flux in cluster
 sigma_qi_Cluster = cell(N_Cluster,1); %size-selective partial flux uncertainty in cluster
 Qi_Cluster = cell(N_Cluster,1); %size-selective flux in cluster
 sigma_Qi_Cluster = cell(N_Cluster,1); %size-selective flux uncertainty in cluster
+q0i_Cluster = cell(N_Cluster,1); %size-selective basal flux in cluster
+sigma_q0i_Cluster = cell(N_Cluster,1); %size-selective basal flux uncertainty in cluster
 zqi_Cluster = cell(N_Cluster,1); %size-selective zq in cluster
 sigma_zqi_Cluster = cell(N_Cluster,1); %size-selective zq uncertainty in cluster
 Qhat_Cluster = cell(N_Cluster,1); %normalized size-selective flux in cluster
@@ -368,6 +370,8 @@ for i = 1:N_Cluster
     %compute size-selective total fluxes
     Qi_Cluster{i} = zeros(N_profile_Cluster,N_bins); %size-selective flux in cluster
     sigma_Qi_Cluster{i} = zeros(N_profile_Cluster,N_bins); %size-selective flux uncertainty in cluster
+    q0i_Cluster{i} = zeros(N_profile_Cluster,N_bins); %size-selective basal flux in cluster
+    sigma_q0i_Cluster{i} = zeros(N_profile_Cluster,N_bins); %size-selective basal flux uncertainty in cluster
     zqi_Cluster{i} = zeros(N_profile_Cluster,N_bins); %size-selective zq in cluster
     sigma_zqi_Cluster{i} = zeros(N_profile_Cluster,N_bins); %size-selective zq uncertainty in cluster
     Qhat_Cluster{i} = zeros(N_profile_Cluster,N_bins); %normalized size-selective flux in cluster
@@ -375,9 +379,11 @@ for i = 1:N_Cluster
     
     for j = 1:N_profile_Cluster
         for k = 1:N_bins
-            [~,zqi,Qi,~,sigma_zqi,sigma_Qi] = qz_profilefit_exponential(qi_Cluster{i}{j}(:,k), z_profile_Cluster{i}{j}, sigma_qi_Cluster{i}{j}(:,k), sigma_z_profile_Cluster{i}{j}, zq_profile_Cluster{i}(j)); %perform profile fitting
+            [q0i,zqi,Qi,sigma_q0i,sigma_zqi,sigma_Qi] = qz_profilefit_exponential(qi_Cluster{i}{j}(:,k), z_profile_Cluster{i}{j}, sigma_qi_Cluster{i}{j}(:,k), sigma_z_profile_Cluster{i}{j}, zq_profile_Cluster{i}(j)); %perform profile fitting
             Qi_Cluster{i}(j,k) = Qi;
             sigma_Qi_Cluster{i}(j,k) = sigma_Qi;
+            q0i_Cluster{i}(j,k) = q0i;
+            sigma_q0i_Cluster{i}(j,k) = sigma_q0i;
             zqi_Cluster{i}(j,k) = zqi;
             sigma_zqi_Cluster{i}(j,k) = sigma_zqi;
         end
