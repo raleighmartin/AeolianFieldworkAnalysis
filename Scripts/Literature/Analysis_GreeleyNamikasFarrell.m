@@ -36,6 +36,7 @@ N_taunorm_bins = 5;
 %% filepath information
 folder_LoadData = '../../AnalysisData/Literature/'; %folder for loading inputs of this analysis
 folder_SaveData = '../../AnalysisData/Literature/'; %folder for storing outputs of this analysis
+folder_Plots = '../../PlotOutput/SizeSelective/'; %folder for printing plots
 folder_Functions = '../Functions/'; %folder with functions
 addpath(folder_Functions); %point MATLAB to location of functions
 LoadData_Path = strcat(folder_LoadData,'LitData'); %path for loading data
@@ -104,9 +105,8 @@ sigma_zq_Namikas03 = sigma_zq_Namikas03(GoodInd_Namikas03);
 %% Calculate size-selective saltation heights - Namikas
 zqi_Namikas06 = zeros(N_Namikas06,N_d_Namikas06); %e-folding height (m)
 sigma_zqi_Namikas06 = zeros(N_Namikas06,N_d_Namikas06); %e-folding height (m)
-Qi_fit_Namikas06 = zeros(N_Namikas03,N_d_Namikas06); %total flux (g/m/s)
-sigma_Qi_fit_Namikas06 = zeros(N_Namikas03,N_d_Namikas06); %total flux (g/m/s)
-% z_Namikas06 = cell(N_Namikas06,1); %initialize array of calculated trap heights
+Qi_fit_Namikas06 = zeros(N_Namikas06,N_d_Namikas06); %total flux (g/m/s)
+sigma_Qi_fit_Namikas06 = zeros(N_Namikas06,N_d_Namikas06); %total flux (g/m/s)
 
 %calculate equivalent tau and taunorm values
 tau_Namikas06 = rho_Namikas06_assumed.*ust_Namikas06.^2; %Pa
@@ -118,19 +118,71 @@ sigma_taunorm_Namikas06 = (1/tauit_Namikas06_assumed)*...
 % Make calculations
 for i=1:N_Namikas06
     
+    %matrix of calculated trap heights for diagnostics
+    z_profile_all = zeros(size(qi_Namikas06{i}));
+    
+    %list of calculated q0 for diagnostics
+    q0_all = zeros(1,N_d_Namikas06);
+    
     for j=1:N_d_Namikas06
+        ind_fit = find(qi_Namikas06{i}(:,j)>0); %fit only values with qi>0
+        qi_fit = qi_Namikas06{i}(ind_fit,j);
+        z_bottom_fit = z_bottom_Namikas06(ind_fit);
+        H_fit = H_Namikas06(ind_fit);
+        sigma_qi_fit = sigma_qi_Namikas06{i}(ind_fit,j);
+        sigma_z_bottom_fit = sigma_z_bottom_Namikas06(ind_fit);
+        
         %iterative fit to profile to optimize trap heights for fitting
         [z_profile,q0,zq,Q,~,sigma_zq,sigma_Q,~,~,~,~,z_profile_geomean,q0_geomean,zq_geomean,Q_geomean] = ...
-            BSNE_profilefit_exponential(qi_Namikas06{i}(:,j), z_bottom_Namikas06, H_Namikas06,...
-            sigma_qi_Namikas06{i}(:,j), sigma_z_bottom_Namikas06, zq_Namikas06_assumed);
+            BSNE_profilefit_exponential(qi_fit, z_bottom_fit, H_fit,...
+            sigma_qi_fit, sigma_z_bottom_fit, zq_Namikas06_assumed);
         
         %add fluxes to array
         zqi_Namikas06(i,j) = zq; %e-folding height (m)
         sigma_zqi_Namikas06(i,j) = sigma_zq; %e-folding height uncertainty (m)
         Qi_fit_Namikas06(i,j) = Q; %total flux (g/m/s)
         sigma_Qi_fit_Namikas06(i,j) = sigma_Q; %total flux (g/m/s)
+        
+        %add to matrix of calculated trap heights and for diagnostics
+        z_profile_all(ind_fit,j) = z_profile;
+        q0_all(j) = q0;
     end
+    
+    %plot profiles and fits for diagnostic purposes
+    figure(i); clf; hold on;
+    legend_items = cell(N_d_Namikas06,1);
+    for j = 1:N_d_Namikas06 %plot raw profiles
+        plot(qi_Namikas06{i}(:,j),z_profile_all(:,j));
+        legend_items{j} = ['d = ',num2str(d_Namikas06(j),2),' mm'];
+    end
+    for j = 1:N_d_Namikas06 %plot fit profiles
+        qi_fit = q0_all(j)*exp(-z_profile_all(:,j)/zqi_Namikas06(i,j));
+        plot(qi_fit,z_profile_all(:,j),'k--');
+    end
+    set(gca,'xscale','log','box','on')
+    xlabel('$$q_{i}$$ (kg/m$$^2$$/s)','Interpreter','Latex');
+    ylabel('$$z$$ (m)','Interpreter','Latex');
+    if i==1
+        legend(legend_items,'Location','NorthEast');
+    else
+        legend(legend_items,'Location','SouthWest');
+    end
+    title(['u_* = ',num2str(ust_Namikas06(i),2),' m/s']);
+    print([folder_Plots,'qi_Namikas06_u*_',num2str(ust_Namikas06(i),2),'.png'],'-dpng')
 end
+
+%plot zq versus d for diagnostic purposes
+figure(4); clf; hold on;
+legend_items = cell(N_Namikas06,1);
+for i = 1:N_Namikas06
+    plot(d_Namikas06,zqi_Namikas06(i,:));
+    legend_items{i} = ['u_* = ',num2str(ust_Namikas06(i),2),' m/s'];
+end
+xlabel('d (mm)');
+ylabel('$$z_{q,i}$$ (m)','Interpreter','Latex');
+legend(legend_items);
+print([folder_Plots,'zqi_di_Namikas06.png'],'-dpng')
+
 
 %% Calculate height-specific PSDs - Namikas
 z_Namikas06 = z_profile_calc_exponential(z_bottom_Namikas06,H_Namikas06,zq_Namikas06_assumed); %calculate trap midpoint heights based on assumed zq

@@ -3,8 +3,8 @@ clearvars;
 close all;
 
 %% select plot type
-%plot_type = 'paper';
-plot_type = 'presentation';
+plot_type = 'paper';
+%plot_type = 'presentation';
 
 %%
 %%%%%%%%%%%%%%%%
@@ -829,10 +829,10 @@ for i = 1:N_Cluster
         
         if strcmp(dref_type,'d50') 
             %plot(d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i),f_ratio_bar_Cluster{i}.*fC_4cm_interpolated,'--.','Color',Color_Cluster{i}); %z > 4 cm correction
-            plot(d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i),f_ratio_bar_Cluster{i}.*fC_7cm_interpolated,'--','Color',Color_Cluster{i}); %z > 7 cm correction
+            plot(d_f_mid_Cluster{i}./d50_bar_surface_Cluster(i),f_ratio_bar_Cluster{i}.*fC_7cm_interpolated,'--','Color',Color_Cluster{i},'LineWidth',1); %z > 7 cm correction
         elseif strcmp(dref_type,'dmodal')
             %plot(d_f_mid_Cluster{i}./dmodal_bar_surface_Cluster(i),f_ratio_bar_Cluster{i}.*fC_4cm_interpolated,'--.','Color',Color_Cluster{i}); %z > 4 cm correction
-            plot(d_f_mid_Cluster{i}./dmodal_bar_surface_Cluster(i),f_ratio_bar_Cluster{i}.*fC_7cm_interpolated,'--','Color',Color_Cluster{i}); %z > 7 cm correction
+            plot(d_f_mid_Cluster{i}./dmodal_bar_surface_Cluster(i),f_ratio_bar_Cluster{i}.*fC_7cm_interpolated,'--','Color',Color_Cluster{i},'LineWidth',1); %z > 7 cm correction
         end
     end
 end    
@@ -851,9 +851,10 @@ end
 %plot fine, medium, and coarse ranges
 text(0.32,7,'Fine','HorizontalAlignment','Center','FontSize',PlotFont);
 text(0.56,7,'Medium','HorizontalAlignment','Center','FontSize',PlotFont);
-text(0.95,7,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
-plot([0.4 0.4],[1e-4 1e1],'k--','LineWidth',1);
-plot([0.8 0.8],[1e-4 1e1],'k--','LineWidth',1);
+%text(0.95,7,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
+text(1.2,7,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
+plot([0.4 0.4],[1e-4 1e1],'k-.','LineWidth',0.5);
+plot([0.8 0.8],[1e-4 1e1],'k-.','LineWidth',0.5);
 
 %format plot
 if strcmp(dref_type,'d50')==1
@@ -871,57 +872,115 @@ for i = 1:N_Cluster
 end
 
 % labels and legends
-if strcmp(plot_type,'presentation') %no inset plot
-    ylabel({'Ratio of airborne to bed fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %no inset plot
-    h_legend = legend(legend_items,'Location','SouthWest'); 
-elseif strcmp(plot_type,'paper') %with inset plot
-    ylabel({'Ratio of mean airborne to bed surface volume fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %original plot
-    h_legend = legend(legend_items,'Location','NorthEast'); 
-    text(0.26,7,'(a)','FontSize',PlotFont);
-end
+ylabel({'Ratio of airborne to bed fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %no inset plot
+h_legend = legend(legend_items,'Location','SouthWest'); 
+% if strcmp(plot_type,'presentation') %no inset plot
+%     ylabel({'Ratio of airborne to bed fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %no inset plot
+%     h_legend = legend(legend_items,'Location','SouthWest'); 
+% elseif strcmp(plot_type,'paper') %with inset plot
+%     ylabel({'Ratio of mean airborne to bed surface volume fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %original plot
+%     h_legend = legend(legend_items,'Location','NorthEast'); 
+%     text(0.26,7,'(a)','FontSize',PlotFont);
+% end
 set(h_legend,'FontSize',10);
 set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
 ylim([1e-4 1e1]);
 
-%include inset plot with dimensional values, if for paper
-if strcmp(plot_type,'paper') 
-    axes('Position',[.25 .25 .35 .38]); hold on;
-
-    %plot fratio values
-    for i = 1:N_Cluster   
-        plot(d_f_mid_Cluster{i},f_ratio_bar_Cluster{i},Marker_Cluster{i},'Color',Color_Cluster{i}); %values
-    end
-
-    %plot error bars
-    for i = 1:N_Cluster
-        for k = 1:length(d_f_mid_Cluster{i})
-            if strcmp(dref_type,'d50')
-                plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
-            elseif strcmp(dref_type,'dmodal')
-                plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
-            end
-        end
-    end
-
-    xlabel('Grain size, $$d_{i}$$ (mm)','Interpreter','Latex');
-    ylabel('$$\langle f_{i,air} \rangle /f_{i,bed}$$','Interpreter','Latex');
-    set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
-    xlim([d_min d_max]);
-    ylim([1e-4 1e1]);
-    text(0.8,5,'(b)','FontSize',PlotFont);
-end
-    
 %print plot
-if strcmp(plot_type,'presentation')
-    set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual'); %no inset plot
-    print([folder_Plots,'fratiobar_dhat_noinset_',dref_type,'.png'],'-dpng');
-elseif strcmp(plot_type,'paper')
-    set(gcf,'PaperUnits','inches','PaperSize',[8 6],'PaperPosition',[0 0 8 6],'PaperPositionMode','Manual'); %original plot
-    print([folder_Plots,'fratiobar_dhat_withinset_',dref_type,'.png'],'-dpng');
+set(gcf,'PaperUnits','inches','PaperSize',[7 4],'PaperPosition',[0 0 7 4],'PaperPositionMode','Manual'); %original plot
+print([folder_Plots,'fratiobar_dhat_withcorrection_',dref_type,'.png'],'-dpng');
+
+% %include inset plot with dimensional values, if for paper
+% if strcmp(plot_type,'paper') 
+%     axes('Position',[.25 .25 .35 .38]); hold on;
+% 
+%     %plot fratio values
+%     for i = 1:N_Cluster   
+%         plot(d_f_mid_Cluster{i},f_ratio_bar_Cluster{i},Marker_Cluster{i},'Color',Color_Cluster{i}); %values
+%     end
+% 
+%     %plot error bars
+%     for i = 1:N_Cluster
+%         for k = 1:length(d_f_mid_Cluster{i})
+%             if strcmp(dref_type,'d50')
+%                 plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
+%             elseif strcmp(dref_type,'dmodal')
+%                 plot(d_f_mid_Cluster{i}(k)*[1 1],exp(log(f_ratio_bar_Cluster{i}(k))*[1 1]+f_ratio_sigmalog_Cluster{i}(k)*[-1 1]),'Color',Color_Cluster{i});
+%             end
+%         end
+%     end
+% 
+%     xlabel('Grain size, $$d_{i}$$ (mm)','Interpreter','Latex');
+%     ylabel('$$\langle f_{i,air} \rangle /f_{i,bed}$$','Interpreter','Latex');
+%     set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
+%     xlim([d_min d_max]);
+%     ylim([1e-4 1e1]);
+%     text(0.8,5,'(b)','FontSize',PlotFont);
+% end
+%     
+% %print plot
+% if strcmp(plot_type,'presentation')
+%     set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual'); %no inset plot
+%     print([folder_Plots,'fratiobar_dhat_noinset_',dref_type,'.png'],'-dpng');
+% elseif strcmp(plot_type,'paper')
+%     set(gcf,'PaperUnits','inches','PaperSize',[8 6],'PaperPosition',[0 0 8 6],'PaperPositionMode','Manual'); %original plot
+%     print([folder_Plots,'fratiobar_dhat_withinset_',dref_type,'.png'],'-dpng');
+% end
+
+%% PLOT correction factor from Namikas
+figure(5); clf; hold on;
+
+% create plot
+plot(d_mid_correction, fC_4cm, 'b+--','LineWidth',1);
+plot(d_mid_correction, fC_7cm, 'ro-.','LineWidth',1);
+ 
+%format plot
+set(gca,'XScale','log','YScale','log','YMinorTick','On');
+xlim([0.1, 1]);
+set(gca,'xtick',[0.1:0.1:2]);
+set(gca,'xticklabels',{'0.1','0.2','','0.4','','','0.7','','','1'});
+ylim([0.5 20]);
+xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
+ylabel('Correction factor, $$k_i$$','Interpreter','Latex');
+h_legend = legend('$$z \geq 4$$ cm','$$z \geq 7$$ cm','Location','NorthWest','Interpreter','Latex');
+set(h_legend,'FontSize',12);
+
+%add second axis
+set(gca,'Position',[0.1300 0.1400 0.7750 0.7]) %reposition to make room for second label
+ax1 = gca; %get handle for first axis
+set(ax1,'XColor','k','YColor','k');
+ax2 = axes('Position',get(ax1,'Position'),...
+    'XAxisLocation','top',...
+    'YAxisLocation','right',...
+    'Color','none',...
+    'XColor','k',...
+    'YColor','k');
+cla;
+xmin = 0.06/d50_bar_surface_Cluster(i);
+xmax = 2/d50_bar_surface_Cluster(i);
+line([xmin xmax],[0 0],'Color','k','Parent',ax2);
+set(ax2,'XScale','log','XLim',[xmin xmax],'YLim',[1 2]);
+xmaxtick = floor(xmax*10)/10;
+set(ax2,'XTick',0.2:0.1:xmaxtick);
+XTickLabels = cell(8+xmaxtick*10,1);
+XTickLabels{1} = '0.2';
+XTickLabels{3} = '0.4';
+XTickLabels{6} = '0.7';
+for j = 1:floor(xmaxtick)
+    XTickLabels{j*10-1} = int2str(j);
 end
+set(ax2,'XTickLabel',XTickLabels);
+set(ax2,'YTick',[]);
+
+%secondary xlabel
+xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[5 3],'PaperPosition',[0 0 5 3],'PaperPositionMode','Manual');
+print([folder_Plots,'GSD_correctionfactor.png'],'-dpng');
 
 %% PLOT mean zqnorm VS dhat
-figure(5); clf;
+figure(6); clf;
 
 %% subplot for zq values
 subplot('position',[0.08 0.56 0.9 0.42]); hold on;

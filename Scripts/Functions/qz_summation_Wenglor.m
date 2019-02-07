@@ -13,6 +13,9 @@
 
 function [Qsum,sigma_Qsum] = qz_summation_Wenglor(qW, zW, sigma_qW, zq_BSNE, sigma_zq_BSNE)
 
+ind_summation = find(zW>0);
+
+
 %compute delta_z weights for additive flux calculations
 z1_Qsum = [0 sqrt(zW(1:end-1).*zW(2:end))]; %bottom of summation bins
 z2_Qsum = [sqrt(zW(1:end-1).*zW(2:end)) Inf];
