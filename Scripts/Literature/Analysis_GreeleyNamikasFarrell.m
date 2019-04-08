@@ -45,6 +45,37 @@ SaveData_Path = strcat(folder_SaveData,'LitAnalysis'); %path for saving data
 %% load data
 load(LoadData_Path);
 
+%% load additional Namikas 06 data on profiles with and without near-surface measurements
+Namikas_PSD_ust_z_all_path = strcat(folder_LoadData,'Namikas06_PSD_ust_z_all.dat');
+Namikas_PSD_ust_z_over7cm_path = strcat(folder_LoadData,'Namikas06_PSD_ust_z_over7cm.dat');
+%load(Namikas_PSD_ust_z_all_path);
+%load(Namikas_PSD_ust_z_over7cm_path);
+
+%importing - all
+formatSpec_Namikas_PSD = '%f%f%f%f%[^\n\r]';
+delimiter = '\t';
+startRow = 2;
+
+%load and assign z_all
+fileID_Namikas_PSD_ust_z_all = fopen(Namikas_PSD_ust_z_all_path,'r');
+dataArray_Namikas_PSD_ust_z_all = textscan(fileID_Namikas_PSD_ust_z_all, formatSpec_Namikas_PSD, 'Delimiter', delimiter, 'EmptyValue' ,NaN,'HeaderLines' ,startRow-1, 'ReturnOnError', false);
+fclose(fileID_Namikas_PSD_ust_z_all);
+d_um_Namikas_PSD = dataArray_Namikas_PSD_ust_z_all{1};
+dVdlnD_Namikas_z_all = zeros(N_Namikas06,N_d_Namikas06); %dV-dlogd matrix
+dVdlnD_Namikas_z_all(1,:) = dataArray_Namikas_PSD_ust_z_all{2}';
+dVdlnD_Namikas_z_all(2,:) = dataArray_Namikas_PSD_ust_z_all{3}';
+dVdlnD_Namikas_z_all(3,:) = dataArray_Namikas_PSD_ust_z_all{4}';
+
+%load and assign z_over7cm
+fileID_Namikas_PSD_ust_z_over7cm = fopen(Namikas_PSD_ust_z_over7cm_path,'r');
+dataArray_Namikas_PSD_ust_z_over7cm = textscan(fileID_Namikas_PSD_ust_z_over7cm, formatSpec_Namikas_PSD, 'Delimiter', delimiter, 'EmptyValue' ,NaN,'HeaderLines' ,startRow-1, 'ReturnOnError', false);
+fclose(fileID_Namikas_PSD_ust_z_over7cm);
+d_um_Namikas_PSD = dataArray_Namikas_PSD_ust_z_over7cm{:, 1};
+dVdlnD_Namikas_z_over7cm = zeros(N_Namikas06,N_d_Namikas06); %dV-dlogd matrix
+dVdlnD_Namikas_z_over7cm(1,:) = dataArray_Namikas_PSD_ust_z_over7cm{:, 2};
+dVdlnD_Namikas_z_over7cm(2,:) = dataArray_Namikas_PSD_ust_z_over7cm{:, 3};
+dVdlnD_Namikas_z_over7cm(3,:) = dataArray_Namikas_PSD_ust_z_over7cm{:, 4};
+
 %% Calculate saltation flux and height - Greeley
 
 % Make calculations
@@ -148,40 +179,109 @@ for i=1:N_Namikas06
         q0_all(j) = q0;
     end
     
-    %plot profiles and fits for diagnostic purposes
-    figure(i); clf; hold on;
-    legend_items = cell(N_d_Namikas06,1);
-    for j = 1:N_d_Namikas06 %plot raw profiles
-        plot(qi_Namikas06{i}(:,j),z_profile_all(:,j));
-        legend_items{j} = ['d = ',num2str(d_Namikas06(j),2),' mm'];
-    end
-    for j = 1:N_d_Namikas06 %plot fit profiles
-        qi_fit = q0_all(j)*exp(-z_profile_all(:,j)/zqi_Namikas06(i,j));
-        plot(qi_fit,z_profile_all(:,j),'k--');
-    end
-    set(gca,'xscale','log','box','on')
-    xlabel('$$q_{i}$$ (kg/m$$^2$$/s)','Interpreter','Latex');
-    ylabel('$$z$$ (m)','Interpreter','Latex');
-    if i==1
-        legend(legend_items,'Location','NorthEast');
-    else
-        legend(legend_items,'Location','SouthWest');
-    end
-    title(['u_* = ',num2str(ust_Namikas06(i),2),' m/s']);
-    print([folder_Plots,'qi_Namikas06_u*_',num2str(ust_Namikas06(i),2),'.png'],'-dpng')
+%     %plot profiles and fits for diagnostic purposes
+%     figure(i); clf; hold on;
+%     legend_items = cell(N_d_Namikas06,1);
+%     for j = 1:N_d_Namikas06 %plot raw profiles
+%         plot(qi_Namikas06{i}(:,j),z_profile_all(:,j));
+%         legend_items{j} = ['d = ',num2str(d_Namikas06(j),2),' mm'];
+%     end
+%     for j = 1:N_d_Namikas06 %plot fit profiles
+%         qi_fit = q0_all(j)*exp(-z_profile_all(:,j)/zqi_Namikas06(i,j));
+%         plot(qi_fit,z_profile_all(:,j),'k--');
+%     end
+%     set(gca,'xscale','log','box','on')
+%     xlabel('$$q_{i}$$ (kg/m$$^2$$/s)','Interpreter','Latex');
+%     ylabel('$$z$$ (m)','Interpreter','Latex');
+%     if i==1
+%         legend(legend_items,'Location','NorthEast');
+%     else
+%         legend(legend_items,'Location','SouthWest');
+%     end
+%     title(['u_* = ',num2str(ust_Namikas06(i),2),' m/s']);
+%     print([folder_Plots,'qi_Namikas06_u*_',num2str(ust_Namikas06(i),2),'.png'],'-dpng')
 end
 
-%plot zq versus d for diagnostic purposes
-figure(4); clf; hold on;
+% %plot zq versus d for diagnostic purposes
+% figure(4); clf; hold on;
+% legend_items = cell(N_Namikas06,1);
+% for i = 1:N_Namikas06
+%     plot(d_Namikas06,zqi_Namikas06(i,:));
+%     legend_items{i} = ['u_* = ',num2str(ust_Namikas06(i),2),' m/s'];
+% end
+% xlabel('d (mm)');
+% ylabel('$$z_{q,i}$$ (m)','Interpreter','Latex');
+% legend(legend_items);
+% print([folder_Plots,'zqi_di_Namikas06.png'],'-dpng')
+
+
+%% plot full airborne profiles, with and without near-surface values
+figure(5); clf;
 legend_items = cell(N_Namikas06,1);
+
+% markers and colors for bins by wind strength
+Color_bin = {[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250],[0.4660 0.6740 0.1880]}; %colors for bins
+Marker_bin = {'s','d','v'}; %markers for bins
+
+% plot with near-surface values
+h1 = subplot('Position',[0.14 0.55 0.84 0.41]); hold on;
 for i = 1:N_Namikas06
-    plot(d_Namikas06,zqi_Namikas06(i,:));
-    legend_items{i} = ['u_* = ',num2str(ust_Namikas06(i),2),' m/s'];
+    plot(d_um_Namikas_PSD/1e3,dVdlnD_Namikas_z_all(i,:),...
+        ['-',Marker_bin{i}],'MarkerSize',6,'Color',Color_bin{i},...
+        'LineWidth',1);
+    legend_items{i} = ['\tau/\tau_{it} = ',num2str(taunorm_Namikas06(i),2)];
 end
-xlabel('d (mm)');
-ylabel('$$z_{q,i}$$ (m)','Interpreter','Latex');
-legend(legend_items);
-print([folder_Plots,'zqi_di_Namikas06.png'],'-dpng')
+
+%format plot
+title('Namikas, 2006: All heights');
+h_legend = legend(legend_items,'Location','NorthWest');
+set(h_legend,'FontSize',12);
+set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',12);
+xlim([0.1, 0.6]);
+ylim([0.005 2]);
+set(gca,'xtick',[0.1:0.025:0.6])
+set(gca,'xticklabel',{'0.1','','','',...
+    '0.2','','','',...
+    '0.3','','','',...
+    '0.4','','','',...
+    '0.5','','','','0.6'})
+set(gca,'ytick',[0.005:0.001:0.01, 0.02:0.01:0.1, 0.2:0.1:1.0, 2]);
+set(gca,'yticklabels',{'','','','','',...
+    '0.01','','','','','','','','',...
+    '0.1','','','','','','','','','1','2'})
+ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+text(0.55,1.5,'(a)','FontSize',12)
+
+% plot without near-surface values
+h2 = subplot('Position',[0.14 0.06 0.84 0.41]); hold on;
+for i = 1:N_Namikas06
+    plot(d_um_Namikas_PSD/1e3,dVdlnD_Namikas_z_over7cm(i,:),...
+        ['-',Marker_bin{i}],'MarkerSize',6,'Color',Color_bin{i},...
+        'LineWidth',1);
+end
+
+%format plot
+title('Namikas, 2006: z \geq 7 cm only');
+set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',12);
+xlim([0.1, 0.6]);
+ylim([0.005 2]);
+set(gca,'xtick',[0.1:0.025:0.6])
+set(gca,'xticklabel',{'0.1','','','',...
+    '0.2','','','',...
+    '0.3','','','',...
+    '0.4','','','',...
+    '0.5','','','','0.6'})
+set(gca,'ytick',[0.005:0.001:0.01, 0.02:0.01:0.1, 0.2:0.1:1.0, 2]);
+set(gca,'yticklabels',{'','','','','',...
+    '0.01','','','','','','','','',...
+    '0.1','','','','','','','','','1','2'})
+xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
+ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+text(0.55,1.5,'(b)','FontSize',12)
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[6 8],'PaperPosition',[0 0 6 8],'PaperPositionMode','Manual');
+print([folder_Plots,'GSD_Namikas06_all_over7cm.png'],'-dpng');
 
 
 %% Calculate height-specific PSDs - Namikas

@@ -86,7 +86,7 @@ for n = 1:3
     set(htitle,'FontSize',PlotFont);
     set(gca,'XMinorTick','On','YMinorTick','On','YScale','log','Box','On');
     set(gca,'YTickLabel',{'0.1','1','10'})
-    ylabel('Norm. ht., $$z/<z_q>$$','Interpreter','Latex')
+    ylabel('Non-dim. ht., $$z/<z_q>$$','Interpreter','Latex')
     ylim([0.1 10]);
     if n == 1
         xlim([0.4 1.0]);   
@@ -153,9 +153,10 @@ for n = 1:3
         for j = 1:N_taunorm_bins
             ind_plot = find(~isnan(drefnorm_profile_airborne_taunorm_Cluster{i}(j,:)));
             if ~isempty(ind_plot) %plot only profiles with data
-                plot(drefnorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
+                h_plot = plot(drefnorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
                     znorm_profile_airborne_taunorm_Cluster{i}(j,ind_plot),...
                     [Marker_bin{j},'-']);
+                get(h_plot,'Color')
             else %for those profiles with no data, create a dummy plot so that legend renders properly
                 plot([0 0],[0 0],[Marker_bin{j},'-']);
             end
@@ -165,15 +166,15 @@ for n = 1:3
         htitle = title(ClusterNames{i});
         set(htitle,'FontSize',PlotFont);
         if mod(i,3) == 1
-            ylabel('Norm. ht., $$z/<z_q>$$','Interpreter','Latex')
+            ylabel('Non-dim. ht., $$z/<z_q>$$','Interpreter','Latex')
         end
         if i>=2*round(N_Cluster/2)-2
             if n == 1
-                xlabel('Norm. airborne g.s., $${d}_{50,air}/{d}_{50,bed}$$','Interpreter','Latex')
+                xlabel('Non-dim. airborne g.s., $${d}_{50,air}/{d}_{50,bed}$$','Interpreter','Latex')
             elseif n == 2
-                xlabel('Norm. airborne g.s., $${d}_{10,air}/{d}_{10,bed}$$','Interpreter','Latex')
+                xlabel('Non-dim. airborne g.s., $${d}_{10,air}/{d}_{50,bed}$$','Interpreter','Latex')
             elseif n == 3
-                xlabel('Norm. airborne g.s., $${d}_{90,air}/{d}_{90,bed}$$','Interpreter','Latex')
+                xlabel('Non-dim. airborne g.s., $${d}_{90,air}/{d}_{50,bed}$$','Interpreter','Latex')
             end
         end
         ylim([0.1 10]);
@@ -266,7 +267,7 @@ for n = 1:3
             ind_Cluster = ind_Cluster_all(i); %which cluster to plot?
             ind_d = ind_d_all(j); %which grain-size bin to plot?
 
-            %get normalized profiles
+            %get Non-dimensionalized profiles
             N_profile = length(qi_Cluster{ind_Cluster}); %get number of profiles
             znorm_plot = cell(N_profile,1);
             qnorm_plot = cell(N_profile,1);
@@ -292,10 +293,10 @@ for n = 1:3
 
             %format profile
             if i == 2
-                xlabel('Norm. size-selective flux, $$q_{i}(z)/q_{i,0}$$','Interpreter','Latex');
+                xlabel('Non-dim. size-selective flux, $$q_{i}(z)/q_{i,0}$$','Interpreter','Latex');
             end
             if j == 1
-                ylabel('Normalized height, $$z/\langle z_{q,i} \rangle$$','Interpreter','Latex');
+                ylabel('Non-dimensionalized height, $$z/\langle z_{q,i} \rangle$$','Interpreter','Latex');
             end
             htitle = title([ClusterNames{ind_Cluster},', d = ',num2str(d_f_mid_Cluster{ind_Cluster}(ind_d),3),' mm']);
             set(htitle,'FontSize',PlotFont-2);
@@ -371,7 +372,7 @@ for i = 1:6
     end
     hold on;
 
-    %get normalized profiles
+    %get Non-dimensionalized profiles
     N_profile = length(q_profile_Cluster{i}); %get number of profiles
     znorm_plot = cell(N_profile,1);
     qnorm_plot = cell(N_profile,1);
@@ -397,10 +398,10 @@ for i = 1:6
     
     %format profile
     if i >= 4 
-        xlabel('Normalized saltation flux, $$q(z)/q_{0}$$','Interpreter','Latex');
+        xlabel('Non-dim. saltation flux, $$q(z)/q_{0}$$','Interpreter','Latex');
     end
     if i == 1 || i == 4
-        ylabel('Normalized height, $$z/\langle z_{q} \rangle$$','Interpreter','Latex');
+        ylabel('Non-dim. height, $$z/\langle z_{q} \rangle$$','Interpreter','Latex');
     end
     htitle = title(ClusterNames{i});
     set(htitle,'FontSize',PlotFont);
@@ -429,6 +430,8 @@ for i = 1:6
     %panel labels
     x_text = 10^(0.9*(log10(xlims_new(2))-log10(xlims_new(1)))+log10(xlims_new(1)));
     y_text = 0.9*ylims_new(2);
+    %x_text = 0.5012;
+    %y_text = 5.4000;
     if i == 1
         text(x_text,y_text,'(a)')
     elseif i == 2
@@ -437,7 +440,7 @@ for i = 1:6
         text(x_text,y_text,'(c)')
     elseif i == 4
         text(x_text,y_text,'(d)')
-    elseif j == 5
+    elseif i == 5
         text(x_text,y_text,'(e)')
     elseif i == 6
         text(x_text,y_text,'(f)')

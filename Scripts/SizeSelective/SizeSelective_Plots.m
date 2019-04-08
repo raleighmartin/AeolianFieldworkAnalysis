@@ -145,7 +145,7 @@ for i = 1:N_Cluster
         end
         %ylabel - landscape
         if mod(i,3) == 1
-            ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+            ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
         end
     elseif strcmp(plot_type,'paper')
         %xlabel - portrait
@@ -154,7 +154,7 @@ for i = 1:N_Cluster
         end
         %ylabel - portrait
         if mod(i,2) == 1
-            ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+            ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
         end
         %label for subplot id
         text(0.07, 6, Label_Cluster{i},'FontSize',12);
@@ -190,12 +190,12 @@ for i = 1:N_Cluster
     if strcmp(plot_type,'presentation')
         %xlabel - landscape
         if i<=3
-            xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+            xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
         end
     elseif strcmp(plot_type,'paper')
         %xlabel - portrait
         if i<=2
-            xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+            xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
         end
     end
 end
@@ -289,7 +289,7 @@ for i = 1:N_Cluster
         end
         %ylabel - landscape
         if mod(i,3) == 1
-            ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+            ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
         end
     elseif strcmp(plot_type,'paper')
         %xlabel - portrait
@@ -298,7 +298,7 @@ for i = 1:N_Cluster
         end
         %ylabel - portrait
         if mod(i,2) == 1
-            ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+            ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
         end
         %label for subplot id
         text(0.07, 6, Label_Cluster{i},'FontSize',12);
@@ -349,12 +349,12 @@ for i = 1:N_Cluster
     if strcmp(plot_type,'presentation')
         %xlabel - landscape
         if i<=3
-            xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+            xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
         end
     elseif strcmp(plot_type,'paper')
         %xlabel - portrait
         if i<=2
-            xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+            xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
         end
     end
 end
@@ -448,7 +448,7 @@ for i = 1:N_Cluster
         end
         %ylabel - landscape
         if mod(i,3) == 1
-            ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+            ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
         end
     elseif strcmp(plot_type,'paper')
         %xlabel - portrait
@@ -457,7 +457,7 @@ for i = 1:N_Cluster
         end
         %ylabel - portrait
         if mod(i,2) == 1
-            ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+            ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
         end
         %label for subplot id
         text(0.07, 6, Label_Cluster{i},'FontSize',12);
@@ -508,12 +508,12 @@ for i = 1:N_Cluster
     if strcmp(plot_type,'presentation')
         %xlabel - landscape
         if i<=3
-            xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+            xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
         end
     elseif strcmp(plot_type,'paper')
         %xlabel - portrait
         if i<=2
-            xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+            xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
         end
     end
 end
@@ -552,12 +552,12 @@ set(htitle,'Position',[0.35,3.5]); %set title below edge of box to accommodate s
 if strcmp(plot_type,'presentation')
     %xlabel - landscape
     xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
-    ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+    ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
 elseif strcmp(plot_type,'paper')
     %xlabel - portrait
     xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
     %ylabel - portrait
-    ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+    ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
 end
     
 %add second axis
@@ -589,10 +589,10 @@ set(ax2,'YTick',[]);
 %secondary xlabel
 if strcmp(plot_type,'presentation')
     %xlabel - landscape
-    xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+    xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
 elseif strcmp(plot_type,'paper')
     %xlabel - portrait
-    xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+    xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
 end
 
 if strcmp(plot_type,'presentation')
@@ -636,12 +636,12 @@ if strcmp(plot_type,'presentation')
     %xlabel - landscape
     xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
     %ylabel - landscape
-    ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+    ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
 elseif strcmp(plot_type,'paper')
     %xlabel - portrait
     xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
     %ylabel - portrait
-    ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+    ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
 end
 
 %create legend
@@ -680,10 +680,10 @@ set(ax2,'YTick',[]);
 %secondary xlabel
 if strcmp(plot_type,'presentation')
     %xlabel - landscape
-    xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+    xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
 elseif strcmp(plot_type,'paper')
     %xlabel - portrait
-    xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+    xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
 end
 
 if strcmp(plot_type,'presentation')
@@ -729,12 +729,12 @@ if strcmp(plot_type,'presentation')
     %xlabel - landscape
     xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
     %ylabel - landscape
-    ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+    ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
 elseif strcmp(plot_type,'paper')
     %xlabel - portrait
     xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
     %ylabel - portrait
-    ylabel('Normalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+    ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
 end
 
 %create legend
@@ -779,10 +779,10 @@ set(ax2,'YTick',[]);
 %secondary xlabel
 if strcmp(plot_type,'presentation')
     %xlabel - landscape
-    xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+    xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
 elseif strcmp(plot_type,'paper')
     %xlabel - portrait
-    xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+    xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
 end
 
 if strcmp(plot_type,'presentation')
@@ -858,9 +858,9 @@ plot([0.8 0.8],[1e-4 1e1],'k-.','LineWidth',0.5);
 
 %format plot
 if strcmp(dref_type,'d50')==1
-    xlabel('Normalized grain size, $$d_i / d_{50,bed}$$','Interpreter','Latex');
+    xlabel('Non-dimensionalized grain size, $$d_i / d_{50,bed}$$','Interpreter','Latex');
 elseif strcmp(dref_type,'dmodal')==1
-    xlabel('Normalized grain size, $$d_i / d_{modal,bed}$$','Interpreter','Latex');
+    xlabel('Non-dimensionalized grain size, $$d_i / d_{modal,bed}$$','Interpreter','Latex');
 end
 
 %generate legend items
@@ -872,7 +872,7 @@ for i = 1:N_Cluster
 end
 
 % labels and legends
-ylabel({'Ratio of airborne to bed fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %no inset plot
+ylabel({'Ratio mean airborne to bed frac., $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %no inset plot
 h_legend = legend(legend_items,'Location','SouthWest'); 
 % if strcmp(plot_type,'presentation') %no inset plot
 %     ylabel({'Ratio of airborne to bed fraction, $$\langle f_{i,air} \rangle/f_{i,bed}$$'},'Interpreter','Latex','HorizontalAlignment','Center'); %no inset plot
@@ -973,7 +973,7 @@ set(ax2,'XTickLabel',XTickLabels);
 set(ax2,'YTick',[]);
 
 %secondary xlabel
-xlabel('Normalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
 
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[5 3],'PaperPosition',[0 0 5 3],'PaperPositionMode','Manual');
@@ -1017,9 +1017,9 @@ xlim([0.28 2]);
 ylim([0 0.15]);
 set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
 if strcmp(dref_type,'dmodal')
-    xlabel('Normalized grain size, $$d_{i} / d_{modal}$$','Interpreter','Latex');
+    xlabel('Non-dimensionalized grain size, $$d_{i} / d_{modal}$$','Interpreter','Latex');
 else
-    xlabel('Normalized grain size, $$d_{i} / d_{50,bed}$$','Interpreter','Latex');
+    xlabel('Non-dimensionalized grain size, $$d_{i} / d_{50,bed}$$','Interpreter','Latex');
 end
 ylabel('Mean size-selective saltation height, $$\langle z_{q,i} \rangle$$ (m)','Interpreter','Latex');
 text(1.8,0.14,'(a)','FontSize',PlotFont);
@@ -1066,11 +1066,11 @@ ylim([0 450]);
 set(gca,'XScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
 text(0.29,425,'(b)','FontSize',PlotFont);
 if strcmp(dref_type,'dmodal')
-    xlabel('Normalized grain size, $$d_{i} / d_{modal}$$','Interpreter','Latex');
+    xlabel('Non-dimensionalized grain size, $$d_{i} / d_{modal}$$','Interpreter','Latex');
 else
-    xlabel('Normalized grain size, $$d_{i} / d_{50,bed}$$','Interpreter','Latex');
+    xlabel('Non-dimensionalized grain size, $$d_{i} / d_{50,bed}$$','Interpreter','Latex');
 end
-ylabel('Mean normalized size-selective saltation height, $$\langle z_{q,i} \rangle/d_{i}$$','Interpreter','Latex');
+ylabel('Mean non-dim. size-selective saltation height, $$\langle z_{q,i} \rangle/d_{i}$$','Interpreter','Latex');
 
 %% inset plot with zq versus d
 axes('Position',[.76 .328 .205 .18]); hold on;
@@ -1106,80 +1106,80 @@ print([folder_Plots,'zq_d_',dref_type,'.png'],'-dpng');
 % % SUPPORTING INFORMATION PLOTS %
 % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % 
-% %% plot variation in znorm of BSNEs
-% figure(12); clf;
-% for i = 1:N_Cluster
-%     %initialize subplot
-%     if N_Cluster == 6 %defined subplot sizes for four clusters
-%         if i == 1
-%             h_subplot(1) = subplot('position',[0.08 0.72 0.40 0.26]); hold on;
-%         elseif i == 2
-%             h_subplot(2) = subplot('position',[0.57 0.72 0.40 0.26]); hold on;
-%         elseif i == 3
-%             h_subplot(3) = subplot('position',[0.08 0.39 0.40 0.26]); hold on;
-%         elseif i == 4
-%             h_subplot(4) = subplot('position',[0.57 0.39 0.40 0.26]); hold on;
-%         elseif i == 5
-%             h_subplot(5) = subplot('position',[0.08 0.06 0.40 0.26]); hold on;
-%         else
-%             h_subplot(6) = subplot('position',[0.57 0.06 0.40 0.26]); hold on;
-%         end
-%     else %otherwise, automated subplot sizes
-%         h_subplot(i) = subplot(round((N_Cluster+1)/2),2,i); hold on;
-%     end   
-%     
-%     %plot znorm - usable profiles
-%     ind_usable = ind_usable_profile_Cluster{i};
-%     znorm_plot = znorm_profile_Cluster{i}(ind_usable);
-%     Time_plot = Time_profile_Cluster{i}(ind_usable);
-%     N_plot = length(znorm_plot);
-%     for j = 1:N_plot
-%         Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
-%         h1 = plot(Time_profile,znorm_plot{j},'bo-');
-%     end
-%     
-%     %plot znorm - unusable profiles
-%     ind_unusable = setdiff(1:length(znorm_profile_Cluster{i}),ind_usable);
-%     znorm_plot = znorm_profile_Cluster{i}(ind_unusable);
-%     Time_plot = Time_profile_Cluster{i}(ind_unusable);
-%     N_plot = length(znorm_plot);
-%     for j = 1:N_plot
-%         Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
-%         h2 = plot(Time_profile,znorm_plot{j},'rx-');
-%     end
-%     
-%     if mod(i,2) == 1
-%         ylabel('Normalized BSNE trap height, $$z/z_q$$','Interpreter','Latex','FontSize',PlotFont);
-%     end
-% 
-%     if i == 1
-%         h_legend = legend([h1 h2],{'usable','unusable'},'Location','North');
-%         set(h_legend,'FontSize',PlotFont);
-%     end
-%     
-%     title(ClusterNames{i},'FontSize',PlotFont);
-%     ylim([0 7]);
-%     if i==1
-%         set(gca,'XTick',[datetime(2014,11,13):duration(48,0,0):datetime(2014,11,19),datetime(2014,11,21)]);
-%     elseif i>=5
-%         set(gca,'XTick',[datetime(2015,5,23):duration(72,0,0):datetime(2015,6,2),datetime(2015,6,5)]);
-%     elseif i>=3
-%         set(gca,'XTick',[datetime(2015,5,15):duration(48,0,0):datetime(2015,5,23)]);
-%     elseif i>=2
-%         set(gca,'XTick',[datetime(2015,3,23):duration(24,0,0):datetime(2015,3,25)]);
-%     end
-%     datetick('x','mmm dd','keepticks')
-%     set(gca,'YMinorTick','On','Box','On','FontSize',PlotFont);
-%     xlims = xlim;
-%     text(xlims(1)+range(xlims)*0.03,6.5,Label_Cluster{i},'FontSize',PlotFont)
-%     
-%     %set(gca,'XTick',xlims(1):(floor(days(range(xlims))/3)*duration(24,0,0)):xlims(2))
-% end
-% 
-% %print plot
-% set(gcf,'PaperUnits','inches','PaperSize',[8 10],'PaperPosition',[0 0 8 10],'PaperPositionMode','Manual');
-% print([folder_Plots,'znorm_profile_BSNE.png'],'-dpng');
-% 
+%% plot variation in znorm of BSNEs
+figure(12); clf;
+for i = 1:N_Cluster
+    %initialize subplot
+    if N_Cluster == 6 %defined subplot sizes for four clusters
+        if i == 1
+            h_subplot(1) = subplot('position',[0.08 0.72 0.40 0.26]); hold on;
+        elseif i == 2
+            h_subplot(2) = subplot('position',[0.57 0.72 0.40 0.26]); hold on;
+        elseif i == 3
+            h_subplot(3) = subplot('position',[0.08 0.39 0.40 0.26]); hold on;
+        elseif i == 4
+            h_subplot(4) = subplot('position',[0.57 0.39 0.40 0.26]); hold on;
+        elseif i == 5
+            h_subplot(5) = subplot('position',[0.08 0.06 0.40 0.26]); hold on;
+        else
+            h_subplot(6) = subplot('position',[0.57 0.06 0.40 0.26]); hold on;
+        end
+    else %otherwise, automated subplot sizes
+        h_subplot(i) = subplot(round((N_Cluster+1)/2),2,i); hold on;
+    end   
+    
+    %plot znorm - usable profiles
+    ind_usable = ind_usable_profile_Cluster{i};
+    znorm_plot = znorm_profile_Cluster{i}(ind_usable);
+    Time_plot = Time_profile_Cluster{i}(ind_usable);
+    N_plot = length(znorm_plot);
+    for j = 1:N_plot
+        Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
+        h1 = plot(Time_profile,znorm_plot{j},'bo-');
+    end
+    
+    %plot znorm - unusable profiles
+    ind_unusable = setdiff(1:length(znorm_profile_Cluster{i}),ind_usable);
+    znorm_plot = znorm_profile_Cluster{i}(ind_unusable);
+    Time_plot = Time_profile_Cluster{i}(ind_unusable);
+    N_plot = length(znorm_plot);
+    for j = 1:N_plot
+        Time_profile = []; for k = 1:length(znorm_plot{j}); Time_profile = [Time_profile; Time_plot(j)]; end; %get times for profile
+        h2 = plot(Time_profile,znorm_plot{j},'rx-');
+    end
+    
+    if mod(i,2) == 1
+        ylabel('Non-dim. BSNE trap height, $$z/z_q$$','Interpreter','Latex','FontSize',PlotFont);
+    end
+
+    if i == 1
+        h_legend = legend([h1 h2],{'usable','unusable'},'Location','North');
+        set(h_legend,'FontSize',PlotFont);
+    end
+    
+    title(ClusterNames{i},'FontSize',PlotFont);
+    ylim([0 7]);
+    if i==1
+        set(gca,'XTick',[datetime(2014,11,13):duration(48,0,0):datetime(2014,11,19),datetime(2014,11,21)]);
+    elseif i>=5
+        set(gca,'XTick',[datetime(2015,5,23):duration(72,0,0):datetime(2015,6,2),datetime(2015,6,5)]);
+    elseif i>=3
+        set(gca,'XTick',[datetime(2015,5,15):duration(48,0,0):datetime(2015,5,23)]);
+    elseif i>=2
+        set(gca,'XTick',[datetime(2015,3,23):duration(24,0,0):datetime(2015,3,25)]);
+    end
+    datetick('x','mmm dd','keepticks')
+    set(gca,'YMinorTick','On','Box','On','FontSize',PlotFont);
+    xlims = xlim;
+    text(xlims(1)+range(xlims)*0.03,6.5,Label_Cluster{i},'FontSize',PlotFont)
+    
+    %set(gca,'XTick',xlims(1):(floor(days(range(xlims))/3)*duration(24,0,0)):xlims(2))
+end
+
+%print plot
+set(gcf,'PaperUnits','inches','PaperSize',[8 10],'PaperPosition',[0 0 8 10],'PaperPositionMode','Manual');
+print([folder_Plots,'znorm_profile_BSNE.png'],'-dpng');
+
 % %% plot variation in reference zqnorm with saltation flux - dhat values
 % figure(13); clf;
 % 
@@ -1248,7 +1248,7 @@ print([folder_Plots,'zq_d_',dref_type,'.png'],'-dpng');
 %     ylims = ylim;
 %     text(1.05, ylims(1)+range(ylims)*0.94, Label_Cluster{i},'FontSize',12);
 %     if i==N_Cluster || i==N_Cluster-1
-%         xlabel('Normalized shear stress, $$\tau/\tau_{it}$$','Interpreter','Latex')
+%         xlabel('Non-dimensionalized shear stress, $$\tau/\tau_{it}$$','Interpreter','Latex')
 %     end
 %     if mod(i,2) == 1
 %         ylabel('Norm. size-sel. salt. ht., $$z_{q,i}/d_{i}$$','Interpreter','Latex');
