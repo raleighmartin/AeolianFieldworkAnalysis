@@ -224,7 +224,7 @@ Color_bin = {[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250],[0.4660 0.6740 0.1880
 Marker_bin = {'s','d','v'}; %markers for bins
 
 % plot with near-surface values
-h1 = subplot('Position',[0.14 0.55 0.84 0.41]); hold on;
+h1 = subplot('Position',[0.18 0.57 0.8 0.39]); hold on;
 for i = 1:N_Namikas06
     plot(d_um_Namikas_PSD/1e3,dVdlnD_Namikas_z_all(i,:),...
         ['-',Marker_bin{i}],'MarkerSize',6,'Color',Color_bin{i},...
@@ -234,9 +234,9 @@ end
 
 %format plot
 title('Namikas, 2006: All heights');
-h_legend = legend(legend_items,'Location','NorthWest');
-set(h_legend,'FontSize',12);
-set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',12);
+h_legend = legend(legend_items,'Location','South');
+set(h_legend,'FontSize',14);
+set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',14);
 xlim([0.1, 0.6]);
 ylim([0.005 2]);
 set(gca,'xtick',[0.1:0.025:0.6])
@@ -244,16 +244,16 @@ set(gca,'xticklabel',{'0.1','','','',...
     '0.2','','','',...
     '0.3','','','',...
     '0.4','','','',...
-    '0.5','','','','0.6'})
+    '0.5','','','','0.6'},'FontSize',14)
 set(gca,'ytick',[0.005:0.001:0.01, 0.02:0.01:0.1, 0.2:0.1:1.0, 2]);
 set(gca,'yticklabels',{'','','','','',...
     '0.01','','','','','','','','',...
-    '0.1','','','','','','','','','1','2'})
-ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
-text(0.55,1.5,'(a)','FontSize',12)
+    '0.1','','','','','','','','','1','2'},'FontSize',14)
+ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex','FontSize',16);
+text(0.5,1.25,'(a)','FontSize',20)
 
 % plot without near-surface values
-h2 = subplot('Position',[0.14 0.06 0.84 0.41]); hold on;
+h2 = subplot('Position',[0.18 0.08 0.8 0.39]); hold on;
 for i = 1:N_Namikas06
     plot(d_um_Namikas_PSD/1e3,dVdlnD_Namikas_z_over7cm(i,:),...
         ['-',Marker_bin{i}],'MarkerSize',6,'Color',Color_bin{i},...
@@ -261,8 +261,8 @@ for i = 1:N_Namikas06
 end
 
 %format plot
-title('Namikas, 2006: z \geq 7 cm only');
-set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',12);
+title('Namikas, 2006: z \geq 7 cm only','FontSize',14);
+set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',14);
 xlim([0.1, 0.6]);
 ylim([0.005 2]);
 set(gca,'xtick',[0.1:0.025:0.6])
@@ -270,14 +270,14 @@ set(gca,'xticklabel',{'0.1','','','',...
     '0.2','','','',...
     '0.3','','','',...
     '0.4','','','',...
-    '0.5','','','','0.6'})
+    '0.5','','','','0.6'},'FontSize',14)
 set(gca,'ytick',[0.005:0.001:0.01, 0.02:0.01:0.1, 0.2:0.1:1.0, 2]);
 set(gca,'yticklabels',{'','','','','',...
     '0.01','','','','','','','','',...
-    '0.1','','','','','','','','','1','2'})
-xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
-ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
-text(0.55,1.5,'(b)','FontSize',12)
+    '0.1','','','','','','','','','1','2'},'FontSize',14)
+xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex','FontSize',16)
+ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex','FontSize',16);
+text(0.5,1.25,'(b)','FontSize',20)
 
 %print plot
 set(gcf,'PaperUnits','inches','PaperSize',[6 8],'PaperPosition',[0 0 6 8],'PaperPositionMode','Manual');

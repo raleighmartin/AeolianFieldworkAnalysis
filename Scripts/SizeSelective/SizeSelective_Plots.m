@@ -157,7 +157,7 @@ for i = 1:N_Cluster
             ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
         end
         %label for subplot id
-        text(0.07, 6, Label_Cluster{i},'FontSize',12);
+        text(0.07, 6, Label_Cluster{i},'FontSize',14);
     end
     
     %add second axis
@@ -301,7 +301,7 @@ for i = 1:N_Cluster
             ylabel('Non-dimensionalized volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
         end
         %label for subplot id
-        text(0.07, 6, Label_Cluster{i},'FontSize',12);
+        text(0.07, 6, Label_Cluster{i},'FontSize',14);
     end
     
     %create legend
@@ -430,37 +430,37 @@ for i = 1:N_Cluster
     end
     
     %format plot
-    set(gca,'XScale','log','YScale','log','YMinorTick','On');
+    set(gca,'XScale','log','YScale','log','YMinorTick','On','FontSize',12);
     xlim([0.06, 2]);
     set(gca,'xtick',[0.06:0.01:0.1,0.2:0.1:2]);
-    set(gca,'xticklabels',{'0.06','','','','0.1','0.2','','0.4','','','0.7','','','1','','','','','','','','','','2'});
+    set(gca,'xticklabels',{'0.06','','','','0.1','0.2','','0.4','','','0.7','','','1','','','','','','','','','','2'},'FontSize',12);
     ylim([1e-4 1e1]);
 
     %label plot
     htitle = title(ClusterNames{i});
-    set(htitle,'Position',[0.35,3.5]); %set title below edge of box to accommodate second axis
+    set(htitle,'Position',[0.35,3.5],'FontSize',13); %set title below edge of box to accommodate second axis
 
     %labels 
     if strcmp(plot_type,'presentation')
         %xlabel - landscape
         if i>=2*round(N_Cluster/2)-2
-            xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
+            xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex','FontSize',13)
         end
         %ylabel - landscape
         if mod(i,3) == 1
-            ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+            ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex','FontSize',13);
         end
     elseif strcmp(plot_type,'paper')
         %xlabel - portrait
         if i>=2*round(N_Cluster/2)-1
-            xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
+            xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex','FontSize',13)
         end
         %ylabel - portrait
         if mod(i,2) == 1
-            ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex');
+            ylabel('Non-dim. volume size distr., $$\frac{dV}{d\textrm{ln}(d)}$$','Interpreter','Latex','FontSize',13);
         end
         %label for subplot id
-        text(0.07, 6, Label_Cluster{i},'FontSize',12);
+        text(0.07, 4, Label_Cluster{i},'FontSize',20);
     end
     
     %create legend
@@ -475,12 +475,12 @@ for i = 1:N_Cluster
     end
     if i == 1
         h_legend = legend(legend_items,'Location','SouthWest');
-        set(h_legend,'FontSize',8);
+        set(h_legend,'FontSize',9);
     end
     
     %add second axis
     ax1 = gca; %get handle for first axis
-    set(ax1,'XColor','k','YColor','k');
+    set(ax1,'XColor','k','YColor','k','FontSize',12);
     ax2 = axes('Position',get(ax1,'Position'),...
         'XAxisLocation','top',...
         'YAxisLocation','right',...
@@ -491,7 +491,7 @@ for i = 1:N_Cluster
     xmin = 0.06/d50_bar_surface_Cluster(i);
     xmax = 2/d50_bar_surface_Cluster(i);
     line([xmin xmax],[0 0],'Color','k','Parent',ax2);
-    set(ax2,'XScale','log','XLim',[xmin xmax],'YLim',[1 2]);
+    set(ax2,'XScale','log','XLim',[xmin xmax],'YLim',[1 2],'FontSize',12);
     xmaxtick = floor(xmax*10)/10;
     set(ax2,'XTick',0.2:0.1:xmaxtick);
     XTickLabels = cell(8+xmaxtick*10,1);
@@ -501,19 +501,19 @@ for i = 1:N_Cluster
     for j = 1:floor(xmaxtick)
         XTickLabels{j*10-1} = int2str(j);
     end
-    set(ax2,'XTickLabel',XTickLabels);
+    set(ax2,'XTickLabel',XTickLabels,'FontSize',12);
     set(ax2,'YTick',[]);
     
     %secondary xlabel
     if strcmp(plot_type,'presentation')
         %xlabel - landscape
         if i<=3
-            xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+            xlabel('Non-dim. grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex','FontSize',13)
         end
     elseif strcmp(plot_type,'paper')
         %xlabel - portrait
         if i<=2
-            xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+            xlabel('Non-dim. grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex','FontSize',13)
         end
     end
 end
@@ -524,7 +524,7 @@ if strcmp(plot_type,'presentation')
     print([folder_Plots,'GSD_taunorm_landscape.png'],'-dpng');
 elseif strcmp(plot_type,'paper')
     %print plot - portrait
-    set(gcf,'PaperUnits','inches','PaperSize',[7 9],'PaperPosition',[0 0 7 9],'PaperPositionMode','Manual');
+    set(gcf,'PaperUnits','inches','PaperSize',[7 10],'PaperPosition',[0 0 7 10],'PaperPositionMode','Manual');
     print([folder_Plots,'GSD_taunorm_portrait.png'],'-dpng');
 end
 
@@ -546,7 +546,7 @@ ylim([1e-4 1e1]);
 
 %label plot
 htitle = title(ClusterNames{i});
-set(htitle,'Position',[0.35,3.5]); %set title below edge of box to accommodate second axis
+set(htitle,'Position',[0.35,3.5],'FontSize',13); %set title below edge of box to accommodate second axis
 
 %labels 
 if strcmp(plot_type,'presentation')
@@ -849,18 +849,18 @@ for i = 1:N_Cluster
 end
 
 %plot fine, medium, and coarse ranges
-text(0.32,7,'Fine','HorizontalAlignment','Center','FontSize',PlotFont);
-text(0.56,7,'Medium','HorizontalAlignment','Center','FontSize',PlotFont);
-%text(0.95,7,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
-text(1.2,7,'Coarse','HorizontalAlignment','Center','FontSize',PlotFont);
+text(0.32,7,'Fine','HorizontalAlignment','Center','FontSize',13);
+text(0.56,7,'Medium','HorizontalAlignment','Center','FontSize',13);
+%text(0.95,7,'Coarse','HorizontalAlignment','Center','FontSize',13);
+text(1.2,7,'Coarse','HorizontalAlignment','Center','FontSize',13);
 plot([0.4 0.4],[1e-4 1e1],'k-.','LineWidth',0.5);
 plot([0.8 0.8],[1e-4 1e1],'k-.','LineWidth',0.5);
 
 %format plot
 if strcmp(dref_type,'d50')==1
-    xlabel('Non-dimensionalized grain size, $$d_i / d_{50,bed}$$','Interpreter','Latex');
+    xlabel('Non-dimensionalized grain size, $$d_i / d_{50,bed}$$','Interpreter','Latex','FontSize',14);
 elseif strcmp(dref_type,'dmodal')==1
-    xlabel('Non-dimensionalized grain size, $$d_i / d_{modal,bed}$$','Interpreter','Latex');
+    xlabel('Non-dimensionalized grain size, $$d_i / d_{modal,bed}$$','Interpreter','Latex','FontSize',14);
 end
 
 %generate legend items
@@ -882,12 +882,12 @@ h_legend = legend(legend_items,'Location','SouthWest');
 %     h_legend = legend(legend_items,'Location','NorthEast'); 
 %     text(0.26,7,'(a)','FontSize',PlotFont);
 % end
-set(h_legend,'FontSize',10);
-set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',PlotFont);
+set(h_legend,'FontSize',13);
+set(gca,'XScale','log','YScale','log','XMinorTick','On','YMinorTick','On','Box','On','FontSize',13);
 ylim([1e-4 1e1]);
 
 %print plot
-set(gcf,'PaperUnits','inches','PaperSize',[7 4],'PaperPosition',[0 0 7 4],'PaperPositionMode','Manual'); %original plot
+set(gcf,'PaperUnits','inches','PaperSize',[8 5],'PaperPosition',[0 0 8 5],'PaperPositionMode','Manual'); %original plot
 print([folder_Plots,'fratiobar_dhat_withcorrection_',dref_type,'.png'],'-dpng');
 
 % %include inset plot with dimensional values, if for paper
@@ -935,15 +935,15 @@ plot(d_mid_correction, fC_4cm, 'b+--','LineWidth',1);
 plot(d_mid_correction, fC_7cm, 'ro-.','LineWidth',1);
  
 %format plot
-set(gca,'XScale','log','YScale','log','YMinorTick','On');
+set(gca,'XScale','log','YScale','log','YMinorTick','On','FontSize',12);
 xlim([0.1, 1]);
 set(gca,'xtick',[0.1:0.1:2]);
-set(gca,'xticklabels',{'0.1','0.2','','0.4','','','0.7','','','1'});
+set(gca,'xticklabels',{'0.1','0.2','','0.4','','','0.7','','','1'},'FontSize',12);
 ylim([0.5 20]);
-xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex')
-ylabel('Correction factor, $$k_i$$','Interpreter','Latex');
+xlabel('Grain diameter, $$d$$ (mm)','Interpreter','Latex','FontSize',14)
+ylabel('Correction factor, $$k_i$$','Interpreter','Latex','FontSize',14);
 h_legend = legend('$$z \geq 4$$ cm','$$z \geq 7$$ cm','Location','NorthWest','Interpreter','Latex');
-set(h_legend,'FontSize',12);
+set(h_legend,'FontSize',14);
 
 %add second axis
 set(gca,'Position',[0.1300 0.1400 0.7750 0.7]) %reposition to make room for second label
@@ -969,14 +969,14 @@ XTickLabels{6} = '0.7';
 for j = 1:floor(xmaxtick)
     XTickLabels{j*10-1} = int2str(j);
 end
-set(ax2,'XTickLabel',XTickLabels);
+set(ax2,'XTickLabel',XTickLabels,'FontSize',12);
 set(ax2,'YTick',[]);
 
 %secondary xlabel
-xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex')
+xlabel('Non-dimensionalized grain diameter, $$d/d_{50,bed}$$','Interpreter','Latex','FontSize',14)
 
 %print plot
-set(gcf,'PaperUnits','inches','PaperSize',[5 3],'PaperPosition',[0 0 5 3],'PaperPositionMode','Manual');
+set(gcf,'PaperUnits','inches','PaperSize',[6 4],'PaperPosition',[0 0 6 4],'PaperPositionMode','Manual');
 print([folder_Plots,'GSD_correctionfactor.png'],'-dpng');
 
 %% PLOT mean zqnorm VS dhat
@@ -1246,7 +1246,7 @@ print([folder_Plots,'znorm_profile_BSNE.png'],'-dpng');
 %     xlim([1 4]);
 %     ylim([0 400]);
 %     ylims = ylim;
-%     text(1.05, ylims(1)+range(ylims)*0.94, Label_Cluster{i},'FontSize',12);
+%     text(1.05, ylims(1)+range(ylims)*0.94, Label_Cluster{i},'FontSize',14);
 %     if i==N_Cluster || i==N_Cluster-1
 %         xlabel('Non-dimensionalized shear stress, $$\tau/\tau_{it}$$','Interpreter','Latex')
 %     end

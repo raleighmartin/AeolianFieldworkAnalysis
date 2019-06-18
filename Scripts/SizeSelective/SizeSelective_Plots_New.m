@@ -31,7 +31,7 @@ addpath(folder_Functions); %point MATLAB to location of functions
 %%%%%%%%%%%%%%%%%
 
 %% plotting information
-PlotFont = 10; %font for labels
+PlotFont = 12; %font for labels
 LineWidth_Plot = 1; %width of lines
 Marker_bin = {'o','s','d','^','v','>','<'}; %markers for bins
 Color_bin = {[0 0.4470 0.7410],[0.8500 0.3250 0.0980],[0.9290 0.6940 0.1250],[0.4940 0.1840 0.5560],[0.4660 0.6740 0.1880], [0.3010 0.7450 0.9330], [0.6350 0.0780 0.1840]}; %colors for bins
@@ -90,13 +90,13 @@ for n = 1:3
     ylim([0.1 10]);
     if n == 1
         xlim([0.4 1.0]);   
-        text(0.42,7.5,'(a)'); %label panel
+        text(0.42,7.5,'(a)','FontSize',14); %label panel
     elseif n == 2
         xlim([0.2 0.8]);
-        text(0.22,7.5,'(a)'); %label panel          
+        text(0.22,7.5,'(a)','FontSize',14); %label panel          
     elseif n == 3
         xlim([0.6 1.2]);
-        text(0.62,7.5,'(a)'); %label panel
+        text(0.62,7.5,'(a)','FontSize',14); %label panel
     end
     set(gca,'FontSize',PlotFont);
 
@@ -118,17 +118,17 @@ for n = 1:3
     htitle = title('Farrell et al., 2012');
     set(htitle,'FontSize',PlotFont);
     set(gca,'XMinorTick','On','YMinorTick','On','YScale','log','Box','On');
-    set(gca,'YTickLabel',{'0.1','1','10'})
+    set(gca,'YTickLabel',{'0.1','1','10'},'FontSize',PlotFont)
     ylim([0.1 10]);
     if n == 1
         xlim([0.4 1.0]);   
-        text(0.42,7.5,'(b)'); %label panel
+        text(0.42,7.5,'(b)','FontSize',14); %label panel
     elseif n == 2
         xlim([0.2 0.8]);
-        text(0.22,7.5,'(b)'); %label panel          
+        text(0.22,7.5,'(b)','FontSize',14); %label panel          
     elseif n == 3
         xlim([0.6 1.2]);
-        text(0.62,7.5,'(b)'); %label panel
+        text(0.62,7.5,'(b)','FontSize',14); %label panel
     end
     set(gca,'FontSize',PlotFont);
 
@@ -140,7 +140,7 @@ for n = 1:3
         elseif i == 2
             h_subplot(4) = subplot('position',[0.385 0.41 0.275 0.23]); hold on;
         elseif i == 3 %make this subplot bigger to accommodate legend
-            h_subplot(5) = subplot('position',[0.71 0.41 0.275 0.455]); hold on;
+            h_subplot(5) = subplot('position',[0.71 0.41 0.275 0.485]); hold on;
         elseif i == 4
             h_subplot(6) = subplot('position',[0.06 0.09 0.275 0.23]); hold on;
         elseif i == 5
@@ -166,30 +166,30 @@ for n = 1:3
         htitle = title(ClusterNames{i});
         set(htitle,'FontSize',PlotFont);
         if mod(i,3) == 1
-            ylabel('Non-dim. ht., $$z/<z_q>$$','Interpreter','Latex')
+            ylabel('Non-dim. ht., $$z/<z_q>$$','Interpreter','Latex','FontSize',PlotFont)
         end
         if i>=2*round(N_Cluster/2)-2
             if n == 1
-                xlabel('Non-dim. airborne g.s., $${d}_{50,air}/{d}_{50,bed}$$','Interpreter','Latex')
+                xlabel('Non-dim. airborne g.s., $${d}_{50,air}/{d}_{50,bed}$$','Interpreter','Latex','FontSize',11)
             elseif n == 2
-                xlabel('Non-dim. airborne g.s., $${d}_{10,air}/{d}_{50,bed}$$','Interpreter','Latex')
+                xlabel('Non-dim. airborne g.s., $${d}_{10,air}/{d}_{50,bed}$$','Interpreter','Latex','FontSize',11)
             elseif n == 3
-                xlabel('Non-dim. airborne g.s., $${d}_{90,air}/{d}_{50,bed}$$','Interpreter','Latex')
+                xlabel('Non-dim. airborne g.s., $${d}_{90,air}/{d}_{50,bed}$$','Interpreter','Latex','FontSize',11)
             end
         end
         ylim([0.1 10]);
         if n == 1
             xlim([0.4 1.0]);   
-            text(0.42,7.5,panel_labels{i}); %label panel
+            text(0.42,7.5,panel_labels{i},'FontSize',14); %label panel
         elseif n == 2
             xlim([0.2 0.8]);
-            text(0.22,7.5,panel_labels{i}); %label panel          
+            text(0.22,7.5,panel_labels{i},'FontSize',14); %label panel          
         elseif n == 3
             xlim([0.6 1.2]);
-            text(0.62,7.5,panel_labels{i}); %label panel
+            text(0.62,7.5,panel_labels{i},'FontSize',14); %label panel
         end
         set(gca,'XMinorTick','On','YMinorTick','On','YScale','log','Box','On');
-        set(gca,'YTickLabel',{'0.1','1','10'})
+        set(gca,'YTickLabel',{'0.1','1','10'},'FontSize',PlotFont)
         set(gca,'FontSize',PlotFont);
 
         %create legend
@@ -203,12 +203,12 @@ for n = 1:3
         end
         if i == 3
             h_legend = legend(legend_items,'Location','NorthOutside');
-            set(h_legend,'FontSize',8);
+            set(h_legend,'FontSize',12);
         end
     end
 
     %print plot
-    set(gcf,'PaperUnits','inches','PaperSize',[8 6],'PaperPosition',[0 0 8 6],'PaperPositionMode','Manual');
+    set(gcf,'PaperUnits','inches','PaperSize',[9.5 7],'PaperPosition',[0 0 9.5 7],'PaperPositionMode','Manual');
     if n == 1
         print([folder_Plots,'d50norm_profile_airborne_comparison.png'],'-dpng');
     elseif n == 2
